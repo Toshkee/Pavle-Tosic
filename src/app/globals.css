@@ -1,26 +1,106 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ================= BASE ================= */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #0a0a0a;
+  color: #ededed;
+  overflow-x: hidden;
+}
+
+section {
+  scroll-margin-top: 110px;
+}
+
+/* ================= HERO / PARCHMENT ================= */
+
+.poster-parchment {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1200px circle at 50% 20%, rgba(0,0,0,0.18), transparent 60%),
+    radial-gradient(900px circle at 10% 10%, rgba(0,0,0,0.22), transparent 55%),
+    radial-gradient(900px circle at 90% 15%, rgba(0,0,0,0.18), transparent 55%),
+    linear-gradient(180deg, #d6bf8a 0%, #cfb47a 45%, #c9ad7a 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0,0,0,0.18),
+    inset 0 0 80px rgba(0,0,0,0.25);
+}
+
+/* ================= ATMOSPHERE ================= */
+
+.spotlight {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    1200px circle at 50% 18%,
+    rgba(255,255,255,0.06),
+    transparent 60%
+  );
+}
+
+.particles {
+  position: absolute;
+  inset: 0;
+  opacity: 0.4;
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+}
+
+/* ================= JOURNEY / OCEAN ================= */
+
+.journey {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 200px 0 260px;
+}
+
+/* ================= ISLANDS ================= */
+
+.island {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120vh;
+}
+
+.island::before {
+  content: "";
+  position: absolute;
+  top: -48px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(90,70,40,0.9);
+  box-shadow: 0 0 0 8px rgba(90,70,40,0.15);
+}
+
+/* ================= OCEAN AMBIENCE ================= */
+
+@keyframes oceanDrift {
+  0%   { transform: translateX(-2%) translateY(0); }
+  50%  { transform: translateX(2%) translateY(-1%); }
+  100% { transform: translateX(-2%) translateY(0); }
+}
+
+@keyframes particleRise {
+  from { transform: translateY(0); opacity: 0.4; }
+  to   { transform: translateY(-200px); opacity: 0; }
+}
+
+/* Utility helpers */
+.ocean-drift {
+  animation: oceanDrift 18s ease-in-out infinite;
 }
