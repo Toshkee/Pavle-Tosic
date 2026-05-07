@@ -201,44 +201,204 @@ function ScrollRope({ targetRef }: { targetRef: React.RefObject<HTMLDivElement |
   );
 }
 
-// Magnetic hover wrapper — element gently follows the cursor
-function Magnetic({
+// Sealed envelope — wraps a parchment that "comes out" of the envelope on click.
+// The envelope sits at the parchment's final size; clicking the wax seal lifts
+// the flap, slides the parchment up out of the pocket, and fades the envelope away.
+function SealedEnvelope({
   children,
-  strength = 0.35,
-  className = "",
+  sealColor = "#b91c1c",
+  sealGlow = "rgba(220,38,38,0.55)",
+  sealLetter = "P",
+  label = "SEALED · TAP TO OPEN",
+  faceSrc,
+  faceAlt,
+  facePosition = "50% 30%",
+  faceTop = "72%",
+  faceSize = 96,
 }: {
   children: ReactNode;
-  strength?: number;
-  className?: string;
+  sealColor?: string;
+  sealGlow?: string;
+  sealLetter?: string;
+  label?: string;
+  faceSrc?: string;
+  faceAlt?: string;
+  faceTop?: string;
+  facePosition?: string;
+  faceSize?: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 200, damping: 18, mass: 0.4 });
-  const sy = useSpring(y, { stiffness: 200, damping: 18, mass: 0.4 });
-
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    x.set((e.clientX - (r.left + r.width / 2)) * strength);
-    y.set((e.clientY - (r.top + r.height / 2)) * strength);
-  };
-  const onLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
+  const [open, setOpen] = useState(false);
 
   return (
-    <motion.div
-      ref={ref}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={{ x: sx, y: sy }}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <div className="relative w-full max-w-xl">
+      {/* The envelope itself — absolutely positioned over the parchment slot */}
+      <motion.div
+        className="pointer-events-none absolute inset-0 z-20"
+        initial={false}
+        animate={{ opacity: open ? 0 : 1 }}
+        transition={{ duration: 0.45, ease, delay: open ? 0.5 : 0 }}
+        aria-hidden={open}
+      >
+        {/* Envelope body */}
+        <div
+          className="absolute inset-0 rounded-sm border-2 border-[#6b4a1f] shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 50% 30%, rgba(255,235,180,0.35), rgba(220,180,110,0) 70%), linear-gradient(180deg, #e8cf95 0%, #c9a05c 100%)",
+          }}
+        >
+          {/* Inner aging vignette */}
+          <div
+            className="pointer-events-none absolute inset-0 rounded-sm"
+            style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.55)" }}
+          />
+          {/* Side fold lines */}
+          <div className="pointer-events-none absolute inset-y-0 left-1/4 w-px bg-black/10" />
+          <div className="pointer-events-none absolute inset-y-0 right-1/4 w-px bg-black/10" />
+          {/* Bottom fold (V shape) suggesting the envelope pocket */}
+          <svg
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 w-full"
+            viewBox="0 0 100 50"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0 0 L50 42 L100 0 L100 50 L0 50 Z"
+              fill="rgba(0,0,0,0.06)"
+            />
+            <path
+              d="M0 0 L50 42 L100 0"
+              stroke="rgba(60,40,15,0.45)"
+              strokeWidth="0.6"
+              fill="none"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          {/* Face portrait — centered in the lower half (the envelope pocket area) */}
+          {faceSrc && (
+            <div
+              className="pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+              style={{ top: faceTop }}
+            >
+              <div
+                className="relative overflow-hidden rounded-full border-[3px] border-[#6b4a1f] shadow-[0_6px_18px_rgba(0,0,0,0.55),inset_0_0_18px_rgba(120,80,30,0.45)]"
+                style={{
+                  width: faceSize,
+                  height: faceSize,
+                  background: "linear-gradient(180deg, #f0d7a0 0%, #c9a05c 100%)",
+                }}
+              >
+                <Image
+                  src={faceSrc}
+                  alt={faceAlt ?? ""}
+                  fill
+                  sizes="120px"
+                  className="object-cover"
+                  style={{ objectPosition: facePosition, filter: "sepia(0.35) contrast(1.05)" }}
+                />
+                {/* Sepia/age overlay */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-full"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 50% 30%, transparent 50%, rgba(80,50,15,0.45) 100%)",
+                    mixBlendMode: "multiply",
+                  }}
+                />
+                {/* Inner gold ring */}
+                <div
+                  className="pointer-events-none absolute inset-1 rounded-full"
+                  style={{
+                    boxShadow: "inset 0 0 0 2px rgba(218,165,32,0.65)",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          <p className="absolute inset-x-0 bottom-3 text-center text-[9px] font-bold tracking-[0.4em] text-black/55">
+            {label}
+          </p>
+        </div>
+
+        {/* Top flap — pivots up when opened */}
+        <motion.div
+          className="absolute inset-x-0 top-0 origin-top"
+          style={{ height: "55%", transformStyle: "preserve-3d", transformOrigin: "top center" }}
+          initial={false}
+          animate={{ rotateX: open ? -165 : 0 }}
+          transition={{ duration: 0.7, ease }}
+        >
+          <svg
+            viewBox="0 0 100 55"
+            preserveAspectRatio="none"
+            className="h-full w-full drop-shadow-[0_6px_8px_rgba(0,0,0,0.35)]"
+          >
+            <defs>
+              <linearGradient id="envFlapGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#dcbe7e" />
+                <stop offset="100%" stopColor="#b88e4a" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0 0 L100 0 L50 52 Z"
+              fill="url(#envFlapGrad)"
+              stroke="#6b4a1f"
+              strokeWidth="0.6"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        </motion.div>
+
+        {/* Wax seal — the click target. Sits at the bottom point of the flap. */}
+        <motion.button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open the sealed message"
+          className="pointer-events-auto absolute left-1/2 top-1/2 z-30 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full font-serif text-xl font-black text-amber-50 transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-amber-200/70"
+          style={{
+            background: `radial-gradient(circle at 35% 30%, ${sealColor}cc, ${sealColor} 55%, #3a0a0a 100%)`,
+            boxShadow: `0 0 18px ${sealGlow}, 0 6px 14px rgba(0,0,0,0.55), inset 0 -3px 6px rgba(0,0,0,0.45), inset 0 3px 4px rgba(255,255,255,0.25)`,
+            border: "2px solid rgba(0,0,0,0.55)",
+          }}
+          initial={false}
+          animate={{ scale: open ? 0 : 1, opacity: open ? 0 : 1, rotate: open ? 25 : 0 }}
+          transition={{ duration: 0.35, ease }}
+        >
+          {/* Drip edges */}
+          <span
+            className="pointer-events-none absolute inset-0 rounded-full"
+            style={{
+              boxShadow: `inset 0 0 0 2px ${sealColor}88`,
+              clipPath:
+                "polygon(50% 0%, 62% 8%, 78% 4%, 86% 18%, 96% 30%, 92% 48%, 100% 62%, 88% 78%, 80% 92%, 62% 96%, 50% 100%, 38% 96%, 22% 92%, 12% 78%, 4% 62%, 8% 48%, 2% 30%, 14% 18%, 22% 4%, 38% 8%)",
+            }}
+          />
+          <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{sealLetter}</span>
+        </motion.button>
+      </motion.div>
+
+      {/* Parchment — clipped inside the envelope while sealed, slides up to reveal */}
+      <motion.div
+        className="relative"
+        initial={false}
+        animate={{ y: open ? 0 : 24, opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.7, ease, delay: open ? 0.35 : 0 }}
+      >
+        {children}
+      </motion.div>
+
+      {/* Re-seal button (small, only when open) */}
+      {open && (
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Re-seal the message"
+          className="absolute -top-3 right-2 z-40 flex h-7 w-7 items-center justify-center rounded-full border border-black/40 bg-amber-100/90 text-xs text-black/70 shadow hover:bg-amber-200"
+        >
+          ↺
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -275,6 +435,13 @@ const PROJECTS = [
     stack: ["Python", "Django"],
     link: "https://cryptofloww.netlify.app/",
   },
+  {
+    title: "Meet2Explore",
+    description:
+      "Travel-focused web app for discovering destinations and connecting with fellow explorers.",
+    stack: ["React", "Node.js"],
+    link: "https://meet2explore.netlify.app/",
+  },
 ];
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -288,9 +455,8 @@ const VOYAGE = [
     org: "Infostream Ltd",
     current: true,
     bullets: [
-      "Building production web applications with .NET & C#",
+      "Built the company's new website from scratch",
       "Oracle APEX development and internal training",
-      "Building the company's own website from scratch",
       "Collaborating within a professional development team",
     ],
   },
@@ -603,7 +769,7 @@ function WantedPosterScene() {
                 whileInView={{ opacity: 1, y: 0, rotate: -2.5 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.8, delay: 0.45, ease }}
-                whileHover={{ y: -6, rotate: 0, scale: 1.03, zIndex: 20 }}
+                whileHover={{ y: -6, rotate: 0, scale: 1.03, zIndex: 20, transition: { duration: 0.25, ease } }}
                 style={{ transformOrigin: "top center" }}
                 className="relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
               >
@@ -619,28 +785,24 @@ function WantedPosterScene() {
                     Full-stack developer building end-to-end products — UI, APIs, and databases. Sailing the Grand Line of React, Node.js, Django, and SQL.
                   </p>
                   <div className="mt-5 flex flex-col gap-2">
-                    <Magnetic strength={0.4}>
-                      <a
-                        href="https://github.com/Toshkee"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
-                      >
-                        <span>GitHub</span>
-                        <span>→</span>
-                      </a>
-                    </Magnetic>
-                    <Magnetic strength={0.4}>
-                      <a
-                        href="https://www.linkedin.com/in/tosiicp/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
-                      >
-                        <span>LinkedIn</span>
-                        <span>→</span>
-                      </a>
-                    </Magnetic>
+                    <a
+                      href="https://github.com/Toshkee"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
+                    >
+                      <span>GitHub</span>
+                      <span>→</span>
+                    </a>
+                    <a
+                      href="https://www.linkedin.com/in/tosiicp/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
+                    >
+                      <span>LinkedIn</span>
+                      <span>→</span>
+                    </a>
                   </div>
                 </div>
               </motion.div>
@@ -721,7 +883,7 @@ function WantedPosterScene() {
                 whileInView={{ opacity: 1, y: 0, rotate: 2.5 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.8, delay: 0.6, ease }}
-                whileHover={{ y: -6, rotate: 0, scale: 1.03, zIndex: 20 }}
+                whileHover={{ y: -6, rotate: 0, scale: 1.03, zIndex: 20, transition: { duration: 0.25, ease } }}
                 style={{ transformOrigin: "top center" }}
                 className="relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
               >
@@ -942,41 +1104,56 @@ function JourneyTransition() {
           <Compass />
         </motion.div>
 
-        {/* Parchment — Shanks / Red Hair Pirates */}
+        {/* Parchment — Shanks / Red Hair Pirates (sealed in envelope) */}
         <motion.div
           initial={{ opacity: 0, y: 24, rotate: -1 }}
           whileInView={{ opacity: 1, y: 0, rotate: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 1, delay: 0.25, ease }}
-          className="relative w-full max-w-xl rounded-sm border-2 border-[#8b6a32] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-          }}
+          className="w-full max-w-xl"
         >
-          <div
-            className="pointer-events-none absolute inset-0 rounded-sm"
-            style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
-          />
-          <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+          <SealedEnvelope
+            sealColor="#b91c1c"
+            sealGlow="rgba(220,38,38,0.55)"
+            sealLetter="S"
+            label="RED HAIR PIRATES · TAP TO OPEN"
+            faceSrc="/images/shanks.jpg"
+            faceAlt="Shanks"
+            faceTop="74%"
+            faceSize={98}
+          >
+            <div
+              className="relative rounded-sm border-2 border-[#8b6a32] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
+              }}
+            >
+              <div
+                className="pointer-events-none absolute inset-0 rounded-sm"
+                style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
+              />
+              <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
 
-          <div className="relative text-center">
-            <p className="text-[10px] uppercase tracking-[0.4em] text-black/70">Intercepted Message · Red Hair Pirates</p>
-            <h2 className="mt-3 font-serif text-3xl font-extrabold text-black md:text-4xl">
-              A Pirate Needs No Permission
-            </h2>
-            <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
-              &ldquo;This straw hat is a very important treasure to me. I am entrusting it to you. Promise to return it to me one day — when you have become a great pirate.&rdquo;
-            </p>
-            <p className="mt-4 text-xs font-bold tracking-[0.3em] text-black/80">
-              — &apos;RED-HAIR&apos; SHANKS · CAPTAIN, RED HAIR PIRATES
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px w-12 bg-black/50" />
-              <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">RAISE YOUR FLAG</span>
-              <div className="h-px w-12 bg-black/50" />
+              <div className="relative text-center">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-black/70">Intercepted Message · Red Hair Pirates</p>
+                <h2 className="mt-3 font-serif text-3xl font-extrabold text-black md:text-4xl">
+                  A Pirate Needs No Permission
+                </h2>
+                <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
+                  &ldquo;This straw hat is a very important treasure to me. I am entrusting it to you. Promise to return it to me one day — when you have become a great pirate.&rdquo;
+                </p>
+                <p className="mt-4 text-xs font-bold tracking-[0.3em] text-black/80">
+                  — &apos;RED-HAIR&apos; SHANKS · CAPTAIN, RED HAIR PIRATES
+                </p>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <div className="h-px w-12 bg-black/50" />
+                  <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">RAISE YOUR FLAG</span>
+                  <div className="h-px w-12 bg-black/50" />
+                </div>
+              </div>
             </div>
-          </div>
+          </SealedEnvelope>
         </motion.div>
       </div>
     </section>
@@ -1222,11 +1399,13 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
                 whileInView={{ opacity: 1, y: 0, rotate: baseRot }}
                 viewport={{ once: true, amount: 0.4 }}
                 transition={{ delay: 0.25 + i * 0.15, duration: 0.7, ease }}
-                whileHover={{ y: -8, rotate: 0, scale: 1.04, zIndex: 20 }}
+                whileHover={{ y: -8, rotate: 0, scale: 1.04, zIndex: 20, transition: { duration: 0.25, ease } }}
                 style={{ transformOrigin: "top center" }}
                 className={
                   "relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]" +
-                  (i === 2 ? " md:col-span-2 md:mx-auto md:max-w-[62%]" : "")
+                  (projects.length % 2 === 1 && i === projects.length - 1
+                    ? " md:col-span-2 md:mx-auto md:max-w-[62%]"
+                    : "")
                 }
               >
                 {/* Pinned nail at top */}
@@ -1560,41 +1739,55 @@ function GrandLineTransition() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 1.1, ease }}
-          className="relative w-full max-w-lg rounded-sm border-2 border-[#8b6a32] p-10 text-center shadow-[0_24px_70px_rgba(0,0,0,0.7)]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-          }}
+          className="w-full max-w-lg"
         >
-          <div
-            className="pointer-events-none absolute inset-0 rounded-sm"
-            style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
-          />
-          {/* Pin */}
-          <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+          <SealedEnvelope
+            sealColor="#eab308"
+            sealGlow="rgba(234,179,8,0.55)"
+            sealLetter="L"
+            label="HEART PIRATES · TAP TO OPEN"
+            faceSrc="/images/law.jpg"
+            faceAlt="Trafalgar Law"
+            faceSize={106}
+          >
+            <div
+              className="relative rounded-sm border-2 border-[#8b6a32] p-10 text-center shadow-[0_24px_70px_rgba(0,0,0,0.7)]"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
+              }}
+            >
+              <div
+                className="pointer-events-none absolute inset-0 rounded-sm"
+                style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
+              />
+              {/* Pin */}
+              <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
 
-          <div className="relative">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-black/70">Intercepted Den Den Mushi · Heart Pirates</p>
-            <h2 className="mt-3 font-serif text-4xl font-extrabold text-black md:text-5xl">
-              The Grand Line<br />Awaits
-            </h2>
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px w-10 bg-black/50" />
-              <span className="text-[10px] tracking-[0.3em] text-black/60">✦ ✦ ✦</span>
-              <div className="h-px w-10 bg-black/50" />
+              <div className="relative">
+                <p className="text-[10px] uppercase tracking-[0.45em] text-black/70">Intercepted Den Den Mushi · Heart Pirates</p>
+                <h2 className="mt-3 font-serif text-4xl font-extrabold text-black md:text-5xl">
+                  The Grand Line<br />Awaits
+                </h2>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <div className="h-px w-10 bg-black/50" />
+                  <span className="text-[10px] tracking-[0.3em] text-black/60">✦ ✦ ✦</span>
+                  <div className="h-px w-10 bg-black/50" />
+                </div>
+                <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
+                  &ldquo;A man only truly dies when he is forgotten. Carry the will of those who came before — and decide your own death yourself.&rdquo;
+                </p>
+                <p className="mt-4 text-xs font-bold tracking-[0.28em] text-black/80">
+                  — TRAFALGAR D. WATER LAW · SURGEON OF DEATH, HEART PIRATES
+                </p>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <div className="h-px w-14 bg-black/50" />
+                  <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">LOG OPEN</span>
+                  <div className="h-px w-14 bg-black/50" />
+                </div>
+              </div>
             </div>
-            <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
-              &ldquo;A man only truly dies when he is forgotten. Carry the will of those who came before — and decide your own death yourself.&rdquo;
-            </p>
-            <p className="mt-4 text-xs font-bold tracking-[0.28em] text-black/80">
-              — TRAFALGAR D. WATER LAW · SURGEON OF DEATH, HEART PIRATES
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px w-14 bg-black/50" />
-              <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">LOG OPEN</span>
-              <div className="h-px w-14 bg-black/50" />
-            </div>
-          </div>
+          </SealedEnvelope>
         </motion.div>
       </div>
     </section>
@@ -2421,7 +2614,7 @@ function CallMeFlipCard() {
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* FRONT — Call Me button */}
+        {/* FRONT — Contact Me button */}
         <button
           type="button"
           onClick={() => setFlipped(true)}
@@ -2434,7 +2627,7 @@ function CallMeFlipCard() {
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          ☎ Call Me
+          ☎ Contact Me
         </button>
 
         {/* BACK — Number + WhatsApp */}
@@ -2607,11 +2800,11 @@ function TreasureChest() {
               Open to projects, collaborations, or just a chat about code, combat, or crypto.
             </p>
 
-            <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
-              <Magnetic strength={0.35}>
+            <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+              <div className="w-full sm:w-[260px]" style={{ height: 50 }}>
                 <a
                   href="mailto:tosiicp@gmail.com"
-                  className="flex items-center justify-center gap-2 rounded-lg border-2 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-950 shadow-[0_6px_20px_rgba(255,200,80,0.45)] transition hover:scale-[1.03]"
+                  className="flex h-full w-full items-center justify-center gap-2 rounded-lg border-2 px-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-950 shadow-[0_6px_20px_rgba(255,200,80,0.45)] transition hover:scale-[1.03]"
                   style={{
                     background:
                       "linear-gradient(180deg, #ffeaa0 0%, #f4c75a 55%, #c08820 100%)",
@@ -2620,7 +2813,7 @@ function TreasureChest() {
                 >
                   ✉ tosiicp@gmail.com
                 </a>
-              </Magnetic>
+              </div>
               <CallMeFlipCard />
             </div>
           </div>
