@@ -157,7 +157,7 @@ function ScrollRope({ targetRef }: { targetRef: React.RefObject<HTMLDivElement |
 
   return (
     <svg
-      className="pointer-events-none absolute left-1/2 top-0 h-full w-[18px] -translate-x-1/2 overflow-visible"
+      className="pointer-events-none absolute top-0 left-3 h-full w-[18px] overflow-visible md:left-1/2 md:-translate-x-1/2"
       preserveAspectRatio="none"
       viewBox="0 0 18 1000"
       fill="none"
@@ -475,17 +475,17 @@ function WantedPosterScene() {
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease }}
-          className="mb-24 text-center md:mb-28"
+          className="mb-16 text-center sm:mb-24 md:mb-28"
         >
-          <p className="text-xs uppercase tracking-[0.45em] text-amber-100/80">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-100/80 sm:text-xs sm:tracking-[0.45em]">
             By Order of the World Government
           </p>
           <AnimatedHeading
             as="h1"
             text="WANTED"
-            className="mt-3 font-serif text-6xl font-black tracking-[0.18em] text-white drop-shadow-[0_4px_25px_rgba(255,150,80,0.55)] md:text-7xl"
+            className="mt-3 font-serif text-5xl font-black tracking-[0.14em] text-white drop-shadow-[0_4px_25px_rgba(255,150,80,0.55)] sm:text-6xl sm:tracking-[0.18em] md:text-7xl"
           />
-          <p className="mt-4 text-xs uppercase tracking-[0.35em] text-amber-200/75">
+          <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-amber-200/75 sm:text-xs sm:tracking-[0.35em]">
             Dead or Alive • Bounty Active
           </p>
         </motion.div>
@@ -501,8 +501,8 @@ function WantedPosterScene() {
 
           {/* Top banner */}
           <div className="absolute left-1/2 -top-9 z-30 -translate-x-1/2 whitespace-nowrap">
-            <div className="rounded-md border-y-4 border-[#2a1808] bg-gradient-to-b from-[#7a4a22] to-[#4a2a12] px-12 py-2.5 shadow-2xl">
-              <p className="font-serif text-sm tracking-[0.45em] text-amber-100">⚓ MOST WANTED ⚓</p>
+            <div className="rounded-md border-y-4 border-[#2a1808] bg-gradient-to-b from-[#7a4a22] to-[#4a2a12] px-5 py-2 shadow-2xl sm:px-12 sm:py-2.5">
+              <p className="font-serif text-[11px] tracking-[0.3em] text-amber-100 sm:text-sm sm:tracking-[0.45em]">⚓ MOST WANTED</p>
             </div>
           </div>
 
@@ -512,7 +512,7 @@ function WantedPosterScene() {
 
           {/* The wooden board */}
           <div
-            className="relative rounded-md border-4 border-[#2a1808] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.7)] md:p-10"
+            className="relative rounded-md border-4 border-[#2a1808] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.7)] sm:p-6 md:p-10"
             style={{
               backgroundColor: "#6b4423",
               backgroundImage: [
@@ -616,13 +616,13 @@ function WantedPosterScene() {
                   </p>
 
                   {/* Photo */}
-                  <div className="relative mt-3 h-[290px] overflow-hidden border-4 border-[#5a3a1a] bg-black/20 shadow-inner">
+                  <div className="relative mt-3 aspect-[4/5] overflow-hidden border-4 border-[#5a3a1a] bg-black/20 shadow-inner">
                     <Image
                       src="/images/me.jpg"
                       alt="Pavle Tošić"
                       fill
                       priority
-                      sizes="360px"
+                      sizes="(max-width: 640px) 90vw, 360px"
                       className="object-cover"
                       style={{ objectPosition: "50% 22%" }}
                     />
@@ -1135,14 +1135,14 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
 
       {/* Top banner: QUEST BOARD */}
       <div className="absolute left-1/2 -top-7 z-30 -translate-x-1/2 whitespace-nowrap">
-        <div className="rounded-md border-y-4 border-[#2a1808] bg-gradient-to-b from-[#7a4a22] to-[#4a2a12] px-10 py-2.5 shadow-2xl">
-          <p className="font-serif text-sm tracking-[0.45em] text-amber-100">⚓ QUEST BOARD ⚓</p>
+        <div className="rounded-md border-y-4 border-[#2a1808] bg-gradient-to-b from-[#7a4a22] to-[#4a2a12] px-4 py-2 shadow-2xl sm:px-10 sm:py-2.5">
+          <p className="font-serif text-[11px] tracking-[0.3em] text-amber-100 sm:text-sm sm:tracking-[0.45em]">⚓ QUEST BOARD ⚓</p>
         </div>
       </div>
 
       {/* The wooden board */}
       <div
-        className="relative rounded-md border-4 border-[#2a1808] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.65)] md:p-8"
+        className="relative rounded-md border-4 border-[#2a1808] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.65)] sm:p-6 md:p-8"
         style={{
           backgroundColor: "#6b4423",
           backgroundImage: [
@@ -1306,10 +1306,10 @@ function QuestBoardIsland() {
           transition={{ duration: 1, ease }}
           className="mb-12 text-center"
         >
-          <p className="text-xs uppercase tracking-[0.4em] text-amber-100/80">Land Ho! • Loguetown</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-amber-100/80 sm:text-xs sm:tracking-[0.4em]">Land Ho! • Loguetown</p>
           <AnimatedHeading
             text="Quest Board"
-            className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] md:text-6xl"
+            className="mt-3 font-serif text-4xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] sm:text-5xl md:text-6xl"
           />
           <p className="mt-3 text-sm text-zinc-200/90">
             Pinned to the village board — quests completed across the Grand Line.
@@ -1322,7 +1322,7 @@ function QuestBoardIsland() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 1.2, ease }}
-          className="relative aspect-[2/1] w-full"
+          className="relative min-h-[860px] w-full xs:min-h-[780px] sm:min-h-0 sm:aspect-[3/2] md:aspect-[2/1]"
         >
           {/* Landmass SVG */}
           <IslandLandmass />
@@ -1397,7 +1397,7 @@ function QuestBoardIsland() {
           />
 
           {/* THE QUEST BOARD — centerpiece, planted on the grass */}
-          <div className="absolute left-1/2 top-[18%] z-[30] w-[min(720px,82%)] -translate-x-1/2">
+          <div className="absolute left-1/2 top-[8%] z-[30] w-[min(720px,92%)] -translate-x-1/2 sm:top-[18%] sm:w-[min(720px,82%)]">
             <QuestBoard projects={PROJECTS} />
           </div>
         </motion.div>
@@ -1620,14 +1620,14 @@ function VoyageLog() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1, ease }}
-          className="mb-20 text-center"
+          className="mb-12 text-center sm:mb-20"
         >
-          <p className="text-xs uppercase tracking-[0.4em] text-amber-100/80">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-amber-100/80 sm:text-xs sm:tracking-[0.4em]">
             The Grand Line · Captain&apos;s Log
           </p>
           <AnimatedHeading
             text="Voyage Log"
-            className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] md:text-6xl"
+            className="mt-3 font-serif text-4xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] sm:text-5xl md:text-6xl"
           />
           <p className="mt-3 text-sm text-zinc-200/85">
             Every port shaped the journey. Every arc built the crew.
@@ -1642,12 +1642,12 @@ function VoyageLog() {
           {VOYAGE.map((entry, i) => (
             <div
               key={i}
-              className={`relative mb-16 flex items-start ${
-                i % 2 === 0 ? "justify-end" : "justify-start"
-              }`}
+              className={`relative mb-12 flex items-start md:mb-16 ${
+                i % 2 === 0 ? "md:justify-end" : "md:justify-start"
+              } justify-start pl-12 md:pl-0`}
             >
               {/* Anchor marker on the rope */}
-              <div className="absolute left-1/2 top-7 z-20 -translate-x-1/2">
+              <div className="absolute left-3 top-7 z-20 md:left-1/2 md:-translate-x-1/2">
                 <motion.div
                   className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#3d2410] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-800 shadow-[0_0_14px_rgba(255,180,80,0.5)]"
                   animate={{ scale: [1, 1.08, 1] }}
@@ -1657,9 +1657,9 @@ function VoyageLog() {
                 </motion.div>
               </div>
 
-              {/* Connector line to card */}
+              {/* Connector line to card — only shown on md+ where the card sits across the rope */}
               <div
-                className={`absolute top-[2.15rem] h-[2px] w-[calc(50%-1.25rem)] bg-gradient-to-r from-amber-700/80 to-transparent ${
+                className={`absolute top-[2.15rem] hidden h-[2px] w-[calc(50%-1.25rem)] bg-gradient-to-r from-amber-700/80 to-transparent md:block ${
                   i % 2 === 0
                     ? "right-1/2 translate-x-[-1.25rem] bg-gradient-to-l"
                     : "left-1/2 translate-x-[1.25rem]"
@@ -1673,8 +1673,8 @@ function VoyageLog() {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.85, delay: 0.15, ease }}
                 whileHover={{ y: -5, scale: 1.02 }}
-                className={`relative w-[calc(50%-2.5rem)] rounded-sm border border-[#b08b4f] p-6 shadow-[0_14px_35px_rgba(0,0,0,0.55)] ${
-                  i % 2 === 0 ? "mr-[calc(50%+1.25rem)]" : "ml-[calc(50%+1.25rem)]"
+                className={`relative w-full rounded-sm border border-[#b08b4f] p-5 shadow-[0_14px_35px_rgba(0,0,0,0.55)] sm:p-6 md:w-[calc(50%-2.5rem)] ${
+                  i % 2 === 0 ? "md:mr-[calc(50%+1.25rem)]" : "md:ml-[calc(50%+1.25rem)]"
                 }`}
                 style={{
                   backgroundImage:
@@ -1854,14 +1854,14 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.9, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex flex-col gap-8 lg:flex-row ${isEven ? "" : "lg:flex-row-reverse"} items-center`}
+      className={`relative flex flex-col gap-6 sm:gap-8 lg:flex-row ${isEven ? "" : "lg:flex-row-reverse"} items-center`}
     >
       {/* Media panel — flippable */}
       <div className="relative w-full lg:w-1/2" style={{ perspective: "1400px" }}>
         <motion.div
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          className="relative h-72 w-full lg:h-80"
+          className="relative h-64 w-full sm:h-72 lg:h-80"
           style={{ transformStyle: "preserve-3d" }}
         >
           {/* FRONT — media */}
@@ -2051,13 +2051,13 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
       </AnimatePresence>
 
       {/* Text panel */}
-      <div className="flex w-full flex-col gap-5 px-2 lg:w-1/2 lg:px-6">
+      <div className="flex w-full flex-col gap-5 px-1 sm:px-2 lg:w-1/2 lg:px-6">
         {/* Icon + heading */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <motion.div
             animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.1, 1] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: index * 0.8 }}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl text-3xl shadow-lg"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl shadow-lg sm:h-14 sm:w-14 sm:text-3xl"
             style={{
               background: `linear-gradient(135deg, ${h.color}44, ${h.color}88)`,
               border: `1px solid ${h.accent}55`,
@@ -2066,14 +2066,14 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
           >
             {h.icon}
           </motion.div>
-          <div>
+          <div className="min-w-0">
             <p
-              className="text-[10px] uppercase tracking-[0.4em] font-medium"
+              className="text-[9px] uppercase tracking-[0.3em] font-medium sm:text-[10px] sm:tracking-[0.4em]"
               style={{ color: h.accent }}
             >
               {h.tag}
             </p>
-            <h3 className="font-serif text-2xl font-extrabold text-white md:text-3xl">
+            <h3 className="font-serif text-xl font-extrabold text-white sm:text-2xl md:text-3xl">
               {h.label}
             </h3>
           </div>
@@ -2193,12 +2193,12 @@ function CrewQuarters() {
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
           className="mb-6 text-center"
         >
-          <p className="text-xs uppercase tracking-[0.45em] text-violet-300/80">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-violet-300/80 sm:text-xs sm:tracking-[0.45em]">
             Beyond The Code · The Captain Himself
           </p>
           <AnimatedHeading
             text="Beyond The Bounty"
-            className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_30px_rgba(139,92,246,0.4)] md:text-6xl"
+            className="mt-3 font-serif text-4xl font-extrabold text-white drop-shadow-[0_4px_30px_rgba(139,92,246,0.4)] sm:text-5xl md:text-6xl"
           />
           <p className="mt-3 text-sm text-zinc-400">
             What sharpens the mind outside the ship.
@@ -2215,7 +2215,7 @@ function CrewQuarters() {
         />
 
         {/* Hobby cards */}
-        <div className="flex w-full flex-col gap-24">
+        <div className="flex w-full flex-col gap-16 sm:gap-20 lg:gap-24">
           {HOBBIES.map((h, i) => (
             <HobbyCard key={h.id} h={h} index={i} />
           ))}
@@ -2230,16 +2230,16 @@ function CrewQuarters() {
 ───────────────────────────────────────────── */
 
 const CREW = [
-  { id: "luffy",   name: "Monkey D. Luffy", role: "Captain",         color: "#dc2626", glow: "rgba(220,38,38,0.55)",  initial: "L" },
-  { id: "zoro",    name: "Roronoa Zoro",    role: "Swordsman",       color: "#16a34a", glow: "rgba(22,163,74,0.55)",  initial: "Z" },
-  { id: "nami",    name: "Nami",            role: "Navigator",       color: "#f59e0b", glow: "rgba(245,158,11,0.55)", initial: "N" },
-  { id: "usopp",   name: "Usopp",           role: "Sniper",          color: "#a16207", glow: "rgba(161,98,7,0.55)",   initial: "U" },
-  { id: "sanji",   name: "Sanji",           role: "Cook",            color: "#facc15", glow: "rgba(250,204,21,0.55)", initial: "S" },
-  { id: "chopper", name: "Tony Tony Chopper", role: "Doctor",        color: "#fb7185", glow: "rgba(251,113,133,0.55)",initial: "C" },
-  { id: "robin",   name: "Nico Robin",      role: "Archaeologist",   color: "#7c3aed", glow: "rgba(124,58,237,0.55)", initial: "R" },
-  { id: "franky",  name: "Franky",          role: "Shipwright",      color: "#06b6d4", glow: "rgba(6,182,212,0.55)",  initial: "F" },
-  { id: "brook",   name: "Brook",           role: "Musician",        color: "#e5e7eb", glow: "rgba(229,231,235,0.55)",initial: "B" },
-  { id: "jinbe",   name: "Jinbe",           role: "Helmsman",        color: "#1d4ed8", glow: "rgba(29,78,216,0.55)",  initial: "J" },
+  { id: "luffy",   name: "Monkey D. Luffy",   role: "Captain",       img: "/images/luffy.jpg",   face: "50% 14%", bounty: "3,000,000,000", color: "#dc2626", glow: "rgba(220,38,38,0.55)",  initial: "L" },
+  { id: "zoro",    name: "Roronoa Zoro",      role: "Swordsman",     img: "/images/zoro.jpg",    face: "50% 0%",  bounty: "1,111,000,000", color: "#16a34a", glow: "rgba(22,163,74,0.55)",  initial: "Z" },
+  { id: "nami",    name: "Nami",              role: "Navigator",     img: "/images/nami.jpg",    face: "50% 0%",  bounty: "366,000,000",   color: "#f59e0b", glow: "rgba(245,158,11,0.55)", initial: "N" },
+  { id: "usopp",   name: "Usopp",             role: "Sniper",        img: "/images/usopp.jpg",   face: "50% 0%",  bounty: "500,000,000",   color: "#a16207", glow: "rgba(161,98,7,0.55)",   initial: "U" },
+  { id: "sanji",   name: "Sanji",             role: "Cook",          img: "/images/sanji.jpg",   face: "50% 0%",  bounty: "1,032,000,000", color: "#facc15", glow: "rgba(250,204,21,0.55)", initial: "S" },
+  { id: "chopper", name: "Tony Tony Chopper", role: "Doctor",        img: "/images/chopper.jpg", face: "50% 30%", bounty: "1,000",         color: "#fb7185", glow: "rgba(251,113,133,0.55)",initial: "C" },
+  { id: "robin",   name: "Nico Robin",        role: "Archaeologist", img: "/images/robin.jpg",   face: "50% 0%",  bounty: "930,000,000",   color: "#7c3aed", glow: "rgba(124,58,237,0.55)", initial: "R" },
+  { id: "franky",  name: "Franky",            role: "Shipwright",    img: "/images/franky.jpg",  face: "50% 8%",  bounty: "394,000,000",   color: "#06b6d4", glow: "rgba(6,182,212,0.55)",  initial: "F" },
+  { id: "brook",   name: "Brook",             role: "Musician",      img: "/images/brook.jpg",   face: "50% 8%",  bounty: "383,000,000",   color: "#e5e7eb", glow: "rgba(229,231,235,0.55)",initial: "B" },
+  { id: "jinbe",   name: "Jinbe",             role: "Helmsman",      img: "/images/jinbe.jpg",   face: "50% 14%", bounty: "1,100,000,000", color: "#1d4ed8", glow: "rgba(29,78,216,0.55)",  initial: "J" },
 ];
 
 function LaughtaleTransition() {
@@ -2334,7 +2334,7 @@ function LaughtaleTransition() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1.4, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="font-serif text-2xl font-extrabold uppercase tracking-[0.35em] text-amber-50 drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)] md:text-4xl"
+          className="font-serif text-xl font-extrabold uppercase tracking-[0.2em] text-amber-50 drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)] sm:text-2xl sm:tracking-[0.35em] md:text-4xl"
           style={{
             textShadow:
               "0 2px 4px rgba(0,0,0,0.9), 0 4px 22px rgba(255,170,80,0.55), 0 0 1px rgba(0,0,0,0.95)",
@@ -2710,114 +2710,133 @@ function LaughtaleIsland() {
           Drop your message — every great adventure starts with a hello.
         </motion.p>
 
-        {/* Crew showcase — single group image framed as a wanted poster */}
+        {/* Crew showcase — individual wanted posters per Strawhat */}
         <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.96 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mt-16 w-full max-w-[420px]"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mt-16 w-full max-w-[1100px]"
         >
-          {/* Soft warm aura */}
+          {/* Soft warm aura behind the whole wall */}
           <div
-            className="pointer-events-none absolute -inset-6 -z-10 rounded-[28px] blur-2xl"
-            style={{ background: "radial-gradient(ellipse, rgba(255,200,120,0.55), transparent 70%)" }}
+            className="pointer-events-none absolute -inset-8 -z-10 rounded-[40px] blur-3xl"
+            style={{ background: "radial-gradient(ellipse, rgba(255,200,120,0.45), transparent 70%)" }}
           />
-          {/* Wanted-poster frame */}
-          <div
-            className="relative overflow-hidden rounded-md border-4 border-[#5a3a1a] shadow-[0_24px_60px_rgba(60,30,5,0.55)]"
-            style={{
-              background: "linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-            }}
-          >
-            {/* Pins */}
-            <div className="absolute left-6 -top-2 z-10 h-4 w-4 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
-            <div className="absolute right-6 -top-2 z-10 h-4 w-4 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
 
-            <div className="relative p-3">
-              <p className="text-center font-serif text-[10px] uppercase tracking-[0.4em] text-amber-950/70">
-                Wanted · Together
-              </p>
-              <h3 className="mt-1 text-center font-serif text-2xl font-black tracking-[0.18em] text-amber-950 md:text-3xl">
-                THE STRAWHAT PIRATES
-              </h3>
-              <div className="relative mt-3 overflow-hidden rounded-sm border-2 border-[#5a3a1a] bg-black/15 shadow-inner">
-                <img
-                  src="/images/crew.jpg"
-                  alt="The Strawhat Pirates"
-                  className="block h-auto w-full"
-                />
-                {/* Sepia tone */}
-                <div className="pointer-events-none absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/15" />
-              </div>
-              <p className="mt-3 text-center text-[11px] uppercase tracking-[0.35em] text-amber-950/75">
-                Captain Monkey D. Luffy & Crew
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Crew name chips — Captain centered on top, crew below */}
-        <div className="mt-10 flex w-full max-w-[900px] flex-col items-center gap-3">
-          {/* Captain row */}
-          {CREW.slice(0, 1).map((m) => (
+          <div className="mb-10 text-center">
             <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: -10 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ y: -3, scale: 1.05 }}
-              className="flex items-center gap-2 rounded-full border-[3px] px-5 py-2 backdrop-blur-sm shadow-lg"
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="flex items-center justify-center gap-3"
+            >
+              <span className="h-px w-10 bg-amber-200/60 sm:w-20" />
+              <span className="font-serif text-[10px] uppercase tracking-[0.45em] text-amber-100/90 sm:text-xs">
+                ⚓ Most Wanted ⚓
+              </span>
+              <span className="h-px w-10 bg-amber-200/60 sm:w-20" />
+            </motion.div>
+
+            <motion.h3
+              initial={{ opacity: 0, scale: 0.92 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-3 font-serif text-4xl font-black uppercase tracking-[0.22em] text-amber-50 sm:text-5xl md:text-6xl"
               style={{
-                background: "rgba(255,245,220,0.95)",
-                borderColor: m.color,
-                boxShadow: `0 0 24px ${m.glow}`,
+                color: "#fff3d6",
+                textShadow:
+                  "0 0 24px rgba(255,180,90,0.55), 0 4px 18px rgba(120,40,5,0.85), 0 2px 0 rgba(60,20,5,0.9)",
+                WebkitTextStroke: "1px rgba(70,30,5,0.55)",
               }}
             >
-              <span
-                className="h-3 w-3 rounded-full shadow"
-                style={{ background: m.color, boxShadow: `0 0 10px ${m.glow}` }}
-              />
-              <span className="font-serif text-base font-black text-amber-950">{m.name}</span>
-              <span className="text-[11px] uppercase tracking-[0.2em] text-amber-900/80">
-                · {m.role}
-              </span>
-              <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-950">
-                ★
-              </span>
-            </motion.div>
-          ))}
+              Wanted — Dead or Alive
+            </motion.h3>
 
-          {/* Crew rows */}
-          <div className="flex w-full flex-wrap items-center justify-center gap-2.5">
-            {CREW.slice(1).map((m, i) => (
+            <p className="mt-2 font-serif text-base font-bold tracking-[0.25em] text-amber-200/95 drop-shadow md:text-lg">
+              THE STRAWHAT PIRATES
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {CREW.map((m, i) => (
               <motion.div
                 key={m.id}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 24, rotate: i % 2 === 0 ? -2 : 2 }}
+                whileInView={{ opacity: 1, y: 0, rotate: i % 2 === 0 ? -1.2 : 1.2 }}
                 viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: 0.1 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -3, scale: 1.05 }}
-                className="flex items-center gap-2 rounded-full border-2 px-3.5 py-1.5 backdrop-blur-sm shadow-md"
+                transition={{ duration: 0.6, delay: 0.05 * i, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -6, rotate: 0, scale: 1.04 }}
+                className="relative overflow-hidden rounded-md border-4 border-[#5a3a1a] shadow-[0_14px_30px_rgba(60,30,5,0.55)]"
                 style={{
-                  background: "rgba(255,245,220,0.92)",
-                  borderColor: m.color,
+                  background: "linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
+                  boxShadow: `0 14px 30px rgba(60,30,5,0.55), 0 0 22px ${m.glow}`,
                 }}
               >
-                <span
-                  className="h-2.5 w-2.5 rounded-full shadow"
-                  style={{ background: m.color, boxShadow: `0 0 8px ${m.glow}` }}
-                />
-                <span className="font-serif text-sm font-bold text-amber-950">{m.name}</span>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-amber-900/70">
-                  · {m.role}
-                </span>
+                {/* Pins */}
+                <div className="absolute left-3 -top-1.5 z-10 h-3 w-3 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+                <div className="absolute right-3 -top-1.5 z-10 h-3 w-3 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+
+                <div className="relative p-2">
+                  <p className="text-center font-serif text-[8px] uppercase tracking-[0.35em] text-amber-950/70">
+                    Wanted
+                  </p>
+                  <p className="mt-0.5 text-center font-serif text-[16px] font-black tracking-[0.2em] text-amber-950">
+                    WANTED
+                  </p>
+
+                  {/* Face crop */}
+                  <div
+                    className="relative mt-1.5 aspect-square overflow-hidden rounded-sm border-2 border-[#5a3a1a] bg-black/15 shadow-inner"
+                    style={{ boxShadow: `inset 0 0 0 1px ${m.color}55` }}
+                  >
+                    <img
+                      src={m.img}
+                      alt={m.name}
+                      className="block h-full w-full object-cover"
+                      style={{ objectPosition: m.face }}
+                    />
+                    {/* Sepia tint */}
+                    <div className="pointer-events-none absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+                    {/* Captain star */}
+                    {m.id === "luffy" && (
+                      <span className="absolute right-1.5 top-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-950 shadow">
+                        ★ Captain
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-2 truncate text-center font-serif text-[12px] font-black tracking-[0.05em] text-amber-950 sm:text-[13px]">
+                    {m.name}
+                  </p>
+                  <p className="text-center text-[8px] uppercase tracking-[0.25em] text-amber-900/75 sm:text-[9px]">
+                    {m.role}
+                  </p>
+
+                  {/* Color stripe */}
+                  <div
+                    className="mx-auto mt-1.5 h-0.5 w-10 rounded-full"
+                    style={{ background: m.color, boxShadow: `0 0 6px ${m.glow}` }}
+                  />
+
+                  {/* Bounty bar */}
+                  <div className="mt-2 flex items-center justify-center gap-1 border-t-2 border-dashed border-[#5a3a1a]/60 pt-1.5">
+                    <span className="font-serif text-[11px] font-black text-amber-950 sm:text-[13px]">฿</span>
+                    <span className="font-mono text-[10px] font-black tracking-tight text-amber-950 sm:text-[11px]">
+                      {m.bounty}
+                    </span>
+                  </div>
+                  <p className="mt-0.5 text-center text-[7px] uppercase tracking-[0.3em] text-amber-900/70 sm:text-[8px]">
+                    Berries · Dead or Alive
+                  </p>
+                </div>
               </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* GREEN ISLAND with chest */}

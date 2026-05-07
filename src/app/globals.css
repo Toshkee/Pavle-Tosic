@@ -13,7 +13,13 @@ body {
 }
 
 section {
-  scroll-margin-top: 110px;
+  scroll-margin-top: 64px;
+}
+
+@media (min-width: 768px) {
+  section {
+    scroll-margin-top: 110px;
+  }
 }
 
 /* ================= GLOBAL OVERLAY TEXT TRIAL ================= */
