@@ -531,7 +531,7 @@ function WantedFlipPhoto() {
   const [wiping, setWiping] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => setWiping(true), 4200);
+    const id = setInterval(() => setWiping(true), 2000);
     return () => clearInterval(id);
   }, []);
 
@@ -565,7 +565,7 @@ function WantedFlipPhoto() {
             ? "polygon(0% 0%, 0% 0%, -30% 100%, 0% 100%)"
             : "polygon(0% 0%, 130% 0%, 100% 100%, 0% 100%)",
         }}
-        transition={{ duration: 1.7, ease: [0.7, 0.05, 0.3, 1] }}
+        transition={{ duration: 1.4, ease: [0.7, 0.05, 0.3, 1] }}
         onAnimationComplete={() => {
           if (wiping) {
             setCurrent((c) => (c === "anime" ? "real" : "anime"));
