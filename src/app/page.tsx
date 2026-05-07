@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef, useMemo, type ReactNode } from "react";
+import { useState, useRef, useMemo, useEffect, type ReactNode } from "react";
 import {
   motion,
   AnimatePresence,
@@ -360,6 +360,70 @@ function HangingLantern({ className, period = 4.5 }: { className?: string; perio
   );
 }
 
+function WantedFlipPhoto() {
+  const [current, setCurrent] = useState<"anime" | "real">("anime");
+  const [wiping, setWiping] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setWiping(true), 4200);
+    return () => clearInterval(id);
+  }, []);
+
+  const currentSrc = current === "anime" ? "/images/me-anime.jpg" : "/images/me.jpg";
+  const otherSrc   = current === "anime" ? "/images/me.jpg" : "/images/me-anime.jpg";
+
+  return (
+    <div className="relative mt-3 aspect-[4/5] overflow-hidden border-4 border-[#5a3a1a] bg-black/20 shadow-inner">
+      {/* BEHIND — next poster, revealed as the wipe passes */}
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src={otherSrc}
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 640px) 90vw, 360px"
+          className="object-cover"
+          style={{ objectPosition: "50% 22%" }}
+        />
+        <div className="absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/25" />
+      </div>
+
+      {/* FRONT — top poster, gets clipped away as the brush passes */}
+      <motion.div
+        key={current}
+        className="absolute inset-0 overflow-hidden"
+        initial={{ clipPath: "polygon(0% 0%, 130% 0%, 100% 100%, 0% 100%)" }}
+        animate={{
+          clipPath: wiping
+            ? "polygon(0% 0%, 0% 0%, -30% 100%, 0% 100%)"
+            : "polygon(0% 0%, 130% 0%, 100% 100%, 0% 100%)",
+        }}
+        transition={{ duration: 1.7, ease: [0.7, 0.05, 0.3, 1] }}
+        onAnimationComplete={() => {
+          if (wiping) {
+            setCurrent((c) => (c === "anime" ? "real" : "anime"));
+            setWiping(false);
+          }
+        }}
+      >
+        <Image
+          src={currentSrc}
+          alt="Pavle Tošić"
+          fill
+          priority
+          sizes="(max-width: 640px) 90vw, 360px"
+          className="object-cover"
+          style={{ objectPosition: "50% 22%" }}
+        />
+        <div className="absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/25" />
+      </motion.div>
+
+    </div>
+  );
+}
+
 function WantedPosterScene() {
   return (
     <section
@@ -615,21 +679,8 @@ function WantedPosterScene() {
                     DEAD OR ALIVE
                   </p>
 
-                  {/* Photo */}
-                  <div className="relative mt-3 aspect-[4/5] overflow-hidden border-4 border-[#5a3a1a] bg-black/20 shadow-inner">
-                    <Image
-                      src="/images/me.jpg"
-                      alt="Pavle Tošić"
-                      fill
-                      priority
-                      sizes="(max-width: 640px) 90vw, 360px"
-                      className="object-cover"
-                      style={{ objectPosition: "50% 22%" }}
-                    />
-                    {/* Sepia tone */}
-                    <div className="absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/25" />
-                  </div>
+                  {/* Photo — auto-flips between anime & real */}
+                  <WantedFlipPhoto />
 
                   {/* Name */}
                   <h3 className="mt-3 text-center font-serif text-2xl font-extrabold tracking-wide text-black">
