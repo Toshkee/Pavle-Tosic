@@ -16,6 +16,46 @@ section {
   scroll-margin-top: 110px;
 }
 
+/* ================= GLOBAL OVERLAY TEXT TRIAL ================= */
+/* Apply the warm-shadow overlay treatment to all major text on top of section
+   imagery. Trial — easy to roll back by removing this block. */
+
+main h1,
+main h2,
+main h3,
+main p,
+main li {
+  text-shadow:
+    0 2px 10px rgba(70, 30, 5, 0.85),
+    0 0 14px rgba(70, 30, 5, 0.45);
+}
+
+/* Keep parchment text crisp (no shadow on cream-coloured cards) */
+main .parchment-text,
+main [data-parchment] *,
+main .text-black,
+main .text-black\/90,
+main .text-black\/80,
+main .text-black\/75,
+main .text-black\/72,
+main .text-black\/70,
+main .text-black\/65,
+main .text-black\/60,
+main .text-black\/55,
+main .text-black\/50,
+main .text-black\/45,
+main .text-amber-950,
+main .text-amber-950\/85,
+main .text-amber-950\/80,
+main .text-amber-950\/75,
+main .text-amber-950\/70,
+main .text-amber-900\/80,
+main .text-amber-900\/75,
+main .text-amber-900\/70,
+main .text-amber-900\/60 {
+  text-shadow: none;
+}
+
 /* ================= HERO / PARCHMENT ================= */
 
 .poster-parchment {

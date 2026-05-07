@@ -1,8 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useMemo, type ReactNode } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useSpring,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import {
   SiJavascript,
   SiTypescript,
@@ -13,7 +20,227 @@ import {
   SiOracle,
   SiPostgresql,
   SiEthereum,
+  SiWhatsapp,
 } from "react-icons/si";
+
+/* ─────────────────────────────────────────────
+   Reusable animation helpers
+───────────────────────────────────────────── */
+
+// Letter-by-letter reveal heading
+function AnimatedHeading({
+  text,
+  className = "",
+  as: Tag = "h2",
+  delay = 0,
+}: {
+  text: string;
+  className?: string;
+  as?: "h1" | "h2" | "h3";
+  delay?: number;
+}) {
+  const words = useMemo(() => text.split(" "), [text]);
+  const MotionTag = motion[Tag];
+  return (
+    <MotionTag
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.4 }}
+      transition={{ staggerChildren: 0.04, delayChildren: delay }}
+      className={className}
+      aria-label={text}
+    >
+      {words.map((word, wi) => (
+        <span key={wi} className="inline-block whitespace-nowrap">
+          {Array.from(word).map((ch, ci) => (
+            <motion.span
+              key={ci}
+              variants={{
+                hidden: { opacity: 0, y: "0.5em", filter: "blur(8px)" },
+                visible: { opacity: 1, y: 0, filter: "blur(0px)" },
+              }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="inline-block"
+            >
+              {ch}
+            </motion.span>
+          ))}
+          {wi < words.length - 1 && <span className="inline-block">&nbsp;</span>}
+        </span>
+      ))}
+    </MotionTag>
+  );
+}
+
+// 3D tilt that follows the cursor (used on the wanted poster)
+function TiltCard({
+  children,
+  className = "",
+  max = 12,
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  max?: number;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const rx = useMotionValue(0);
+  const ry = useMotionValue(0);
+  const srx = useSpring(rx, { stiffness: 150, damping: 16, mass: 0.5 });
+  const sry = useSpring(ry, { stiffness: 150, damping: 16, mass: 0.5 });
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    ry.set(px * max);
+    rx.set(-py * max);
+  };
+  const onLeave = () => {
+    rx.set(0);
+    ry.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ ...style, rotateX: srx, rotateY: sry, transformPerspective: 1000, transformStyle: "preserve-3d" }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Tiny ship that sails down the right edge as the page scrolls
+function ScrollShip() {
+  const { scrollYProgress } = useScroll();
+  const top = useTransform(scrollYProgress, [0, 1], ["6%", "92%"]);
+  const sway = useSpring(top, { stiffness: 80, damping: 18, mass: 0.5 });
+  const tilt = useTransform(scrollYProgress, [0, 1], [-4, 4]);
+  return (
+    <motion.div
+      className="pointer-events-none fixed right-3 z-[60] hidden md:block"
+      style={{ top: sway }}
+    >
+      {/* Faint vertical rope/wake guide */}
+      <div className="absolute -left-[1px] top-1/2 h-[60vh] w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-amber-200/15 to-transparent" />
+      <motion.div style={{ rotate: tilt }} className="relative">
+        <svg width="36" height="40" viewBox="0 0 36 40" className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
+          {/* Mast */}
+          <line x1="18" y1="4" x2="18" y2="22" stroke="#7a4a1a" strokeWidth="1.5" />
+          {/* Sail */}
+          <path d="M 18 6 L 30 18 L 18 22 Z" fill="#f3e3b8" stroke="#7a4a1a" strokeWidth="0.8" />
+          <path d="M 18 6 L 6 18 L 18 22 Z" fill="#e6c378" stroke="#7a4a1a" strokeWidth="0.8" />
+          {/* Hull */}
+          <path d="M 4 24 L 32 24 L 28 32 L 8 32 Z" fill="#5a3a1a" stroke="#2a1a0a" strokeWidth="0.8" />
+          {/* Wave under hull */}
+          <path d="M 2 34 Q 9 31 18 34 T 34 34" stroke="rgba(255,255,255,0.55)" strokeWidth="1" fill="none" />
+        </svg>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Scroll-driven rope: a rope SVG that draws itself as the user scrolls past it
+function ScrollRope({ targetRef }: { targetRef: React.RefObject<HTMLDivElement | null> }) {
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start 80%", "end 20%"],
+  });
+  const drawn = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.4 });
+
+  return (
+    <svg
+      className="pointer-events-none absolute left-1/2 top-0 h-full w-[18px] -translate-x-1/2 overflow-visible"
+      preserveAspectRatio="none"
+      viewBox="0 0 18 1000"
+      fill="none"
+    >
+      <defs>
+        <linearGradient id="ropeGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(180,120,50,0)" />
+          <stop offset="6%" stopColor="rgba(180,120,50,0.85)" />
+          <stop offset="94%" stopColor="rgba(180,120,50,0.85)" />
+          <stop offset="100%" stopColor="rgba(180,120,50,0)" />
+        </linearGradient>
+        <pattern id="ropeTwist" width="6" height="14" patternUnits="userSpaceOnUse">
+          <path d="M 0 0 Q 3 7 6 14" stroke="rgba(70,40,15,0.55)" strokeWidth="1.2" fill="none" />
+        </pattern>
+      </defs>
+      {/* Faint base rope (always visible, very subtle) */}
+      <line x1="9" y1="0" x2="9" y2="1000" stroke="rgba(180,120,50,0.18)" strokeWidth="2" />
+      {/* Drawn rope — main thick strand */}
+      <motion.line
+        x1="9"
+        y1="0"
+        x2="9"
+        y2="1000"
+        stroke="url(#ropeGrad)"
+        strokeWidth="4"
+        strokeLinecap="round"
+        style={{ pathLength: drawn, scaleY: drawn, transformOrigin: "top" }}
+      />
+      {/* Twist overlay for rope texture */}
+      <motion.line
+        x1="9"
+        y1="0"
+        x2="9"
+        y2="1000"
+        stroke="url(#ropeTwist)"
+        strokeWidth="6"
+        strokeLinecap="round"
+        style={{ pathLength: drawn, scaleY: drawn, transformOrigin: "top", opacity: 0.6 }}
+      />
+    </svg>
+  );
+}
+
+// Magnetic hover wrapper — element gently follows the cursor
+function Magnetic({
+  children,
+  strength = 0.35,
+  className = "",
+}: {
+  children: ReactNode;
+  strength?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 200, damping: 18, mass: 0.4 });
+  const sy = useSpring(y, { stiffness: 200, damping: 18, mass: 0.4 });
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    x.set((e.clientX - (r.left + r.width / 2)) * strength);
+    y.set((e.clientY - (r.top + r.height / 2)) * strength);
+  };
+  const onLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ x: sx, y: sy }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 const TECH = [
   { Icon: SiJavascript, label: "JavaScript" },
@@ -72,10 +299,10 @@ const VOYAGE = [
     port: "Shells Town",
     period: "Sept 2025 – Dec 2025",
     title: "Fullstack Software Developer",
-    org: "General Assembly",
+    org: "General Assembly · Fullstack Software Engineering Bootcamp",
     current: false,
     bullets: [
-      "420+ hours of intensive bootcamp training",
+      "420+ hours of intensive fullstack software engineering bootcamp",
       "JavaScript, React, HTML & CSS frontend development",
       "Node.js, APIs, databases & security basics",
       "Team projects and real-world application development",
@@ -253,9 +480,11 @@ function WantedPosterScene() {
           <p className="text-xs uppercase tracking-[0.45em] text-amber-100/80">
             By Order of the World Government
           </p>
-          <h1 className="mt-3 font-serif text-6xl font-black tracking-[0.18em] text-white drop-shadow-[0_4px_25px_rgba(255,150,80,0.55)] md:text-7xl">
-            WANTED
-          </h1>
+          <AnimatedHeading
+            as="h1"
+            text="WANTED"
+            className="mt-3 font-serif text-6xl font-black tracking-[0.18em] text-white drop-shadow-[0_4px_25px_rgba(255,150,80,0.55)] md:text-7xl"
+          />
           <p className="mt-4 text-xs uppercase tracking-[0.35em] text-amber-200/75">
             Dead or Alive • Bounty Active
           </p>
@@ -326,24 +555,28 @@ function WantedPosterScene() {
                     Full-stack developer building end-to-end products — UI, APIs, and databases. Sailing the Grand Line of React, Node.js, Django, and SQL.
                   </p>
                   <div className="mt-5 flex flex-col gap-2">
-                    <a
-                      href="https://github.com/Toshkee"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
-                    >
-                      <span>GitHub</span>
-                      <span>→</span>
-                    </a>
-                    <a
-                      href="https://www.linkedin.com/in/tosiicp/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
-                    >
-                      <span>LinkedIn</span>
-                      <span>→</span>
-                    </a>
+                    <Magnetic strength={0.4}>
+                      <a
+                        href="https://github.com/Toshkee"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
+                      >
+                        <span>GitHub</span>
+                        <span>→</span>
+                      </a>
+                    </Magnetic>
+                    <Magnetic strength={0.4}>
+                      <a
+                        href="https://www.linkedin.com/in/tosiicp/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
+                      >
+                        <span>LinkedIn</span>
+                        <span>→</span>
+                      </a>
+                    </Magnetic>
                   </div>
                 </div>
               </motion.div>
@@ -354,13 +587,16 @@ function WantedPosterScene() {
                 whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 1, delay: 0.2, ease }}
-                whileHover={{ y: -6, scale: 1.025 }}
-                className="relative w-[min(360px,90vw)] rounded-sm border-2 border-[#7a5722] shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.55), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-                }}
+                className="relative w-[min(360px,90vw)]"
               >
+                <TiltCard
+                  max={10}
+                  className="relative rounded-sm border-2 border-[#7a5722] shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
+                  style={{
+                    backgroundImage:
+                      "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.55), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
+                  }}
+                >
                 {/* Two pins at top */}
                 <div className="absolute left-6 -top-2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
                 <div className="absolute right-6 -top-2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
@@ -425,6 +661,7 @@ function WantedPosterScene() {
                     <span className="text-[9px] tracking-[0.25em] text-black/55">GRAND LINE</span>
                   </div>
                 </div>
+                </TiltCard>
               </motion.div>
 
               {/* RIGHT — Devil Fruits / Skills */}
@@ -673,20 +910,20 @@ function JourneyTransition() {
           <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
 
           <div className="relative text-center">
-            <p className="text-[9px] uppercase tracking-[0.4em] text-black/50">Intercepted Message · Red Hair Pirates</p>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-black/70">Intercepted Message · Red Hair Pirates</p>
             <h2 className="mt-3 font-serif text-3xl font-extrabold text-black md:text-4xl">
               A Pirate Needs No Permission
             </h2>
-            <p className="mt-4 text-sm leading-relaxed text-black/70">
-              &ldquo;I don&apos;t care what the world thinks about where you&apos;re headed. If you&apos;ve decided to set sail — that&apos;s enough. Raise your flag and let the sea decide the rest.&rdquo;
+            <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
+              &ldquo;This straw hat is a very important treasure to me. I am entrusting it to you. Promise to return it to me one day — when you have become a great pirate.&rdquo;
             </p>
-            <p className="mt-4 text-[10px] tracking-[0.3em] text-black/50">
-              — &apos;Red-Hair&apos; Shanks · Captain, Red Hair Pirates
+            <p className="mt-4 text-xs font-bold tracking-[0.3em] text-black/80">
+              — &apos;RED-HAIR&apos; SHANKS · CAPTAIN, RED HAIR PIRATES
             </p>
             <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px w-12 bg-black/40" />
-              <span className="text-[10px] tracking-[0.4em] text-black/55">RAISE YOUR FLAG</span>
-              <div className="h-px w-12 bg-black/40" />
+              <div className="h-px w-12 bg-black/50" />
+              <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">RAISE YOUR FLAG</span>
+              <div className="h-px w-12 bg-black/50" />
             </div>
           </div>
         </motion.div>
@@ -1070,9 +1307,10 @@ function QuestBoardIsland() {
           className="mb-12 text-center"
         >
           <p className="text-xs uppercase tracking-[0.4em] text-amber-100/80">Land Ho! • Loguetown</p>
-          <h2 className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] md:text-6xl">
-            Quest Board
-          </h2>
+          <AnimatedHeading
+            text="Quest Board"
+            className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] md:text-6xl"
+          />
           <p className="mt-3 text-sm text-zinc-200/90">
             Pinned to the village board — quests completed across the Grand Line.
           </p>
@@ -1285,25 +1523,25 @@ function GrandLineTransition() {
           <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
 
           <div className="relative">
-            <p className="text-[9px] uppercase tracking-[0.45em] text-black/50">Intercepted Den Den Mushi · Heart Pirates</p>
+            <p className="text-[10px] uppercase tracking-[0.45em] text-black/70">Intercepted Den Den Mushi · Heart Pirates</p>
             <h2 className="mt-3 font-serif text-4xl font-extrabold text-black md:text-5xl">
               The Grand Line<br />Awaits
             </h2>
             <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px w-10 bg-black/35" />
-              <span className="text-[10px] tracking-[0.3em] text-black/45">✦ ✦ ✦</span>
-              <div className="h-px w-10 bg-black/35" />
+              <div className="h-px w-10 bg-black/50" />
+              <span className="text-[10px] tracking-[0.3em] text-black/60">✦ ✦ ✦</span>
+              <div className="h-px w-10 bg-black/50" />
             </div>
-            <p className="mt-4 text-sm leading-relaxed text-black/65">
-              &ldquo;The New World has no patience for those who improvise. Map every obstacle. Sharpen every skill. When you enter your Room — execute without hesitation.&rdquo;
+            <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
+              &ldquo;A man only truly dies when he is forgotten. Carry the will of those who came before — and decide your own death yourself.&rdquo;
             </p>
-            <p className="mt-4 text-[10px] tracking-[0.28em] text-black/50">
-              — Trafalgar D. Water Law · Surgeon of Death, Heart Pirates
+            <p className="mt-4 text-xs font-bold tracking-[0.28em] text-black/80">
+              — TRAFALGAR D. WATER LAW · SURGEON OF DEATH, HEART PIRATES
             </p>
             <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px w-14 bg-black/35" />
-              <span className="text-[9px] tracking-[0.4em] text-black/50">LOG OPEN</span>
-              <div className="h-px w-14 bg-black/35" />
+              <div className="h-px w-14 bg-black/50" />
+              <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">LOG OPEN</span>
+              <div className="h-px w-14 bg-black/50" />
             </div>
           </div>
         </motion.div>
@@ -1313,6 +1551,7 @@ function GrandLineTransition() {
 }
 
 function VoyageLog() {
+  const timelineRef = useRef<HTMLDivElement>(null);
   return (
     <section id="voyage" className="relative isolate min-h-[120vh] overflow-hidden">
       {/* Continuous ocean sky → night gradient (no horizon seam) */}
@@ -1386,18 +1625,19 @@ function VoyageLog() {
           <p className="text-xs uppercase tracking-[0.4em] text-amber-100/80">
             The Grand Line · Captain&apos;s Log
           </p>
-          <h2 className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] md:text-6xl">
-            Voyage Log
-          </h2>
+          <AnimatedHeading
+            text="Voyage Log"
+            className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] md:text-6xl"
+          />
           <p className="mt-3 text-sm text-zinc-200/85">
             Every port shaped the journey. Every arc built the crew.
           </p>
         </motion.div>
 
         {/* Timeline */}
-        <div className="relative w-full max-w-3xl">
-          {/* Central rope */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-amber-700/80 to-transparent" />
+        <div ref={timelineRef} className="relative w-full max-w-3xl">
+          {/* Animated rope drawn as you scroll */}
+          <ScrollRope targetRef={timelineRef} />
 
           {VOYAGE.map((entry, i) => (
             <div
@@ -1522,7 +1762,7 @@ function VoyageLog() {
 const HOBBIES = [
   {
     id: "mma",
-    label: "Combat Arts",
+    label: "Martial Arts",
     tag: "Wrestling · Boxing · MMA",
     icon: "🥊",
     color: "#c0392b",
@@ -1533,6 +1773,13 @@ const HOBBIES = [
     stat1: { label: "Team", value: "MMA Team Zabjelo" },
     stat2: { label: "Location", value: "Podgorica, Montenegro" },
     image: "/images/mma.jpg",
+    details: [
+      "Athlete my whole life — bodybuilding and powerlifting background before combat sports.",
+      "Wrestling is my favorite of the three. Nothing humbles you like getting controlled on the mat.",
+      "Favorite MMA fighter: Ilia Topuria. Favorite boxer: Canelo Álvarez.",
+      "Home gym: MMA Team Zabjelo, Podgorica.",
+      "Discipline forged in the gym is the same discipline that ships clean code.",
+    ],
   },
   {
     id: "gaming",
@@ -1550,6 +1797,13 @@ const HOBBIES = [
       { label: "Valorant", src: "/video/gaming.mp4" },
       { label: "CS2", src: "/video/cs2.mp4" },
     ],
+    details: [
+      "Gaming my whole life — grew up on Counter-Strike, still in love with the genre.",
+      "Streamed on Twitch for a while. Live feedback loops are unbeatable practice.",
+      "Favorite Valorant agent: Jett. Movement, dash, knife — pure pressure.",
+      "Favorite Valorant team: Sentinels.",
+      "Sharp aim matters less than reading the round and adapting mid-fight.",
+    ],
   },
   {
     id: "crypto",
@@ -1560,12 +1814,17 @@ const HOBBIES = [
     glow: "rgba(245,158,11,0.55)",
     accent: "#fbbf24",
     description:
-      "Self-taught crypto trader since 2021. Deep dives into DeFi protocols, web3 ecosystems, and risk management. Markets are the ultimate adversarial environment. (That's Vitalik Buterin, co-founder of Ethereum, in the picture.)",
+      "Been around crypto since 2021. Still learning every day — DeFi, web3, how the whole thing actually works. Not claiming to be a pro, just genuinely interested in where it's going. (That's Vitalik Buterin, co-founder of Ethereum, in the picture.)",
     stat1: { label: "Since", value: "2021" },
     stat2: { label: "Focus", value: "DeFi · Web3" },
     image: "/images/crypto.jpg",
-    imageFit: "contain" as const,
-    zoomSize: "sm" as const,
+    imagePosition: "top" as const,
+    details: [
+      "Hobby trader, not a guru. Markets are humbling and that's part of the appeal.",
+      "Biggest single trade win so far: ~$1.2k. Small numbers, big lessons.",
+      "Most of the fun is in reading about projects, watching the tech evolve, and learning how value moves on-chain.",
+      "Long-term curious about Ethereum and what programmable money turns into next.",
+    ],
   },
 ];
 
@@ -1575,17 +1834,19 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
   const isEven = index % 2 === 0;
   const videos = "videos" in h ? h.videos : undefined;
   const image = "image" in h ? h.image : undefined;
-  const imageFit = "imageFit" in h ? h.imageFit : "cover";
-  const zoomSize = (("zoomSize" in h && h.zoomSize) || "lg") as "sm" | "md" | "lg";
-  const zoomClass =
-    zoomSize === "sm"
-      ? "max-h-[62vh] max-w-[58vw]"
-      : zoomSize === "md"
-      ? "max-h-[75vh] max-w-[75vw]"
-      : "max-h-[90vh] max-w-[92vw]";
+  const imagePosition = "imagePosition" in h ? h.imagePosition : "center";
+  const details = "details" in h ? h.details : [];
   const [videoIdx, setVideoIdx] = useState(0);
   const [zoomed, setZoomed] = useState(false);
+  const [flipped, setFlipped] = useState(false);
   const activeVideo = videos?.[videoIdx];
+
+  // Lightbox sizing — videos fill the screen; small source images scale up by height
+  const lightboxMediaClass = activeVideo
+    ? "max-h-[90vh] max-w-[92vw] rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.7)]"
+    : "h-[85vh] w-auto max-w-[92vw] rounded-xl object-cover shadow-[0_0_80px_rgba(0,0,0,0.7)]";
+
+  const stop = (e: React.MouseEvent) => e.stopPropagation();
 
   return (
     <motion.div
@@ -1595,78 +1856,134 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
       transition={{ duration: 0.9, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
       className={`relative flex flex-col gap-8 lg:flex-row ${isEven ? "" : "lg:flex-row-reverse"} items-center`}
     >
-      {/* Media panel */}
-      <div className="relative w-full lg:w-1/2">
+      {/* Media panel — flippable */}
+      <div className="relative w-full lg:w-1/2" style={{ perspective: "1400px" }}>
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.4 }}
-          className="group relative cursor-zoom-in overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
-          style={{ boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)` }}
-          onClick={() => setZoomed(true)}
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+          className="relative h-72 w-full lg:h-80"
+          style={{ transformStyle: "preserve-3d" }}
         >
-          {activeVideo ? (
-            <video
-              key={activeVideo.src}
-              className="h-72 w-full object-cover lg:h-80"
-              src={activeVideo.src}
-              autoPlay
-              muted
-              loop
-              playsInline
-            />
-          ) : image ? (
-            <img
-              src={image}
-              alt={h.label}
-              className={`h-72 w-full lg:h-80 ${imageFit === "contain" ? "object-contain bg-black/40" : "object-cover"}`}
-            />
-          ) : (
-            <div
-              className="flex h-72 w-full items-center justify-center lg:h-80"
-              style={{ background: `linear-gradient(135deg, ${h.color}22, ${h.color}44)` }}
-            >
-              <span className="text-7xl opacity-40">{h.icon}</span>
-            </div>
-          )}
-          {/* Overlay gradient */}
+          {/* FRONT — media */}
           <div
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: `linear-gradient(to top, ${h.color}88 0%, transparent 50%)`,
-            }}
-          />
-          {/* Video switcher (when multiple videos) */}
-          {videos && videos.length > 1 && (
-            <div
-              className="absolute right-3 top-3 flex gap-1.5 rounded-full bg-black/55 p-1 backdrop-blur-md"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {videos.map((v, idx) => (
-                <button
-                  key={v.label}
-                  onClick={() => setVideoIdx(idx)}
-                  className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] transition"
-                  style={{
-                    background: idx === videoIdx ? h.color : "transparent",
-                    color: idx === videoIdx ? "#fff" : "rgba(255,255,255,0.7)",
-                    border: `1px solid ${idx === videoIdx ? h.accent : "rgba(255,255,255,0.18)"}`,
-                  }}
-                >
-                  {v.label}
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Zoom hint */}
-          <div className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-black/55 px-2.5 py-1 text-[10px] uppercase tracking-[0.2em] text-white/80 opacity-0 backdrop-blur-md transition group-hover:opacity-100">
-            ⤢ Click to expand
-          </div>
-          {/* Tag pill on image */}
-          <div
-            className="absolute bottom-4 left-4 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white backdrop-blur-md"
-            style={{ background: `${h.color}99`, border: `1px solid ${h.accent}66` }}
+            className="absolute inset-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+            style={{ backfaceVisibility: "hidden", boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)` }}
           >
-            {h.tag}
+            {activeVideo ? (
+              <video
+                key={activeVideo.src}
+                className="h-full w-full object-cover"
+                src={activeVideo.src}
+                autoPlay
+                muted
+                loop
+                playsInline
+              />
+            ) : image ? (
+              <img
+                src={image}
+                alt={h.label}
+                className="h-full w-full object-cover"
+                style={{ objectPosition: imagePosition }}
+              />
+            ) : (
+              <div
+                className="flex h-full w-full items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${h.color}22, ${h.color}44)` }}
+              >
+                <span className="text-7xl opacity-40">{h.icon}</span>
+              </div>
+            )}
+            {/* Overlay gradient */}
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ background: `linear-gradient(to top, ${h.color}88 0%, transparent 50%)` }}
+            />
+
+            {/* Top-right control cluster */}
+            <div className="absolute right-3 top-3 flex items-center gap-1.5">
+              {videos && videos.length > 1 && (
+                <div
+                  className="flex gap-1 rounded-full bg-black/55 p-1 backdrop-blur-md"
+                  onClick={stop}
+                >
+                  {videos.map((v, idx) => (
+                    <button
+                      key={v.label}
+                      onClick={() => setVideoIdx(idx)}
+                      className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] transition"
+                      style={{
+                        background: idx === videoIdx ? h.color : "transparent",
+                        color: idx === videoIdx ? "#fff" : "rgba(255,255,255,0.7)",
+                        border: `1px solid ${idx === videoIdx ? h.accent : "rgba(255,255,255,0.18)"}`,
+                      }}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={(e) => { stop(e); setZoomed(true); }}
+                title="View full"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/80"
+                style={{ border: `1px solid ${h.accent}55` }}
+              >
+                ⤢
+              </button>
+              <button
+                onClick={(e) => { stop(e); setFlipped(true); }}
+                title="More info"
+                className="flex h-8 items-center gap-1 rounded-full bg-black/55 px-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md transition hover:bg-black/80"
+                style={{ border: `1px solid ${h.accent}55` }}
+              >
+                ↻ Flip
+              </button>
+            </div>
+
+            {/* Tag pill */}
+            <div
+              className="absolute bottom-4 left-4 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white backdrop-blur-md"
+              style={{ background: `${h.color}99`, border: `1px solid ${h.accent}66` }}
+            >
+              {h.tag}
+            </div>
+          </div>
+
+          {/* BACK — extended info */}
+          <div
+            className="absolute inset-0 flex flex-col gap-3 overflow-y-auto rounded-2xl border border-white/10 p-6 shadow-2xl"
+            style={{
+              backfaceVisibility: "hidden",
+              transform: "rotateY(180deg)",
+              background: `linear-gradient(145deg, ${h.color}22 0%, rgba(10,15,30,0.92) 60%, rgba(10,15,30,0.96) 100%)`,
+              boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)`,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-[0.4em]" style={{ color: h.accent }}>
+                Inside the Log
+              </p>
+              <button
+                onClick={(e) => { stop(e); setFlipped(false); }}
+                title="Back"
+                className="flex h-7 items-center gap-1 rounded-full bg-white/10 px-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-white/20"
+              >
+                ← Back
+              </button>
+            </div>
+            <h4 className="font-serif text-xl font-bold text-white">{h.label}</h4>
+            <p className="text-xs leading-relaxed text-zinc-300">{h.description}</p>
+            {details.length > 0 && (
+              <ul className="mt-1 space-y-1.5">
+                {details.map((d) => (
+                  <li key={d} className="flex items-start gap-2 text-xs leading-relaxed text-zinc-200/90">
+                    <span className="mt-1 h-1 w-1 shrink-0 rounded-full" style={{ background: h.accent }} />
+                    {d}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </motion.div>
 
@@ -1694,24 +2011,32 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
               exit={{ scale: 0.92, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="relative"
-              onClick={(e) => e.stopPropagation()}
+              onClick={stop}
             >
               {activeVideo ? (
-                <video
-                  key={activeVideo.src}
-                  src={activeVideo.src}
-                  autoPlay
-                  loop
-                  playsInline
-                  controls
-                  className={`${zoomClass} rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.7)]`}
-                />
+                <>
+                  <video
+                    key={activeVideo.src}
+                    src={activeVideo.src}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    controls
+                    className={lightboxMediaClass}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: [0, 1, 1, 0], y: [-8, 0, 0, -8] }}
+                    transition={{ duration: 4, times: [0, 0.1, 0.85, 1], ease: "easeInOut" }}
+                    className="pointer-events-none absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur-md"
+                    style={{ border: `1px solid ${h.accent}66` }}
+                  >
+                    🔊 Sound available — unmute in the player below
+                  </motion.div>
+                </>
               ) : image ? (
-                <img
-                  src={image}
-                  alt={h.label}
-                  className={`${zoomClass} rounded-xl object-contain shadow-[0_0_80px_rgba(0,0,0,0.7)]`}
-                />
+                <img src={image} alt={h.label} className={lightboxMediaClass} />
               ) : null}
               <button
                 onClick={() => setZoomed(false)}
@@ -1798,7 +2123,7 @@ function CrewQuarters() {
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(180deg, #0c0e1a 0%, #111827 30%, #0f1e38 60%, #0a1628 100%)",
+            "linear-gradient(180deg, #0c0e1a 0%, #111827 30%, #0f1e38 60%, #0c0e1a 100%)",
         }}
       />
 
@@ -1871,9 +2196,10 @@ function CrewQuarters() {
           <p className="text-xs uppercase tracking-[0.45em] text-violet-300/80">
             Beyond The Code · The Captain Himself
           </p>
-          <h2 className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_30px_rgba(139,92,246,0.4)] md:text-6xl">
-            Beyond The Bounty
-          </h2>
+          <AnimatedHeading
+            text="Beyond The Bounty"
+            className="mt-3 font-serif text-5xl font-extrabold text-white drop-shadow-[0_4px_30px_rgba(139,92,246,0.4)] md:text-6xl"
+          />
           <p className="mt-3 text-sm text-zinc-400">
             What sharpens the mind outside the ship.
           </p>
@@ -1899,15 +2225,694 @@ function CrewQuarters() {
   );
 }
 
+/* ─────────────────────────────────────────────
+   LAUGHTALE — Final island & contact
+───────────────────────────────────────────── */
+
+const CREW = [
+  { id: "luffy",   name: "Monkey D. Luffy", role: "Captain",         color: "#dc2626", glow: "rgba(220,38,38,0.55)",  initial: "L" },
+  { id: "zoro",    name: "Roronoa Zoro",    role: "Swordsman",       color: "#16a34a", glow: "rgba(22,163,74,0.55)",  initial: "Z" },
+  { id: "nami",    name: "Nami",            role: "Navigator",       color: "#f59e0b", glow: "rgba(245,158,11,0.55)", initial: "N" },
+  { id: "usopp",   name: "Usopp",           role: "Sniper",          color: "#a16207", glow: "rgba(161,98,7,0.55)",   initial: "U" },
+  { id: "sanji",   name: "Sanji",           role: "Cook",            color: "#facc15", glow: "rgba(250,204,21,0.55)", initial: "S" },
+  { id: "chopper", name: "Tony Tony Chopper", role: "Doctor",        color: "#fb7185", glow: "rgba(251,113,133,0.55)",initial: "C" },
+  { id: "robin",   name: "Nico Robin",      role: "Archaeologist",   color: "#7c3aed", glow: "rgba(124,58,237,0.55)", initial: "R" },
+  { id: "franky",  name: "Franky",          role: "Shipwright",      color: "#06b6d4", glow: "rgba(6,182,212,0.55)",  initial: "F" },
+  { id: "brook",   name: "Brook",           role: "Musician",        color: "#e5e7eb", glow: "rgba(229,231,235,0.55)",initial: "B" },
+  { id: "jinbe",   name: "Jinbe",           role: "Helmsman",        color: "#1d4ed8", glow: "rgba(29,78,216,0.55)",  initial: "J" },
+];
+
+function LaughtaleTransition() {
+  return (
+    <section aria-hidden className="relative h-[110vh] overflow-hidden">
+      {/* Dawn returns — mirror of the opening dawn, deep night → magenta → coral → peach */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, " +
+            "#0c0e1a 0%, " +
+            "#0f1028 8%, " +
+            "#1a1340 17%, " +
+            "#2a1745 26%, " +
+            "#43204e 36%, " +
+            "#6a2c54 47%, " +
+            "#9a4256 58%, " +
+            "#c2604c 68%, " +
+            "#df8456 78%, " +
+            "#efa672 88%, " +
+            "#f5c089 100%)",
+        }}
+      />
+
+      {/* Stars in the upper portion, fading as dawn arrives */}
+      {Array.from({ length: 36 }).map((_, i) => {
+        const x = (i * 37 + 11) % 100;
+        const y = (i * 23 + 7) % 35;
+        return (
+          <motion.div
+            key={i}
+            className="pointer-events-none absolute h-px w-px rounded-full bg-white"
+            style={{ left: `${x}%`, top: `${y}%`, boxShadow: "0 0 3px rgba(255,255,255,0.9)" }}
+            animate={{ opacity: [0.45, 1, 0.1] }}
+            transition={{ duration: 5 + (i % 4), repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
+          />
+        );
+      })}
+
+      {/* Distant horizon glow — the sun rising right at the bottom edge so it
+         visually continues into the island section across the seam. */}
+      <motion.div
+        initial={{ y: 80, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute left-1/2 bottom-[-12vh] h-[60vh] w-[60vh] -translate-x-1/2 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,235,170,0.95) 0%, rgba(255,200,120,0.7) 25%, rgba(255,170,80,0.35) 50%, rgba(255,150,80,0.1) 70%, rgba(255,140,60,0) 85%)",
+          filter: "blur(8px)",
+        }}
+      />
+      {/* Tail haze pushing the warm peach color into the next section */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-[10vh]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(245,192,137,0) 0%, rgba(245,192,137,1) 100%)",
+        }}
+      />
+
+      {/* Subtle drifting wisps */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <motion.div
+          key={`wisp-${i}`}
+          className="pointer-events-none absolute h-12 w-[40vw] rounded-full bg-white/15 blur-3xl"
+          style={{ top: `${30 + i * 15}%`, left: i % 2 === 0 ? "-20%" : "60%" }}
+          animate={{ x: i % 2 === 0 ? [0, 200, 0] : [0, -200, 0] }}
+          transition={{ duration: 30 + i * 6, repeat: Infinity, ease: "easeInOut", delay: i * 3 }}
+        />
+      ))}
+
+      {/* Foreshadowing text in the upper third */}
+      <div className="absolute inset-x-0 top-[18%] flex items-center justify-center">
+        <motion.p
+          initial={{ opacity: 0, letterSpacing: "0.2em" }}
+          whileInView={{ opacity: 1, letterSpacing: "0.45em" }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+          className="font-serif text-xs uppercase text-amber-100/85 drop-shadow-md md:text-sm"
+        >
+          A New Dawn Rises…
+        </motion.p>
+      </div>
+
+      {/* Second tag lower down once the warm tones hit */}
+      <div className="absolute inset-x-0 top-[64%] flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <motion.p
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.4, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="font-serif text-2xl font-extrabold uppercase tracking-[0.35em] text-amber-50 drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)] md:text-4xl"
+          style={{
+            textShadow:
+              "0 2px 4px rgba(0,0,0,0.9), 0 4px 22px rgba(255,170,80,0.55), 0 0 1px rgba(0,0,0,0.95)",
+          }}
+        >
+          We Arrive at Laughtale
+        </motion.p>
+        <motion.div
+          initial={{ scaleX: 0, opacity: 0 }}
+          whileInView={{ scaleX: 1, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="h-px w-48 origin-center bg-amber-50/80 md:w-64"
+        />
+      </div>
+    </section>
+  );
+}
+
+function CallMeFlipCard() {
+  const [flipped, setFlipped] = useState(false);
+  const number = "+382 67 474 438";
+  const waNumber = "38267474438";
+
+  return (
+    <div
+      className="relative w-full sm:w-[260px]"
+      style={{ perspective: 1200, height: 50 }}
+    >
+      <motion.div
+        className="relative h-full w-full"
+        style={{ transformStyle: "preserve-3d" }}
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {/* FRONT — Call Me button */}
+        <button
+          type="button"
+          onClick={() => setFlipped(true)}
+          className="absolute inset-0 flex items-center justify-center gap-2 rounded-lg border-2 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-50 shadow-[0_6px_20px_rgba(0,0,0,0.45)] transition hover:scale-[1.03]"
+          style={{
+            background:
+              "linear-gradient(180deg, #4a2e14 0%, #2e1b08 100%)",
+            borderColor: "#7a5210",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
+          ☎ Call Me
+        </button>
+
+        {/* BACK — Number + WhatsApp */}
+        <div
+          className="absolute inset-0 flex items-center justify-between gap-2 rounded-lg border-2 px-3 py-2 text-amber-50 shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
+          style={{
+            background:
+              "linear-gradient(180deg, #1a3a1a 0%, #0a1f0a 100%)",
+            borderColor: "#25d366",
+            transform: "rotateY(180deg)",
+            backfaceVisibility: "hidden",
+            WebkitBackfaceVisibility: "hidden",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setFlipped(false)}
+            aria-label="Flip back"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-50/30 text-amber-50/70 transition hover:scale-110 hover:text-amber-50"
+          >
+            ↺
+          </button>
+          <a
+            href={`tel:+${waNumber}`}
+            className="font-mono text-sm font-bold tracking-wider text-amber-50 transition hover:text-white"
+          >
+            {number}
+          </a>
+          <a
+            href={`https://wa.me/${waNumber}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25d366] text-black shadow-[0_0_12px_rgba(37,211,102,0.7)] transition hover:scale-110"
+          >
+            <SiWhatsapp className="h-4 w-4" />
+          </a>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function TreasureChest() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, rotateX: 12 }}
+      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+      className="relative w-full max-w-[640px]"
+      style={{ perspective: 1400 }}
+    >
+      {/* Soft golden aura behind the chest */}
+      <div
+        className="pointer-events-none absolute -inset-12 -z-10 rounded-full opacity-80 blur-3xl"
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 60% at 50% 60%, rgba(255,210,120,0.7), rgba(255,160,60,0.25) 50%, transparent 80%)",
+        }}
+      />
+
+      {/* OPEN LID — tilted back behind the body */}
+      <div
+        className="relative mx-auto h-20 w-[88%] origin-bottom"
+        style={{ transform: "rotateX(-65deg) translateY(8px)", transformStyle: "preserve-3d" }}
+      >
+        <div
+          className="h-full w-full rounded-t-[160px_70px] border-2 border-[#3d2410] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
+          style={{
+            background:
+              "linear-gradient(180deg, #5a3a1a 0%, #74491f 40%, #8b5a2b 100%)",
+          }}
+        >
+          {/* Gold band on the lid */}
+          <div
+            className="mx-auto mt-3 h-2 w-[92%] rounded-sm"
+            style={{
+              background:
+                "linear-gradient(180deg, #ffe48a 0%, #d4a747 50%, #8a6618 100%)",
+              boxShadow: "0 1px 0 rgba(255,255,255,0.4) inset, 0 -1px 0 rgba(0,0,0,0.3) inset",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* CHEST BODY */}
+      <div
+        className="relative -mt-2 overflow-hidden rounded-b-2xl rounded-t-md border-2 border-[#3d2410] shadow-[0_30px_70px_rgba(60,30,10,0.6)]"
+        style={{
+          background:
+            "repeating-linear-gradient(90deg, #6a4220 0px, #7a4d28 18px, #5e3a1c 19px, #6a4220 36px), linear-gradient(180deg, #5a3a1a, #4a2e14)",
+          backgroundBlendMode: "multiply",
+        }}
+      >
+        {/* Wood grain overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, rgba(0,0,0,0.25) 0 1px, transparent 1px 22px), repeating-linear-gradient(180deg, rgba(255,200,140,0.15) 0 2px, transparent 2px 30px)",
+          }}
+        />
+
+        {/* Top gold band */}
+        <div
+          className="absolute inset-x-0 top-0 h-3"
+          style={{
+            background:
+              "linear-gradient(180deg, #ffe48a 0%, #d4a747 50%, #8a6618 100%)",
+            boxShadow: "0 2px 0 rgba(255,255,255,0.35) inset, 0 -2px 6px rgba(0,0,0,0.4)",
+          }}
+        />
+
+        {/* Bottom gold band */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-4"
+          style={{
+            background:
+              "linear-gradient(180deg, #ffe48a 0%, #d4a747 50%, #8a6618 100%)",
+            boxShadow: "0 2px 0 rgba(255,255,255,0.35) inset, 0 -2px 6px rgba(0,0,0,0.4)",
+          }}
+        />
+
+        {/* Vertical corner straps */}
+        {["left-2", "right-2"].map((p) => (
+          <div
+            key={p}
+            className={`pointer-events-none absolute ${p} top-0 bottom-0 w-3`}
+            style={{
+              background:
+                "linear-gradient(90deg, #b07f25 0%, #ffe48a 50%, #b07f25 100%)",
+              boxShadow: "0 0 0 1px rgba(60,30,5,0.6)",
+            }}
+          >
+            {/* Rivets */}
+            {[8, 28, 48, 68, 88].map((t) => (
+              <div
+                key={t}
+                className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
+                style={{
+                  top: `${t}%`,
+                  background: "radial-gradient(circle at 30% 30%, #fff8c4, #b07f25 70%, #5a3a05)",
+                  boxShadow: "0 1px 1px rgba(0,0,0,0.6)",
+                }}
+              />
+            ))}
+          </div>
+        ))}
+
+        {/* Inside warm glow at the top edge */}
+        <div
+          className="pointer-events-none absolute inset-x-6 top-3 h-12 rounded-full opacity-90 blur-2xl"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 100% at 50% 0%, rgba(255,225,140,0.85), rgba(255,180,80,0) 75%)",
+          }}
+        />
+
+        {/* CONTENT inside the chest */}
+        <div className="relative px-7 py-10 md:px-10 md:py-12">
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/85">
+              Treasure Inside
+            </p>
+            <h3 className="mt-2 font-serif text-3xl font-extrabold text-amber-50 drop-shadow-[0_2px_10px_rgba(255,180,60,0.6)] md:text-4xl">
+              Set Sail Together
+            </h3>
+            <p className="mt-3 text-sm text-amber-100/85 md:text-base">
+              Open to projects, collaborations, or just a chat about code, combat, or crypto.
+            </p>
+
+            <div className="mt-7 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
+              <Magnetic strength={0.35}>
+                <a
+                  href="mailto:tosiicp@gmail.com"
+                  className="flex items-center justify-center gap-2 rounded-lg border-2 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-950 shadow-[0_6px_20px_rgba(255,200,80,0.45)] transition hover:scale-[1.03]"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, #ffeaa0 0%, #f4c75a 55%, #c08820 100%)",
+                    borderColor: "#7a5210",
+                  }}
+                >
+                  ✉ tosiicp@gmail.com
+                </a>
+              </Magnetic>
+              <CallMeFlipCard />
+            </div>
+          </div>
+        </div>
+
+        {/* LOCK PLATE — center front */}
+        <div className="pointer-events-none absolute left-1/2 top-1 -translate-x-1/2">
+          <div
+            className="relative h-8 w-12 rounded-b-md border-2 border-[#5a3a05]"
+            style={{
+              background:
+                "linear-gradient(180deg, #ffe48a 0%, #d4a747 60%, #8a6618 100%)",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.4) inset",
+            }}
+          >
+            {/* Keyhole */}
+            <div className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2">
+              <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-[#1a0c02]" />
+              <div className="absolute left-1/2 bottom-0 h-2 w-1 -translate-x-1/2 bg-[#1a0c02]" />
+            </div>
+          </div>
+        </div>
+
+        {/* Floating sparkles inside the chest */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="pointer-events-none absolute h-1 w-1 rounded-full bg-amber-100"
+            style={{
+              left: `${15 + (i * 11) % 70}%`,
+              top: `${20 + (i * 13) % 60}%`,
+              boxShadow: "0 0 6px rgba(255,220,140,0.95)",
+            }}
+            animate={{ opacity: [0.2, 1, 0.2], scale: [0.6, 1.3, 0.6] }}
+            transition={{ duration: 2 + (i % 3), repeat: Infinity, ease: "easeInOut", delay: i * 0.25 }}
+          />
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function LaughtaleIsland() {
+  return (
+    <section id="contact" className="relative isolate -mt-px overflow-hidden">
+      {/* Dawn sky → green island gradient */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, " +
+            "#f5c089 0%, " +
+            "#f0b478 10%, " +
+            "#e8a468 22%, " +
+            "#dd9258 34%, " +
+            "#cc7e48 44%, " +
+            "#b8703e 52%, " +
+            "#946a3a 60%, " +
+            "#6e8a44 66%, " +
+            "#4a7a36 74%, " +
+            "#3a6a2c 84%, " +
+            "#2c5824 100%)",
+        }}
+      />
+
+      {/* Rising sun continuation — same sun that started in the transition,
+         now cresting into the island sky. Centered above the section so the
+         glow visually continues across the seam. */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-[-28vh] h-[60vh] w-[120vw] max-w-[1600px] -translate-x-1/2 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(255,235,170,0.8) 0%, rgba(255,200,120,0.55) 22%, rgba(255,170,90,0.3) 42%, rgba(255,170,90,0) 70%)",
+          filter: "blur(8px)",
+        }}
+      />
+      {/* Soft top haze that blends into the transition — eliminates any seam */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[8vh]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(245,192,137,0.95) 0%, rgba(245,192,137,0) 100%)",
+        }}
+      />
+
+      {/* Distant island silhouettes on the horizon */}
+      <svg
+        className="pointer-events-none absolute inset-x-0 top-[42%] mx-auto opacity-50"
+        viewBox="0 0 1200 60"
+        width="100%"
+        preserveAspectRatio="none"
+        style={{ height: 60 }}
+      >
+        <path
+          d="M 0 60 L 0 38 Q 100 22 200 30 Q 300 12 400 24 Q 500 30 600 18 Q 700 24 820 28 Q 920 14 1040 26 Q 1140 30 1200 22 L 1200 60 Z"
+          fill="rgba(70,40,20,0.45)"
+        />
+      </svg>
+
+      {/* Floating golden particles */}
+      {Array.from({ length: 28 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="pointer-events-none absolute h-1 w-1 rounded-full bg-amber-200"
+          style={{ left: `${(i * 17 + 5) % 98}%`, top: "100%" }}
+          animate={{ y: [-50, -1100], opacity: [0, 0.85, 0] }}
+          transition={{ duration: 16 + (i % 6) * 2, repeat: Infinity, ease: "linear", delay: i * 0.7 }}
+        />
+      ))}
+
+      {/* CONTENT */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col items-center px-4 pb-16 pt-24">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-4 text-center"
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-[0.45em] text-white"
+            style={{ textShadow: "0 2px 10px rgba(70,30,5,0.85), 0 0 14px rgba(70,30,5,0.5)" }}
+          >
+            The Final Island · Where The One Piece Awaits
+          </p>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="mt-6 max-w-2xl text-center text-base font-medium text-white md:text-lg"
+          style={{ textShadow: "0 2px 8px rgba(70,30,5,0.85), 0 0 14px rgba(70,30,5,0.4)" }}
+        >
+          The journey&apos;s end. The Strawhats are docked, and the captain wants a word with you.
+          Drop your message — every great adventure starts with a hello.
+        </motion.p>
+
+        {/* Crew showcase — single group image framed as a wanted poster */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.96 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mt-16 w-full max-w-[420px]"
+        >
+          {/* Soft warm aura */}
+          <div
+            className="pointer-events-none absolute -inset-6 -z-10 rounded-[28px] blur-2xl"
+            style={{ background: "radial-gradient(ellipse, rgba(255,200,120,0.55), transparent 70%)" }}
+          />
+          {/* Wanted-poster frame */}
+          <div
+            className="relative overflow-hidden rounded-md border-4 border-[#5a3a1a] shadow-[0_24px_60px_rgba(60,30,5,0.55)]"
+            style={{
+              background: "linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
+            }}
+          >
+            {/* Pins */}
+            <div className="absolute left-6 -top-2 z-10 h-4 w-4 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+            <div className="absolute right-6 -top-2 z-10 h-4 w-4 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+
+            <div className="relative p-3">
+              <p className="text-center font-serif text-[10px] uppercase tracking-[0.4em] text-amber-950/70">
+                Wanted · Together
+              </p>
+              <h3 className="mt-1 text-center font-serif text-2xl font-black tracking-[0.18em] text-amber-950 md:text-3xl">
+                THE STRAWHAT PIRATES
+              </h3>
+              <div className="relative mt-3 overflow-hidden rounded-sm border-2 border-[#5a3a1a] bg-black/15 shadow-inner">
+                <img
+                  src="/images/crew.jpg"
+                  alt="The Strawhat Pirates"
+                  className="block h-auto w-full"
+                />
+                {/* Sepia tone */}
+                <div className="pointer-events-none absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/15" />
+              </div>
+              <p className="mt-3 text-center text-[11px] uppercase tracking-[0.35em] text-amber-950/75">
+                Captain Monkey D. Luffy & Crew
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Crew name chips — Captain centered on top, crew below */}
+        <div className="mt-10 flex w-full max-w-[900px] flex-col items-center gap-3">
+          {/* Captain row */}
+          {CREW.slice(0, 1).map((m) => (
+            <motion.div
+              key={m.id}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -3, scale: 1.05 }}
+              className="flex items-center gap-2 rounded-full border-[3px] px-5 py-2 backdrop-blur-sm shadow-lg"
+              style={{
+                background: "rgba(255,245,220,0.95)",
+                borderColor: m.color,
+                boxShadow: `0 0 24px ${m.glow}`,
+              }}
+            >
+              <span
+                className="h-3 w-3 rounded-full shadow"
+                style={{ background: m.color, boxShadow: `0 0 10px ${m.glow}` }}
+              />
+              <span className="font-serif text-base font-black text-amber-950">{m.name}</span>
+              <span className="text-[11px] uppercase tracking-[0.2em] text-amber-900/80">
+                · {m.role}
+              </span>
+              <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-950">
+                ★
+              </span>
+            </motion.div>
+          ))}
+
+          {/* Crew rows */}
+          <div className="flex w-full flex-wrap items-center justify-center gap-2.5">
+            {CREW.slice(1).map((m, i) => (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.1 + i * 0.05, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ y: -3, scale: 1.05 }}
+                className="flex items-center gap-2 rounded-full border-2 px-3.5 py-1.5 backdrop-blur-sm shadow-md"
+                style={{
+                  background: "rgba(255,245,220,0.92)",
+                  borderColor: m.color,
+                }}
+              >
+                <span
+                  className="h-2.5 w-2.5 rounded-full shadow"
+                  style={{ background: m.color, boxShadow: `0 0 8px ${m.glow}` }}
+                />
+                <span className="font-serif text-sm font-bold text-amber-950">{m.name}</span>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-amber-900/70">
+                  · {m.role}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* GREEN ISLAND with chest */}
+      <div className="relative z-10 mt-8">
+        {/* Island grass mound (SVG) */}
+        <svg
+          className="pointer-events-none absolute inset-x-0 -top-6 mx-auto"
+          viewBox="0 0 1200 240"
+          preserveAspectRatio="none"
+          width="100%"
+          style={{ height: 240 }}
+        >
+          <defs>
+            <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#76a64a" />
+              <stop offset="50%" stopColor="#4a8a3e" />
+              <stop offset="100%" stopColor="#2c5824" />
+            </linearGradient>
+            <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#e6c98a" />
+              <stop offset="100%" stopColor="#b0925a" />
+            </linearGradient>
+          </defs>
+          {/* Sand strip under the grass */}
+          <path
+            d="M 0 240 L 0 170 Q 200 140 350 152 Q 500 130 600 138 Q 700 130 850 150 Q 1000 140 1200 168 L 1200 240 Z"
+            fill="url(#sandGrad)"
+            opacity="0.6"
+          />
+          {/* Grass island */}
+          <path
+            d="M 80 240 L 80 130 Q 220 78 380 92 Q 500 64 600 76 Q 700 64 820 92 Q 980 78 1120 130 L 1120 240 Z"
+            fill="url(#grassGrad)"
+          />
+          {/* Grass tufts highlight */}
+          {Array.from({ length: 18 }).map((_, i) => {
+            const x = 100 + i * 60 + (i % 3) * 8;
+            return (
+              <path
+                key={i}
+                d={`M ${x} 130 q 4 -10 8 0`}
+                stroke="#a8d272"
+                strokeWidth="2"
+                fill="none"
+                opacity="0.7"
+              />
+            );
+          })}
+        </svg>
+
+        {/* Palm trees flanking the chest */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex max-w-[1200px] items-end justify-between px-4">
+          <div className="hidden md:block">
+            <PalmTree scale={0.85} />
+          </div>
+          <div className="hidden md:block">
+            <PalmTree scale={0.85} flip />
+          </div>
+        </div>
+
+        {/* Chest container */}
+        <div className="relative flex flex-col items-center px-4 pt-32 pb-20">
+          <TreasureChest />
+
+          {/* Closing line */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, delay: 0.4 }}
+            className="mt-16 max-w-2xl text-center font-serif text-lg italic text-amber-50/95 drop-shadow md:text-xl"
+          >
+            &ldquo;You want the One Piece? Then take it. It&apos;s yours.&rdquo;
+          </motion.p>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.4em] text-amber-50/85 drop-shadow">
+            — Gol D. Roger, Pirate King
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Page() {
   return (
     <main className="bg-black text-zinc-50 overflow-x-hidden">
+      <ScrollShip />
       <WantedPosterScene />
       <JourneyTransition />
       <QuestBoardIsland />
       <GrandLineTransition />
       <VoyageLog />
       <CrewQuarters />
+      <LaughtaleTransition />
+      <LaughtaleIsland />
     </main>
   );
 }
