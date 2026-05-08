@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef, useMemo, useEffect, type ReactNode } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback, type ReactNode } from "react";
+import { useActiveSection } from "./useActiveSection";
 import {
   motion,
   AnimatePresence,
@@ -109,6 +110,423 @@ function TiltCard({
       onMouseMove={onMove}
       onMouseLeave={onLeave}
       style={{ ...style, rotateX: srx, rotateY: sry, transformPerspective: 1000, transformStyle: "preserve-3d" }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Letter parallax tilt
+───────────────────────────────────────────── */
+function LetterParallax({ children }: { children: ReactNode }) {
+  const mx = useMotionValue(0.5);
+  const my = useMotionValue(0.5);
+  const rotateX = useTransform(my, [0, 1], [6, -6]);
+  const rotateY = useTransform(mx, [0, 1], [-6, 6]);
+  const springRX = useSpring(rotateX, { stiffness: 100, damping: 20 });
+  const springRY = useSpring(rotateY, { stiffness: 100, damping: 20 });
+
+  const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    mx.set((e.clientX - r.left) / r.width);
+    my.set((e.clientY - r.top) / r.height);
+  }, [mx, my]);
+
+  const handleLeave = useCallback(() => {
+    mx.set(0.5);
+    my.set(0.5);
+  }, [mx, my]);
+
+  return (
+    <motion.div
+      style={{ rotateX: springRX, rotateY: springRY, transformStyle: "preserve-3d" }}
+      className="[perspective:900px]"
+      onMouseMove={handleMove}
+      onMouseLeave={handleLeave}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   EASTER EGGS
+───────────────────────────────────────────── */
+
+// Conqueror's Haki — Shift+H
+function HakiOverlay() {
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.key === "H") setActive(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    const t = setTimeout(() => setActive(false), 2400);
+    return () => clearTimeout(t);
+  }, [active]);
+
+  return (
+    <AnimatePresence>
+      {active && (
+        <motion.div
+          key="haki"
+          className="pointer-events-none fixed inset-0 z-[999]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          {/* Dark veil */}
+          <motion.div
+            className="absolute inset-0 bg-black"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.92, 0.78, 0.88, 0.55, 0] }}
+            transition={{ duration: 2.4, times: [0, 0.07, 0.2, 0.38, 0.72, 1] }}
+          />
+          {/* Lightning SVG */}
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <filter id="hakiGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="1.2" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+            </defs>
+            {[
+              { d: "M8 0 L19 22 L12 22 L28 52 L18 52 L42 100", delay: 0 },
+              { d: "M50 0 L58 18 L52 18 L68 42 L61 42 L80 100", delay: 0.07 },
+              { d: "M82 3 L90 28 L83 28 L94 58 L87 58 L99 95", delay: 0.13 },
+              { d: "M28 0 L37 26 L30 26 L46 56 L38 56 L54 100", delay: 0.05 },
+              { d: "M0 18 L14 38 L7 38 L23 68 L15 68 L32 100", delay: 0.1 },
+            ].map(({ d, delay }, i) => (
+              <motion.path
+                key={i}
+                d={d}
+                stroke="rgba(170,100,255,0.95)"
+                strokeWidth="0.6"
+                fill="none"
+                filter="url(#hakiGlow)"
+                initial={{ opacity: 0, pathLength: 0 }}
+                animate={{ opacity: [0, 1, 0.8, 1, 0.4, 0], pathLength: [0, 1, 1, 1, 1, 1] }}
+                transition={{ duration: 1.8, delay, ease: "easeOut" }}
+              />
+            ))}
+          </svg>
+          {/* Title */}
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center"
+            initial={{ opacity: 0, scale: 0.65 }}
+            animate={{ opacity: [0, 1, 1, 0], scale: [0.65, 1.08, 1.02, 0.92] }}
+            transition={{ duration: 2.2, times: [0, 0.1, 0.65, 1] }}
+          >
+            <div className="text-center">
+              <p className="font-serif text-[11px] uppercase tracking-[0.6em] text-purple-300/75">Conqueror&apos;s</p>
+              <p className="font-serif text-6xl font-black tracking-wider text-white drop-shadow-[0_0_40px_rgba(190,100,255,0.95)] md:text-8xl">
+                HAKI
+              </p>
+              <p className="mt-1 font-serif text-[10px] uppercase tracking-[0.45em] text-purple-400/65">覇王色の覇気</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// Poneglyph — triggered via custom DOM event
+const GLITCH_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+const PONEGLYPH_MESSAGE = `Monkey D. Luffy is a young pirate with an unshakable dream: to become the King of the Pirates. From the moment he set sail, his journey has been defined by freedom, loyalty, and relentless determination. Alongside his crew, the Straw Hat Pirates, Luffy travels across dangerous seas, facing powerful enemies and impossible odds, but never backing down.
+
+What makes his journey special isn't just the battles he wins, but the people he meets and the bonds he builds along the way. Every island shapes him a little more, pushing him closer to the legendary treasure known as the One Piece and the legacy of the Pirate King he hopes to surpass.
+
+But he's got another dream...`;
+
+function scrambleText(text: string) {
+  return text
+    .split("")
+    .map((c) => (/[A-Za-z0-9]/.test(c) ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : c))
+    .join("");
+}
+
+function PoneglyphModal() {
+  const [open, setOpen] = useState(false);
+  const [translated, setTranslated] = useState(false);
+  const [display, setDisplay] = useState(PONEGLYPH_MESSAGE);
+
+  useEffect(() => {
+    const on = () => {
+      setTranslated(false);
+      setDisplay(scrambleText(PONEGLYPH_MESSAGE));
+      setOpen(true);
+    };
+    window.addEventListener("show-poneglyph", on);
+    return () => window.removeEventListener("show-poneglyph", on);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Idle shimmer — re-scramble while not translated
+  useEffect(() => {
+    if (!open || translated) return;
+    const id = setInterval(() => setDisplay(scrambleText(PONEGLYPH_MESSAGE)), 95);
+    return () => clearInterval(id);
+  }, [open, translated]);
+
+  // Decode animation
+  useEffect(() => {
+    if (!translated) return;
+    const target = PONEGLYPH_MESSAGE;
+    const total = target.length;
+    const step = Math.max(2, Math.floor(total / 90));
+    let revealed = 0;
+    const id = setInterval(() => {
+      revealed += step;
+      const out = target
+        .split("")
+        .map((c, i) => {
+          if (i < revealed) return c;
+          return /[A-Za-z0-9]/.test(c) ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : c;
+        })
+        .join("");
+      setDisplay(out);
+      if (revealed >= total) {
+        clearInterval(id);
+        setDisplay(target);
+      }
+    }, 32);
+    return () => clearInterval(id);
+  }, [translated]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[990] flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <div className="absolute inset-0 bg-black/82 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <motion.div
+            className="relative w-full max-w-3xl overflow-hidden rounded-xl border border-blue-400/28"
+            style={{
+              background: "radial-gradient(ellipse at 50% 0%, #091522 0%, #040c14 100%)",
+              boxShadow: "0 0 70px rgba(80,140,255,0.18), inset 0 0 50px rgba(0,0,0,0.6)",
+            }}
+            initial={{ scale: 0.85, y: 40 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.85, y: 40 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="relative max-h-[85vh] overflow-y-auto p-6 md:p-8">
+              <div className="mb-5 flex items-start justify-between">
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.6em] text-blue-400/55">Ancient Poneglyph</p>
+                  <p className="mt-0.5 font-serif text-sm text-blue-200/75">Road Stone · Laugh&apos;Tale Fragment</p>
+                </div>
+                <button onClick={() => setOpen(false)} className="text-blue-300/28 transition hover:text-blue-300 text-lg">✕</button>
+              </div>
+
+              <div
+                className={`whitespace-pre-wrap rounded-lg border p-5 md:p-6 font-mono text-[12px] md:text-sm leading-[1.85] transition-colors ${
+                  translated
+                    ? "border-blue-400/30 bg-blue-950/40 text-blue-100/90"
+                    : "border-blue-400/15 bg-blue-950/25 text-blue-300/60 tracking-[0.05em]"
+                }`}
+              >
+                {display}
+              </div>
+
+              {!translated ? (
+                <>
+                  <p className="mt-3 text-center text-[10px] text-blue-400/45">
+                    Only a few in the world&apos;s history could read poneglyphs...
+                  </p>
+                  <button
+                    onClick={() => setTranslated(true)}
+                    className="mt-3 w-full rounded-lg border border-blue-400/28 bg-blue-400/8 py-2.5 text-sm font-bold tracking-[0.25em] text-blue-300 transition hover:bg-blue-400/16"
+                  >
+                    🌸 Robin Translates
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mt-3 text-right text-[10px] text-blue-400/45">— Nico Robin, Scholar of Ohara</p>
+                  <button
+                    onClick={() => {
+                      setTranslated(false);
+                      setDisplay(scrambleText(PONEGLYPH_MESSAGE));
+                    }}
+                    className="mt-3 w-full rounded-lg border border-blue-400/18 bg-transparent py-2 text-xs text-blue-400/45 transition hover:text-blue-400"
+                  >
+                    ← Back to ancient text
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Navigation bar
+───────────────────────────────────────────── */
+const NAV_ITEMS = [
+  { id: "wanted",  label: "Wanted" },
+  { id: "journey", label: "Island" },
+  { id: "voyage",  label: "Voyage" },
+  { id: "crew",    label: "Crew" },
+  { id: "contact", label: "Contact" },
+];
+
+function NavBar() {
+  const active = useActiveSection(NAV_ITEMS.map((n) => n.id));
+  const [open, setOpen] = useState(false);
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setOpen(false);
+  }, []);
+
+  return (
+    <>
+      {/* Desktop pill nav */}
+      <nav className="fixed top-4 left-1/2 z-[80] hidden -translate-x-1/2 items-center gap-1 rounded-full border border-amber-400/25 bg-black/70 px-3 py-2 backdrop-blur-md md:flex">
+        {NAV_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => scrollTo(item.id)}
+            className={`rounded-full px-4 py-1.5 font-serif text-sm transition-all duration-200 ${
+              active === item.id
+                ? "bg-amber-400/90 text-black font-bold"
+                : "text-amber-100/60 hover:text-amber-100"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* Mobile hamburger button */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Open navigation"
+        className="fixed right-4 top-4 z-[82] flex h-10 w-10 items-center justify-center rounded-full border border-amber-400/30 bg-black/80 backdrop-blur-md md:hidden"
+      >
+        <motion.svg
+          width="18" height="14" viewBox="0 0 18 14"
+          className="text-amber-200"
+          animate={open ? "open" : "closed"}
+        >
+          <motion.line x1="0" y1="1" x2="18" y2="1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            variants={{ open: { rotate: 45, y: 6, x: 0 }, closed: { rotate: 0, y: 0 } }}
+            style={{ originX: "0px", originY: "1px" }}
+          />
+          <motion.line x1="0" y1="7" x2="18" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            variants={{ open: { opacity: 0 }, closed: { opacity: 1 } }}
+          />
+          <motion.line x1="0" y1="13" x2="18" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+            variants={{ open: { rotate: -45, y: -6 }, closed: { rotate: 0, y: 0 } }}
+            style={{ originX: "0px", originY: "13px" }}
+          />
+        </motion.svg>
+      </button>
+
+      {/* Mobile full-screen drawer */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 z-[81] flex flex-col items-center justify-center gap-8 bg-black/96 backdrop-blur-md md:hidden"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* Jolly Roger watermark */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-5">
+              <svg width="280" height="280" viewBox="0 0 72 72">
+                <ellipse cx="36" cy="28" rx="13" ry="12" fill="white" />
+                <circle cx="31" cy="28" r="3.5" fill="black" />
+                <circle cx="41" cy="28" r="3.5" fill="black" />
+                <path d="M30 35 Q36 39 42 35 L41 41 Q36 43 31 41 Z" fill="white" />
+                <line x1="14" y1="52" x2="30" y2="44" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
+                <line x1="42" y1="44" x2="58" y2="52" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
+                <circle cx="14" cy="52" r="3.5" fill="white" />
+                <circle cx="58" cy="52" r="3.5" fill="white" />
+                <circle cx="30" cy="44" r="3" fill="white" />
+                <circle cx="42" cy="44" r="3" fill="white" />
+              </svg>
+            </div>
+
+            <p className="font-serif text-[10px] uppercase tracking-[0.45em] text-amber-400/60">
+              ⚓ Chart a Course ⚓
+            </p>
+
+            {NAV_ITEMS.map((item, i) => (
+              <motion.button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 * i, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className={`font-serif text-3xl font-black uppercase tracking-[0.2em] transition-colors ${
+                  active === item.id ? "text-amber-400" : "text-amber-100/70 hover:text-amber-100"
+                }`}
+              >
+                {item.label}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Scroll progress bar
+───────────────────────────────────────────── */
+function ScrollProgressBar() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
+  return (
+    <motion.div
+      className="pointer-events-none fixed top-0 left-0 right-0 z-[100] h-[3px] origin-left"
+      style={{
+        scaleX,
+        background: "linear-gradient(90deg, #f59e0b, #fbbf24, #fde68a)",
+        boxShadow: "0 0 8px rgba(251,191,36,0.7)",
+      }}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Section reveal wrapper
+───────────────────────────────────────────── */
+function SectionReveal({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 48 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.06 }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       className={className}
     >
       {children}
@@ -418,26 +836,62 @@ const PROJECTS = [
       "Interactive browser-based game built with JavaScript, HTML, and CSS.",
     stack: ["JavaScript", "HTML", "CSS"],
     link: "https://toshkee.github.io/One-Piece-Sword-Duel/",
+    github: "https://github.com/Toshkee/One-Piece-Sword-Duel",
+    details:
+      "A turn-based browser sword-duel game set in the One Piece universe. Players choose a character, then exchange attacks and special moves with an AI opponent. All game logic, animations, and UI were hand-coded in vanilla JavaScript — no frameworks.",
+    highlights: [
+      "Character select with unique stat profiles",
+      "Turn-based combat loop with special-move cooldowns",
+      "CSS keyframe animations for attack sequences",
+      "Responsive layout that works on mobile",
+    ],
   },
   {
     title: "Anime Watchlist",
     description: "Frontend web app to browse and manage anime watchlists.",
     stack: ["React", "Node.js"],
     link: "https://animee-watchlist-app-724b6a827c81.herokuapp.com/",
+    github: "https://github.com/Toshkee/anime-watchlist",
+    details:
+      "A React SPA that lets users search for anime titles via the Jikan API (MyAnimeList), mark series as watching / completed / plan-to-watch, and persist their list across sessions.",
+    highlights: [
+      "Jikan REST API integration for live anime data",
+      "Local-storage persistence for watchlist state",
+      "Filter and sort by status, rating, or genre",
+      "Clean card-based UI with poster artwork",
+    ],
   },
   {
     title: "CryptoFlow",
     description:
       "Modern React app displaying live cryptocurrency data and trading.",
-    stack: ["Python", "Django"],
+    stack: ["React", "Python", "Django"],
     link: "https://cryptofloww.netlify.app/",
+    github: "https://github.com/Toshkee/CryptoFlow",
+    details:
+      "A full-stack crypto-dashboard with a Django REST backend fetching live prices from CoinGecko and a React frontend charting price history. Built to practice real-time data pipelines and REST API design.",
+    highlights: [
+      "Django REST Framework endpoints for price & history",
+      "CoinGecko API integration with caching layer",
+      "Recharts price-history line graphs",
+      "Deployed frontend on Netlify, backend on Heroku",
+    ],
   },
   {
     title: "Meet2Explore",
     description:
       "Travel-focused web app for discovering destinations and connecting with fellow explorers.",
-    stack: ["React", "Node.js"],
+    stack: ["React", "Node.js", "MongoDB"],
     link: "https://meet2explore.netlify.app/",
+    github: "https://github.com/Toshkee/meet2explore",
+    details:
+      "A community travel app where users can post destinations, share travel tips, and find companions for upcoming trips. Built as a full-stack General Assembly capstone project with a REST API backend.",
+    highlights: [
+      "JWT authentication with bcrypt password hashing",
+      "CRUD destinations with image upload via Cloudinary",
+      "User profiles and follower system",
+      "Express + MongoDB Atlas backend, React frontend",
+    ],
   },
 ];
 
@@ -680,6 +1134,8 @@ function WantedPosterScene() {
       <Seagull top="32%" duration={22} delay={2} scale={0.85} />
       <Seagull top="40%" duration={28} delay={8} reverse scale={0.65} />
 
+      <BirdFlock top="22%" duration={70} delay={-15} reverse scale={0.7} />
+
       {/* Dust motes drifting up */}
       {Array.from({ length: 14 }).map((_, i) => {
         const left = (i * 13 + 4) % 100;
@@ -889,7 +1345,9 @@ function WantedPosterScene() {
                   style={{ boxShadow: "inset 0 0 35px rgba(120,80,30,0.32)" }}
                 />
                 <div className="relative">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">Devil Fruits</div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-black/50">
+                    Devil Fruits
+                  </p>
                   <h3 className="mt-1 font-serif text-lg font-bold text-black/90">Powers Wielded</h3>
                   <p className="mt-2 text-xs leading-relaxed text-black/65">
                     Devil Fruits devoured on the voyage.
@@ -1027,6 +1485,12 @@ function JourneyTransition() {
       <Seagull top="36%" duration={24} delay={2} scale={0.7} />
       <Seagull top="28%" duration={32} delay={10} reverse scale={0.5} />
 
+      <BirdFlock top="18%" duration={80} delay={-10} scale={0.65} />
+
+      {/* Shanks's Red Force sailing past his letter */}
+      <RedForce top="48%" duration={150} delay={-30} scale={0.7} opacity={0.85} />
+      <GoingMerry top="56%" duration={180} delay={-90} reverse scale={0.55} opacity={0.7} />
+
       {/* Midday sun — high overhead */}
       <motion.div
         className="pointer-events-none absolute left-[18%] top-[8%] z-[4]"
@@ -1108,6 +1572,7 @@ function JourneyTransition() {
           transition={{ duration: 1, delay: 0.25, ease }}
           className="w-full max-w-xl"
         >
+          <LetterParallax>
           <SealedEnvelope
             sealColor="#b91c1c"
             sealGlow="rgba(220,38,38,0.55)"
@@ -1155,6 +1620,7 @@ function JourneyTransition() {
               </div>
             </div>
           </SealedEnvelope>
+          </LetterParallax>
         </motion.div>
       </div>
     </section>
@@ -1297,6 +1763,90 @@ function DistantShip() {
   );
 }
 
+function ShipImage({
+  src, alt, width, height, top, duration, delay, reverse = false, scale = 1, opacity = 0.85,
+}: {
+  src: string; alt: string; width: number; height: number;
+  top: string; duration: number; delay: number; reverse?: boolean; scale?: number; opacity?: number;
+}) {
+  const w = width * scale;
+  const h = height * scale;
+  return (
+    <motion.div
+      className="pointer-events-none absolute z-[5]"
+      style={{ top, opacity }}
+      initial={{ x: reverse ? "115vw" : "-15vw" }}
+      animate={{ x: reverse ? "-15vw" : "115vw", y: [0, -4, 0, -2, 0] }}
+      transition={{ duration, repeat: Infinity, ease: "linear", delay, y: { duration: 5, repeat: Infinity, ease: "easeInOut" } }}
+    >
+      <div
+        style={{
+          width: w,
+          height: h,
+          transform: reverse ? "scaleX(-1)" : undefined,
+          filter: "drop-shadow(0 8px 14px rgba(0,0,0,0.55))",
+        }}
+      >
+        <Image src={src} alt={alt} width={width} height={height} className="h-full w-full object-contain" />
+      </div>
+    </motion.div>
+  );
+}
+
+function GoingMerry(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
+  return <ShipImage src="/images/going-merry.png" alt="Going Merry" width={180} height={120} {...props} />;
+}
+function ThousandSunny(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
+  return <ShipImage src="/images/thousand-sunny.png" alt="Thousand Sunny" width={170} height={159} {...props} />;
+}
+function MobyDick(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
+  return <ShipImage src="/images/moby-dick.png" alt="Moby Dick" width={180} height={156} {...props} />;
+}
+function RedForce(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
+  return <ShipImage src="/images/red-force.png" alt="Red Force" width={200} height={117} {...props} />;
+}
+
+function BirdFlock({ top, duration, delay, reverse = false, scale = 1 }: { top: string; duration: number; delay: number; reverse?: boolean; scale?: number }) {
+  const s = scale;
+  // V-formation positions (relative offsets in px before scaling)
+  const birds = [
+    { dx: 0, dy: 0 },
+    { dx: 14, dy: 6 },
+    { dx: -14, dy: 6 },
+    { dx: 28, dy: 12 },
+    { dx: -28, dy: 12 },
+    { dx: 42, dy: 18 },
+  ];
+  return (
+    <motion.div
+      className="pointer-events-none absolute z-[6] text-white/65"
+      style={{ top }}
+      initial={{ x: reverse ? "115vw" : "-15vw" }}
+      animate={{ x: reverse ? "-15vw" : "115vw", y: [0, -6, 0, -3, 0] }}
+      transition={{ duration, repeat: Infinity, ease: "linear", delay, y: { duration: 6, repeat: Infinity, ease: "easeInOut" } }}
+    >
+      <svg width={120 * s} height={40 * s} viewBox="0 0 120 40" style={{ transform: reverse ? "scaleX(-1)" : undefined }}>
+        {birds.map((b, i) => (
+          <motion.path
+            key={i}
+            d="M0 6 C3 1 5 1 7 4 C9 1 11 1 14 6"
+            stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round"
+            transform={`translate(${50 + b.dx} ${10 + b.dy})`}
+            animate={{
+              d: [
+                "M0 6 C3 1 5 1 7 4 C9 1 11 1 14 6",
+                "M0 4 C3 8 5 8 7 3 C9 8 11 8 14 4",
+                "M0 6 C3 1 5 1 7 4 C9 1 11 1 14 6",
+              ],
+            }}
+            transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", delay: i * 0.05 }}
+          />
+        ))}
+      </svg>
+    </motion.div>
+  );
+}
+
 function IslandLandmass() {
   return (
     <svg viewBox="0 0 1200 600" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-[78%] w-full">
@@ -1355,9 +1905,108 @@ function IslandLandmass() {
   );
 }
 
+/* ─────────────────────────────────────────────
+   Project deep-dive modal
+───────────────────────────────────────────── */
+function ProjectModal({ project, onClose }: { project: typeof PROJECTS[number] | null; onClose: () => void }) {
+  useEffect(() => {
+    if (!project) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [project, onClose]);
+
+  return (
+    <AnimatePresence>
+      {project && (
+        <motion.div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25 }}
+          onClick={onClose}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+
+          {/* Panel */}
+          <motion.div
+            className="relative z-10 w-full max-w-lg overflow-hidden rounded-sm border border-[#b08b4f] bg-[#f3e3b8] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
+            initial={{ opacity: 0, y: 32, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
+            style={{ boxShadow: "inset 0 0 50px rgba(120,80,30,0.28), 0 30px 80px rgba(0,0,0,0.7)" }}
+          >
+            {/* Parchment vignette */}
+            <div className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 45px rgba(120,80,30,0.32)" }} />
+
+            {/* Pin */}
+            <div className="absolute left-1/2 -top-2 -translate-x-1/2 z-20">
+              <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+            </div>
+
+            <div className="relative p-7 pt-8">
+              {/* Close */}
+              <button
+                onClick={onClose}
+                className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full border border-black/20 bg-black/10 text-black/60 transition hover:bg-black/20"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+
+              <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">{project.stack.join(" · ")}</div>
+              <h2 className="mt-1 font-serif text-2xl font-black text-black/90">{project.title}</h2>
+
+              <p className="mt-3 text-sm leading-relaxed text-black/75">{project.details}</p>
+
+              {project.highlights && (
+                <ul className="mt-4 space-y-1.5">
+                  {project.highlights.map((h) => (
+                    <li key={h} className="flex items-start gap-2 text-sm text-black/70">
+                      <span className="mt-0.5 text-amber-700">⚓</span>
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a
+                  href={project.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded border border-black/30 bg-black/10 px-4 py-2 text-xs font-medium tracking-wide text-black/80 transition hover:bg-black/20"
+                >
+                  Live Demo →
+                </a>
+                {project.github && (
+                  <a
+                    href={project.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded border border-black/30 bg-black/10 px-4 py-2 text-xs font-medium tracking-wide text-black/80 transition hover:bg-black/20"
+                  >
+                    GitHub →
+                  </a>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
+  const [active, setActive] = useState<typeof PROJECTS[number] | null>(null);
   return (
     <div className="relative w-full max-w-3xl">
+      <ProjectModal project={active} onClose={() => setActive(null)} />
       {/* Wooden support posts */}
       <div className="absolute -left-3 -top-6 -bottom-16 z-10 w-7 rounded bg-gradient-to-r from-[#2e1a08] via-[#5a3819] to-[#2e1a08] shadow-[0_10px_30px_rgba(0,0,0,0.6)]" />
       <div className="absolute -right-3 -top-6 -bottom-16 z-10 w-7 rounded bg-gradient-to-r from-[#2e1a08] via-[#5a3819] to-[#2e1a08] shadow-[0_10px_30px_rgba(0,0,0,0.6)]" />
@@ -1403,11 +2052,12 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
                 whileHover={{ y: -8, rotate: 0, scale: 1.04, zIndex: 20, transition: { duration: 0.25, ease } }}
                 style={{ transformOrigin: "top center" }}
                 className={
-                  "relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]" +
+                  "relative cursor-pointer rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]" +
                   (projects.length % 2 === 1 && i === projects.length - 1
                     ? " md:col-span-2 md:mx-auto md:max-w-[62%]"
                     : "")
                 }
+                onClick={() => setActive(p)}
               >
                 {/* Pinned nail at top */}
                 <div className="absolute left-1/2 -top-2 -translate-x-1/2">
@@ -1432,14 +2082,23 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
                       </span>
                     ))}
                   </div>
-                  <a
-                    href={p.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-4 inline-block rounded border border-black/30 bg-black/10 px-4 py-1.5 text-xs font-medium tracking-wide text-black/80 transition-colors hover:bg-black/25"
-                  >
-                    View Quest →
-                  </a>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setActive(p); }}
+                      className="rounded border border-black/30 bg-black/10 px-4 py-1.5 text-xs font-medium tracking-wide text-black/80 transition-colors hover:bg-black/25"
+                    >
+                      Read Log →
+                    </button>
+                    <a
+                      href={p.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded border border-black/30 bg-black/5 px-4 py-1.5 text-xs font-medium tracking-wide text-black/60 transition-colors hover:bg-black/15"
+                    >
+                      Live ↗
+                    </a>
+                  </div>
                 </div>
               </motion.div>
             );
@@ -1526,6 +2185,13 @@ function QuestBoardIsland() {
       <Seagull top="22%" duration={20} delay={0} />
       <Seagull top="28%" duration={26} delay={6} reverse scale={0.75} />
       <Seagull top="16%" duration={32} delay={12} scale={0.6} />
+
+      {/* Pirate ships rolling past the island */}
+      <GoingMerry top="46%" duration={130} delay={-20} scale={0.7} opacity={0.85} />
+      <ThousandSunny top="50%" duration={170} delay={-70} reverse scale={0.55} opacity={0.7} />
+      <RedForce top="42%" duration={200} delay={-120} reverse scale={0.6} opacity={0.7} />
+      <BirdFlock top="12%" duration={75} delay={-25} scale={0.75} />
+      <BirdFlock top="20%" duration={95} delay={-5} reverse scale={0.55} />
 
       {/* THE ISLAND SCENE */}
       <div className="relative z-10 mx-auto flex min-h-[120vh] w-full max-w-[1400px] flex-col items-center justify-end px-4 pb-24 pt-32">
@@ -1639,13 +2305,13 @@ function QuestBoardIsland() {
 
 function GrandLineTransition() {
   return (
-    <section className="relative isolate min-h-[70vh] overflow-hidden">
-      {/* Daytime sky — bridges QuestBoard's dark ocean up into bright midday blue matching VoyageLog */}
+    <section className="relative isolate min-h-[90vh] overflow-hidden">
+      {/* Dawn — holds QuestBoard's deep night ocean at the top, then gradually rises into morning blue toward VoyageLog */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
-            "linear-gradient(180deg, #08182c 0%, #1a4e80 20%, #3070b0 45%, #4080c0 70%, #2a6aad 100%)",
+            "linear-gradient(180deg, #08182c 0%, #0c2440 12%, #143358 24%, #1e466a 38%, #2a5a85 55%, #3070b0 75%, #2a6aad 100%)",
         }}
       />
 
@@ -1658,9 +2324,15 @@ function GrandLineTransition() {
       <Seagull top="32%" duration={26} delay={3} scale={0.65} />
       <Seagull top="38%" duration={34} delay={11} reverse scale={0.5} />
 
+      <BirdFlock top="14%" duration={85} delay={-15} scale={0.65} />
+
+      {/* Ships drifting past Law's letter */}
+      <ThousandSunny top="50%" duration={155} delay={-25} scale={0.6} opacity={0.8} />
+      <MobyDick top="60%" duration={185} delay={-100} reverse scale={0.55} opacity={0.7} />
+
       {/* Sun — afternoon, slightly past peak */}
       <motion.div
-        className="pointer-events-none absolute right-[14%] top-[10%] z-[4]"
+        className="pointer-events-none absolute right-[14%] top-[40%] z-[4]"
         animate={{ y: [0, -3, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       >
@@ -1734,7 +2406,7 @@ function GrandLineTransition() {
       </div>
 
       {/* Centered content */}
-      <div className="relative z-10 flex min-h-[70vh] items-center justify-center px-6">
+      <div className="relative z-10 flex min-h-[90vh] items-center justify-center px-6 pt-64 pb-24">
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -1742,6 +2414,7 @@ function GrandLineTransition() {
           transition={{ duration: 1.1, ease }}
           className="w-full max-w-lg"
         >
+          <LetterParallax>
           <SealedEnvelope
             sealColor="#eab308"
             sealGlow="rgba(234,179,8,0.55)"
@@ -1794,6 +2467,7 @@ function GrandLineTransition() {
               </div>
             </div>
           </SealedEnvelope>
+          </LetterParallax>
         </motion.div>
       </div>
     </section>
@@ -1849,6 +2523,9 @@ function VoyageLog() {
       <Seagull top="28%" duration={22} delay={1} scale={0.75} />
       <Seagull top="34%" duration={30} delay={9} reverse scale={0.55} />
 
+      {/* Companions on the open sea */}
+      <BirdFlock top="20%" duration={90} delay={-12} reverse scale={0.6} />
+
       {/* Compass rose (decorative, bottom-left corner) */}
       <div className="pointer-events-none absolute bottom-32 left-8 z-[4] opacity-20">
         <svg width="90" height="90" viewBox="0 0 90 90" fill="#f0d7a0">
@@ -1863,7 +2540,7 @@ function VoyageLog() {
       </div>
 
       {/* CONTENT */}
-      <div className="relative z-10 mx-auto flex min-h-[120vh] w-full max-w-[1200px] flex-col items-center px-4 pb-32 pt-24">
+      <SectionReveal className="relative z-10 mx-auto flex min-h-[120vh] w-full max-w-[1200px] flex-col items-center px-4 pb-32 pt-24">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
@@ -1988,19 +2665,28 @@ function VoyageLog() {
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 0.4 }}
           >
-            <motion.div
-              className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-amber-400/80 bg-gradient-to-br from-amber-300/40 to-amber-600/40 shadow-[0_0_20px_rgba(255,180,80,0.5)]"
+            <motion.button
+              onClick={() => window.dispatchEvent(new Event("show-poneglyph"))}
+              className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-amber-400/80 bg-gradient-to-br from-amber-300/40 to-amber-600/40 shadow-[0_0_20px_rgba(255,180,80,0.5)] transition hover:scale-110 hover:shadow-[0_0_30px_rgba(255,180,80,0.7)]"
               animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+              title="Something stirs here..."
             >
               <span className="text-lg">🧭</span>
-            </motion.div>
+            </motion.button>
             <p className="mt-4 text-xs uppercase tracking-[0.4em] text-amber-100/70">
               Where It All Began · East Blue
             </p>
+            <motion.p
+              className="mt-2 text-[10px] uppercase tracking-[0.4em] text-amber-300/80"
+              animate={{ opacity: [0.55, 1, 0.55] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              Press the pulsing compass
+            </motion.p>
           </motion.div>
         </div>
-      </div>
+      </SectionReveal>
     </section>
   );
 }
@@ -2434,7 +3120,7 @@ function CrewQuarters() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
       {/* CONTENT */}
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col items-center px-4 pb-32 pt-24">
+      <SectionReveal className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col items-center px-4 pb-32 pt-24">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -2470,7 +3156,7 @@ function CrewQuarters() {
             <HobbyCard key={h.id} h={h} index={i} />
           ))}
         </div>
-      </div>
+      </SectionReveal>
     </section>
   );
 }
@@ -2795,33 +3481,27 @@ function TreasureChest() {
 
         {/* CONTENT inside the chest */}
         <div className="relative px-7 py-10 md:px-10 md:py-12">
-          <div className="text-center">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/85">
-              Treasure Inside
-            </p>
+          <div className="text-center mb-6">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/85">Treasure Inside</p>
             <h3 className="mt-2 font-serif text-3xl font-extrabold text-amber-50 drop-shadow-[0_2px_10px_rgba(255,180,60,0.6)] md:text-4xl">
               Set Sail Together
             </h3>
-            <p className="mt-3 text-sm text-amber-100/85 md:text-base">
-              Open to projects, collaborations, or just a chat about code, combat, or crypto.
+            <p className="mt-2 text-sm text-amber-100/80">
+              Open to projects, collabs, or a chat about code, combat, or crypto.
             </p>
-
-            <div className="mt-7 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <div className="w-full sm:w-[260px]" style={{ height: 50 }}>
-                <a
-                  href="mailto:tosiicp@gmail.com"
-                  className="flex h-full w-full items-center justify-center gap-2 rounded-lg border-2 px-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-950 shadow-[0_6px_20px_rgba(255,200,80,0.45)] transition hover:scale-[1.03]"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, #ffeaa0 0%, #f4c75a 55%, #c08820 100%)",
-                    borderColor: "#7a5210",
-                  }}
-                >
-                  ✉ tosiicp@gmail.com
-                </a>
-              </div>
-              <CallMeFlipCard />
-            </div>
+          </div>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <a
+              href="mailto:tosiicp@gmail.com"
+              className="w-full rounded-lg border-2 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-950 shadow-[0_6px_20px_rgba(255,200,80,0.45)] transition hover:scale-[1.02] text-center sm:w-auto"
+              style={{
+                background: "linear-gradient(180deg, #ffeaa0 0%, #f4c75a 55%, #c08820 100%)",
+                borderColor: "#7a5210",
+              }}
+            >
+              ✉ Send Message
+            </a>
+            <CallMeFlipCard />
           </div>
         </div>
 
@@ -2931,7 +3611,7 @@ function LaughtaleIsland() {
       ))}
 
       {/* CONTENT */}
-      <div className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col items-center px-4 pb-16 pt-24">
+      <SectionReveal className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col items-center px-4 pb-16 pt-24">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -2956,8 +3636,7 @@ function LaughtaleIsland() {
           className="mt-6 max-w-2xl text-center text-base font-medium text-white md:text-lg"
           style={{ textShadow: "0 2px 8px rgba(70,30,5,0.85), 0 0 14px rgba(70,30,5,0.4)" }}
         >
-          The journey&apos;s end. The Strawhats are docked, and the captain wants a word with you.
-          Drop your message — every great adventure starts with a hello.
+          The journey&apos;s end. The Strawhats are docked, and the captain wants a word with you. Drop your message — every great adventure starts with a hello.
         </motion.p>
 
         {/* Crew showcase — individual wanted posters per Strawhat */}
@@ -3087,7 +3766,7 @@ function LaughtaleIsland() {
             ))}
           </div>
         </motion.div>
-      </div>
+      </SectionReveal>
 
       {/* GREEN ISLAND with chest */}
       <div className="relative z-10 mt-8">
@@ -3164,6 +3843,9 @@ function LaughtaleIsland() {
           <p className="mt-2 text-[10px] uppercase tracking-[0.4em] text-amber-50/85 drop-shadow">
             — Gol D. Roger, Pirate King
           </p>
+          <p className="mt-10 text-[9px] uppercase tracking-[0.35em] text-amber-200/30">
+            ⚑ Scholars say an ancient stone glows beneath the voyage compass...
+          </p>
         </div>
       </div>
     </section>
@@ -3173,6 +3855,11 @@ function LaughtaleIsland() {
 export default function Page() {
   return (
     <main className="bg-black text-zinc-50 overflow-x-hidden">
+      {/* Easter eggs — global overlays */}
+      <HakiOverlay />
+      <PoneglyphModal />
+      <ScrollProgressBar />
+      <NavBar />
       <ScrollShip />
       <WantedPosterScene />
       <JourneyTransition />
