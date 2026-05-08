@@ -11,15 +11,14 @@ import {
   useTransform,
 } from "framer-motion";
 import {
-  SiJavascript,
   SiTypescript,
+  SiNextdotjs,
   SiReact,
   SiNodedotjs,
   SiPython,
   SiDjango,
   SiOracle,
-  SiPostgresql,
-  SiEthereum,
+  SiBitcoin,
   SiWhatsapp,
 } from "react-icons/si";
 
@@ -403,15 +402,13 @@ function SealedEnvelope({
 }
 
 const TECH = [
-  { Icon: SiJavascript, label: "JavaScript" },
   { Icon: SiTypescript, label: "TypeScript" },
   { Icon: SiReact, label: "React" },
+  { Icon: SiNextdotjs, label: "Next.js" },
   { Icon: SiNodedotjs, label: "Node.js" },
   { Icon: SiPython, label: "Python" },
   { Icon: SiDjango, label: "Django" },
   { Icon: SiOracle, label: "Oracle APEX" },
-  { Icon: SiPostgresql, label: "PostgreSQL" },
-  { Icon: SiEthereum, label: "Blockchain (learning)" },
 ];
 
 const PROJECTS = [
@@ -455,8 +452,7 @@ const VOYAGE = [
     org: "Infostream Ltd",
     current: true,
     bullets: [
-      "Built the company's new website from scratch",
-      "Oracle APEX development and internal training",
+      "Oracle APEX",
       "Collaborating within a professional development team",
     ],
   },
@@ -782,7 +778,7 @@ function WantedPosterScene() {
                   <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">Captain&apos;s Log</div>
                   <h3 className="mt-1 font-serif text-lg font-bold text-black/90">About the Pirate</h3>
                   <p className="mt-3 text-sm leading-relaxed text-black/75">
-                    Full-stack developer building end-to-end products — UI, APIs, and databases. Sailing the Grand Line of React, Node.js, Django, and SQL.
+                    A pirate who set sail on the Grand Line of software — charting frontends, conquering backends, and leaving no bug alive. TypeScript, React, Next.js up front; Python and SQL in the engine room. Still searching for the One Piece.
                   </p>
                   <div className="mt-5 flex flex-col gap-2">
                     <a
@@ -896,7 +892,7 @@ function WantedPosterScene() {
                   <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">Devil Fruits</div>
                   <h3 className="mt-1 font-serif text-lg font-bold text-black/90">Powers Wielded</h3>
                   <p className="mt-2 text-xs leading-relaxed text-black/65">
-                    The arsenal carried into every battle.
+                    Devil Fruits devoured on the voyage.
                   </p>
                   <div className="mt-4 flex flex-col gap-2">
                     {TECH.map(({ Icon, label }) => (
@@ -1138,11 +1134,16 @@ function JourneyTransition() {
               <div className="relative text-center">
                 <p className="text-[10px] uppercase tracking-[0.4em] text-black/70">Intercepted Message · Red Hair Pirates</p>
                 <h2 className="mt-3 font-serif text-3xl font-extrabold text-black md:text-4xl">
-                  A Pirate Needs No Permission
+                  My Gift for You
                 </h2>
                 <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
-                  &ldquo;This straw hat is a very important treasure to me. I am entrusting it to you. Promise to return it to me one day — when you have become a great pirate.&rdquo;
+                  &ldquo;I&apos;ll leave this hat with you. It&apos;s dear to me. Take good care of it! Come bring it back to me someday, once you&apos;ve become a great pirate!&rdquo;
                 </p>
+                <div className="mt-5 flex justify-center">
+                  <div className="overflow-hidden rounded border-2 border-[#8b6a32] shadow-[0_4px_16px_rgba(0,0,0,0.45)]" style={{ width: 160 }}>
+                    <Image src="/images/shanks-hat.jpg" alt="Shanks gives Luffy the straw hat" width={160} height={160} className="object-cover w-full" />
+                  </div>
+                </div>
                 <p className="mt-4 text-xs font-bold tracking-[0.3em] text-black/80">
                   — &apos;RED-HAIR&apos; SHANKS · CAPTAIN, RED HAIR PIRATES
                 </p>
@@ -1777,6 +1778,11 @@ function GrandLineTransition() {
                 <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
                   &ldquo;A man only truly dies when he is forgotten. Carry the will of those who came before — and decide your own death yourself.&rdquo;
                 </p>
+                <div className="mt-5 flex justify-center">
+                  <div className="overflow-hidden rounded border-2 border-[#8b6a32] shadow-[0_4px_16px_rgba(0,0,0,0.45)]" style={{ width: 260 }}>
+                    <Image src="/images/corazon-law.jpg" alt="Corazon and Law" width={260} height={146} className="object-cover w-full" />
+                  </div>
+                </div>
                 <p className="mt-4 text-xs font-bold tracking-[0.28em] text-black/80">
                   — TRAFALGAR D. WATER LAW · SURGEON OF DEATH, HEART PIRATES
                 </p>
@@ -2053,7 +2059,7 @@ const HOBBIES = [
     id: "crypto",
     label: "Crypto & Markets",
     tag: "Trading · DeFi · Blockchain",
-    icon: <SiEthereum />,
+    icon: <SiBitcoin />,
     color: "#f59e0b",
     glow: "rgba(245,158,11,0.55)",
     accent: "#fbbf24",

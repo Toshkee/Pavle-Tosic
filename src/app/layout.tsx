@@ -16,7 +16,31 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Pavle Tošić — Full-Stack Developer",
   description:
-    "Full-stack developer (React, Node.js, TypeScript, Django, PostgreSQL) exploring blockchain.",
+    "Full-stack developer (React, Next.js, TypeScript, Python, Django) sailing the Grand Line.",
+  metadataBase: new URL("https://pavletosic.com"),
+  openGraph: {
+    title: "Pavle Tošić — Full-Stack Developer",
+    description:
+      "Full-stack developer (React, Next.js, TypeScript, Python, Django) sailing the Grand Line.",
+    url: "https://pavletosic.com",
+    siteName: "Pavle Tošić",
+    images: [
+      {
+        url: "/images/me-anime.jpg",
+        width: 912,
+        height: 1178,
+        alt: "Pavle Tošić",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Pavle Tošić — Full-Stack Developer",
+    description:
+      "Full-stack developer (React, Next.js, TypeScript, Python, Django) sailing the Grand Line.",
+    images: ["/images/me-anime.jpg"],
+  },
 };
 
 export default function RootLayout({
