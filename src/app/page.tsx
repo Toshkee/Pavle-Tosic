@@ -819,6 +819,60 @@ function SealedEnvelope({
   );
 }
 
+/* ─────────────────────────────────────────────
+   Shared micro-components
+───────────────────────────────────────────── */
+
+// Red wax-seal pin used on parchment cards and posters
+function PinNail({ className = "absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5" }: { className?: string }) {
+  return (
+    <div className={`rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60 ${className}`} />
+  );
+}
+
+// Four corner iron nails on wooden boards
+function BoardNails() {
+  return (
+    <>
+      <div className="pointer-events-none absolute left-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
+      <div className="pointer-events-none absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
+      <div className="pointer-events-none absolute left-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
+      <div className="pointer-events-none absolute right-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
+    </>
+  );
+}
+
+// Animated wave shimmer lines on ocean sections
+function WaveShimmer({ count = 10, colorClass = "bg-white/25", topStart = 60 }: {
+  count?: number;
+  colorClass?: string;
+  topStart?: number;
+}) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <motion.div
+          key={i}
+          className={`pointer-events-none absolute h-[1.5px] rounded-full ${colorClass}`}
+          style={{ top: `${topStart + ((i * 7) % 28)}%`, left: `${(i * 19 + 3) % 95}%`, width: 28 + ((i * 13) % 60) }}
+          animate={{ x: [0, 12, 0], opacity: [0.12, 0.3, 0.12] }}
+          transition={{ duration: 3 + (i % 4) * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+        />
+      ))}
+    </>
+  );
+}
+
+// Shared wooden-board background (used on the WANTED board and QUEST BOARD)
+const WOOD_BOARD_STYLE = {
+  backgroundColor: "#6b4423",
+  backgroundImage: [
+    "repeating-linear-gradient(180deg, transparent 0 46px, rgba(0,0,0,0.28) 46px 48px)",
+    "repeating-linear-gradient(90deg, transparent 0 220px, rgba(0,0,0,0.18) 220px 222px)",
+    "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0))",
+  ].join(", "),
+} as const;
+
 const TECH = [
   { Icon: SiTypescript, label: "TypeScript" },
   { Icon: SiReact, label: "React" },
@@ -1195,23 +1249,13 @@ function WantedPosterScene() {
           {/* The wooden board */}
           <div
             className="relative rounded-md border-4 border-[#2a1808] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.7)] sm:p-6 md:p-10"
-            style={{
-              backgroundColor: "#6b4423",
-              backgroundImage: [
-                "repeating-linear-gradient(180deg, transparent 0 46px, rgba(0,0,0,0.28) 46px 48px)",
-                "repeating-linear-gradient(90deg, transparent 0 220px, rgba(0,0,0,0.18) 220px 222px)",
-                "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0))",
-              ].join(", "),
-            }}
+            style={WOOD_BOARD_STYLE}
           >
             {/* Inner shadow vignette */}
             <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_60px_rgba(0,0,0,0.55)]" />
 
             {/* Decorative corner nails */}
-            <div className="pointer-events-none absolute left-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-            <div className="pointer-events-none absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-            <div className="pointer-events-none absolute left-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-            <div className="pointer-events-none absolute right-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
+            <BoardNails />
 
             {/* Layout: bio | wanted poster | skills */}
             <div className="relative grid items-start gap-6 lg:grid-cols-[1fr_auto_1fr]">
@@ -1225,7 +1269,7 @@ function WantedPosterScene() {
                 style={{ transformOrigin: "top center" }}
                 className="relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
               >
-                <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+                <PinNail />
                 <div
                   className="pointer-events-none absolute inset-0 rounded-sm"
                   style={{ boxShadow: "inset 0 0 35px rgba(120,80,30,0.32)" }}
@@ -1276,8 +1320,8 @@ function WantedPosterScene() {
                   }}
                 >
                 {/* Two pins at top */}
-                <div className="absolute left-6 -top-2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
-                <div className="absolute right-6 -top-2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+                <PinNail className="absolute left-6 -top-2 h-3.5 w-3.5" />
+                <PinNail className="absolute right-6 -top-2 h-3.5 w-3.5" />
 
                 {/* Aging vignette */}
                 <div
@@ -1339,7 +1383,7 @@ function WantedPosterScene() {
                 style={{ transformOrigin: "top center" }}
                 className="relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
               >
-                <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+                <PinNail />
                 <div
                   className="pointer-events-none absolute inset-0 rounded-sm"
                   style={{ boxShadow: "inset 0 0 35px rgba(120,80,30,0.32)" }}
@@ -1538,19 +1582,7 @@ function JourneyTransition() {
       </motion.div>
 
       {/* Wave shimmer */}
-      {Array.from({ length: 10 }).map((_, i) => {
-        const t = 68 + ((i * 7) % 26);
-        const l = (i * 19 + 3) % 95;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-[1.5px] rounded-full bg-cyan-100/35"
-            style={{ top: `${t}%`, left: `${l}%`, width: 28 + ((i * 13) % 60) }}
-            animate={{ x: [0, 12, 0], opacity: [0.12, 0.35, 0.12] }}
-            transition={{ duration: 3 + (i % 4) * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-          />
-        );
-      })}
+      <WaveShimmer count={10} colorClass="bg-cyan-100/35" topStart={68} />
 
       {/* Centered content */}
       <div className="relative z-10 mx-auto flex min-h-[80vh] max-w-5xl flex-col items-center justify-center gap-10 px-6 py-20 md:flex-row md:gap-14">
@@ -1594,7 +1626,7 @@ function JourneyTransition() {
                 className="pointer-events-none absolute inset-0 rounded-sm"
                 style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
               />
-              <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+              <PinNail />
 
               <div className="relative text-center">
                 <p className="text-[10px] uppercase tracking-[0.4em] text-black/70">Intercepted Message · Red Hair Pirates</p>
@@ -1944,9 +1976,7 @@ function ProjectModal({ project, onClose }: { project: typeof PROJECTS[number] |
             <div className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 45px rgba(120,80,30,0.32)" }} />
 
             {/* Pin */}
-            <div className="absolute left-1/2 -top-2 -translate-x-1/2 z-20">
-              <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
-            </div>
+            <PinNail className="absolute left-1/2 -top-2 -translate-x-1/2 z-20 h-3.5 w-3.5" />
 
             <div className="relative p-7 pt-8">
               {/* Close */}
@@ -2021,23 +2051,13 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
       {/* The wooden board */}
       <div
         className="relative rounded-md border-4 border-[#2a1808] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.65)] sm:p-6 md:p-8"
-        style={{
-          backgroundColor: "#6b4423",
-          backgroundImage: [
-            "repeating-linear-gradient(180deg, transparent 0 46px, rgba(0,0,0,0.28) 46px 48px)",
-            "repeating-linear-gradient(90deg, transparent 0 220px, rgba(0,0,0,0.18) 220px 222px)",
-            "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0))",
-          ].join(", "),
-        }}
+        style={WOOD_BOARD_STYLE}
       >
         {/* Inner shadow vignette */}
         <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]" />
 
         {/* Decorative corner nails */}
-        <div className="pointer-events-none absolute left-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-        <div className="pointer-events-none absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-        <div className="pointer-events-none absolute left-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-        <div className="pointer-events-none absolute right-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
+        <BoardNails />
 
         <div className="relative grid gap-7 md:grid-cols-2">
           {projects.map((p, i) => {
@@ -2060,9 +2080,7 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
                 onClick={() => setActive(p)}
               >
                 {/* Pinned nail at top */}
-                <div className="absolute left-1/2 -top-2 -translate-x-1/2">
-                  <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
-                </div>
+                <PinNail />
 
                 {/* Parchment aging vignette */}
                 <div
@@ -2106,26 +2124,7 @@ function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
         </div>
       </div>
 
-      {/* Hanging lantern (right side) */}
-      <motion.div
-        className="absolute -top-3 right-[10%] z-40 origin-top"
-        animate={{ rotate: [-4, 4, -4] }}
-        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <div className="mx-auto h-12 w-px bg-black/70" />
-        <div className="relative -mt-1 mx-auto h-12 w-9 rounded border border-black/70 bg-gradient-to-b from-[#2e1a08] to-[#0e0804] shadow-xl">
-          <motion.div
-            className="absolute inset-1 rounded bg-gradient-to-b from-yellow-200 via-amber-400 to-orange-600 blur-[1.5px]"
-            animate={{ opacity: [0.75, 1, 0.75] }}
-            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute -inset-4 rounded-full bg-yellow-300/35 blur-2xl"
-            animate={{ scale: [1, 1.18, 1], opacity: [0.55, 0.95, 0.55] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </div>
-      </motion.div>
+      <HangingLantern className="-top-3 right-[10%]" />
     </div>
   );
 }
@@ -2436,7 +2435,7 @@ function GrandLineTransition() {
                 style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
               />
               {/* Pin */}
-              <div className="absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+              <PinNail />
 
               <div className="relative">
                 <p className="text-[10px] uppercase tracking-[0.45em] text-black/70">Intercepted Den Den Mushi · Heart Pirates</p>
@@ -2501,19 +2500,7 @@ function VoyageLog() {
       <div className="pointer-events-none absolute inset-x-0 top-[48%] h-[14%] bg-gradient-to-b from-white/8 via-white/4 to-transparent blur-2xl" />
 
       {/* Wave shimmer */}
-      {Array.from({ length: 10 }).map((_, i) => {
-        const t = 60 + ((i * 7) % 28);
-        const l = (i * 21 + 5) % 95;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-[1.5px] rounded-full bg-white/25"
-            style={{ top: `${t}%`, left: `${l}%`, width: 28 + ((i * 11) % 60) }}
-            animate={{ x: [0, 12, 0], opacity: [0.12, 0.3, 0.12] }}
-            transition={{ duration: 3 + (i % 4) * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.35 }}
-          />
-        );
-      })}
+      <WaveShimmer count={10} colorClass="bg-white/25" topStart={60} />
 
       {/* Drifting clouds */}
       <Cloud top="10%" width={200} duration={75} delay={0} />
@@ -2609,11 +2596,7 @@ function VoyageLog() {
                 }}
               >
                 {/* Pin */}
-                <div
-                  className={`absolute -top-2 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60 ${
-                    i % 2 === 0 ? "right-6" : "left-6"
-                  }`}
-                />
+                <PinNail className={`absolute -top-2 h-3.5 w-3.5 ${i % 2 === 0 ? "right-6" : "left-6"}`} />
                 {/* Aging vignette */}
                 <div
                   className="pointer-events-none absolute inset-0 rounded-sm"
@@ -3705,8 +3688,8 @@ function LaughtaleIsland() {
                 }}
               >
                 {/* Pins */}
-                <div className="absolute left-3 -top-1.5 z-10 h-3 w-3 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
-                <div className="absolute right-3 -top-1.5 z-10 h-3 w-3 rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60" />
+                <PinNail className="absolute left-3 -top-1.5 z-10 h-3 w-3" />
+                <PinNail className="absolute right-3 -top-1.5 z-10 h-3 w-3" />
 
                 <div className="relative p-2">
                   <p className="text-center font-serif text-[8px] uppercase tracking-[0.35em] text-amber-950/70">

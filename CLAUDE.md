@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Coding Rules
+
+- Think before coding.
+- Prefer simple, maintainable solutions.
+- Modify existing patterns instead of inventing new architecture.
+- Keep files small and readable.
+- Avoid unnecessary abstractions and dependencies.
+- Preserve existing code style and structure.
+- Write production-ready code, not prototypes.
+- Prioritize clarity over cleverness.
+- Avoid premature optimization.
+- Fix root causes, not symptoms.
+- Use strong typing; avoid `any`.
+- Do not rewrite unrelated code.
+- Minimize side effects and complexity.
+- Make surgical, focused changes.
+- Optimize for developer experience and long-term maintainability.
+- Build fast, but keep the codebase clean.
+
 ## Commands
 
 ```bash
@@ -15,16 +34,25 @@ No test suite configured.
 
 ## Deployment
 
-Deployed to **Cloudflare Workers** via `@opennextjs/cloudflare` + `wrangler`. The worker name is `my-portofolio` (note the misspelling — kept intentionally; renaming requires updating Cloudflare config). No deploy script exists in `package.json`; use the standard `opennextjs-cloudflare` build + `wrangler deploy` flow.
+Deployed to **Cloudflare Workers** via `@opennextjs/cloudflare` + `wrangler`. The worker name is `my-portofolio` (note the misspelling — kept intentionally; renaming requires updating Cloudflare config). No deploy script exists in `package.json`. Deploy flow:
+
+```bash
+npx opennextjs-cloudflare build   # Build for Cloudflare Workers
+npx wrangler deploy               # Deploy to Cloudflare
+npx wrangler dev                  # Local Cloudflare Workers preview
+```
+
+Config lives in `open-next.config.ts` (uses `defineCloudflareConfig()`) and `wrangler.jsonc`.
 
 ## Stack
 
-- **Next.js 16** (App Router) with TypeScript
+- **Next.js 16** + **React 19** (App Router) with TypeScript
 - **Tailwind CSS v4** — configured via `postcss.config.mjs`, no `tailwind.config.*` needed
 - **Framer Motion** — primary animation library
 - **GSAP** — available but currently unused
 - **Lenis** (`@studio-freight/lenis`) — smooth scroll, available but currently unused
 - **react-icons** (Si* icons from `react-icons/si`)
+- **Fonts** — Geist Sans + Geist Mono loaded via `next/font/google` in `layout.tsx`
 
 ## Architecture
 
@@ -41,10 +69,10 @@ This is a single-page portfolio. All content lives in `src/app/page.tsx` as one 
 `page.tsx` is ~3000 lines and contains many inline SVG scenes (gradients, patterns, island/mountain shapes). When editing visuals, expect dense SVG markup mixed with Framer Motion animations.
 
 **Supporting files:**
-- `src/app/components/CinematicBackground.tsx` — wraps content with a fixed video background (`/video/ocean.mp4`) that parallax-scales on scroll via Framer Motion
+- `src/app/layout.tsx` — root layout; sets `<html lang="en">`, metadata (OG, Twitter cards, `metadataBase: pavletosic.com`), font CSS variables
 - `src/app/useActiveSection.ts` — `IntersectionObserver`-based hook to track which section is currently in view (used for nav highlighting)
 - `src/app/globals.css` — global styles including custom CSS classes like `.poster-parchment`, `.spotlight`, `.particles` used heavily in `page.tsx`
-- `src/app/styles/cinematic.css` — currently empty
+- `public/images/` — One Piece character images (luffy.jpg, zoro.jpg, etc.) and profile photos referenced by name in `page.tsx`
 
 ## Design Theme
 
@@ -52,7 +80,6 @@ One Piece anime aesthetic throughout — sections are framed as "arcs" and "port
 
 ## Notes
 
-- `CinematicBackground` references `/video/ocean.mp4`, but only `cs2.mp4` and `gaming.mp4` exist in `public/video/`. The ocean video is currently missing — if the hero background looks broken, that's why. Either add the file or change the `src` in `CinematicBackground.tsx`.
 - `section` elements get `scroll-margin-top: 110px` globally (in `globals.css`) to account for sticky nav offset
 - Section IDs are used by `useActiveSection` — keep them in sync if adding nav items
 - This is a `"use client"` page; if you split components out, be deliberate about the client/server boundary (Next.js 16 App Router defaults to server)
