@@ -2781,12 +2781,12 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
           animate={{ rotateY: flipped ? 180 : 0 }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           className="relative h-64 w-full sm:h-72 lg:h-80"
-          style={{ transformStyle: "preserve-3d" }}
+          style={{ transformStyle: "preserve-3d", WebkitTransformStyle: "preserve-3d" }}
         >
           {/* FRONT — media */}
           <div
             className="absolute inset-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
-            style={{ backfaceVisibility: "hidden", boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)` }}
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "translateZ(0)", boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)` }}
           >
             {activeVideo ? (
               <video
@@ -2874,7 +2874,9 @@ function HobbyCard({ h, index }: { h: Hobby; index: number }) {
             className="absolute inset-0 flex flex-col gap-3 overflow-y-auto rounded-2xl border border-white/10 p-6 shadow-2xl"
             style={{
               backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
+              WebkitTransform: "rotateY(180deg)",
               background: `linear-gradient(145deg, ${h.color}22 0%, rgba(10,15,30,0.92) 60%, rgba(10,15,30,0.96) 100%)`,
               boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)`,
             }}
