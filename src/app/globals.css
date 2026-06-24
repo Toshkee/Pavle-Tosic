@@ -1,152 +1,206 @@
 @import "tailwindcss";
 
+/* =================================================================
+   STUDIO LIGHT — warm cream base, burnt-amber accent grounded by
+   teal. Whole site is set in Mononoki (monospace).
+   Token-driven (Tailwind v4 @theme).
+================================================================= */
+
+@theme {
+  /* Mononoki everywhere — the whole site is monospace. */
+  --font-sans: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+  --font-display: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+  --font-mono: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+
+  /* Surfaces & text */
+  --color-bg: #f3ecdf; /* page background */
+  --color-surface: #ffffff; /* glass cards / raised panels */
+  --color-ink: #211c16; /* headings — near-black warm */
+  --color-body: #463f35; /* body copy (AA on cream) */
+  --color-muted: #6f6859; /* secondary text (AA on cream) */
+  --color-faint: #a99f8e; /* decorative only */
+  --color-line: rgba(33, 28, 22, 0.12);
+  --color-line-strong: rgba(33, 28, 22, 0.2);
+
+  /* Accent — burnt amber, grounded by deep teal */
+  --color-accent: #e0853a; /* the one chromatic accent (fills/dots) */
+  --color-accent-hover: #cf741d; /* button-fill hover (keeps AA w/ ink text) */
+  --color-accent-ink: #a14d0c; /* accent TEXT / links (AA: 4.99:1 on cream) */
+  --color-accent-2: #0f766e; /* teal partner (AA on cream) */
+  --color-accent-soft: rgba(224, 133, 58, 0.14); /* tinted surface */
+}
+
 /* ================= BASE ================= */
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #0a0a0a;
-  color: #ededed;
-  overflow-x: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-body);
+  font-family: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+  /* `clip` (not `hidden`) so body does not become a scroll container, which
+     would break position:sticky on the left rail. */
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: #211c16;
 }
 
 section {
-  scroll-margin-top: 64px;
+  scroll-margin-top: 88px;
 }
 
-@media (min-width: 768px) {
-  section {
-    scroll-margin-top: 110px;
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent-ink);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ================= LENIS SMOOTH SCROLL ================= */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Frosted panel used to lift dense content off the cream background. */
+.glass {
+  background: color-mix(in srgb, var(--color-surface) 68%, transparent);
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  border: 1px solid var(--color-line);
+}
+
+/* ================= HELPERS ================= */
+
+/* Gradient accent text — amber → teal, used sparingly */
+.text-gradient {
+  background: linear-gradient(
+    100deg,
+    var(--color-accent) 0%,
+    var(--color-accent-2) 120%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Force a multi-path logo (e.g. Express, which defaults to black) to take
+   the element's text colour so it can be tinted to the theme. */
+.icon-fill-current :where(svg, svg *) {
+  fill: currentColor;
+}
+
+/* ================= ANIMATED BACKGROUND (Aurora) ================= */
+
+.aurora-blob {
+  position: absolute;
+  width: 44rem;
+  height: 44rem;
+  border-radius: 9999px;
+  filter: blur(90px);
+  will-change: transform;
+}
+.blob-amber {
+  background: radial-gradient(circle, var(--color-accent), transparent 62%);
+  top: -14%;
+  left: -10%;
+  opacity: 0.55;
+  animation: drift1 24s ease-in-out infinite;
+}
+.blob-teal {
+  background: radial-gradient(circle, var(--color-accent-2), transparent 62%);
+  bottom: -16%;
+  right: -8%;
+  opacity: 0.42;
+  animation: drift2 30s ease-in-out infinite;
+}
+.blob-amber2 {
+  background: radial-gradient(circle, #cf741d, transparent 60%);
+  top: 34%;
+  left: 42%;
+  opacity: 0.38;
+  animation: drift3 34s ease-in-out infinite;
+}
+@keyframes drift1 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(10vw, 7vh) scale(1.14);
+  }
+}
+@keyframes drift2 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-9vw, -6vh) scale(1.1);
+  }
+}
+@keyframes drift3 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-6vw, 5vh) scale(1.18);
   }
 }
 
-/* ================= GLOBAL OVERLAY TEXT TRIAL ================= */
-/* Apply the warm-shadow overlay treatment to all major text on top of section
-   imagery. Trial — easy to roll back by removing this block. */
-
-main h1,
-main h2,
-main h3,
-main p,
-main li {
-  text-shadow:
-    0 2px 10px rgba(70, 30, 5, 0.85),
-    0 0 14px rgba(70, 30, 5, 0.45);
-}
-
-/* Keep parchment text crisp (no shadow on cream-coloured cards) */
-main .parchment-text,
-main [data-parchment] *,
-main .text-black,
-main .text-black\/90,
-main .text-black\/80,
-main .text-black\/75,
-main .text-black\/72,
-main .text-black\/70,
-main .text-black\/65,
-main .text-black\/60,
-main .text-black\/55,
-main .text-black\/50,
-main .text-black\/45,
-main .text-amber-950,
-main .text-amber-950\/85,
-main .text-amber-950\/80,
-main .text-amber-950\/75,
-main .text-amber-950\/70,
-main .text-amber-900\/80,
-main .text-amber-900\/75,
-main .text-amber-900\/70,
-main .text-amber-900\/60 {
-  text-shadow: none;
-}
-
-/* ================= HERO / PARCHMENT ================= */
-
-.poster-parchment {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(1200px circle at 50% 20%, rgba(0,0,0,0.18), transparent 60%),
-    radial-gradient(900px circle at 10% 10%, rgba(0,0,0,0.22), transparent 55%),
-    radial-gradient(900px circle at 90% 15%, rgba(0,0,0,0.18), transparent 55%),
-    linear-gradient(180deg, #d6bf8a 0%, #cfb47a 45%, #c9ad7a 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(0,0,0,0.18),
-    inset 0 0 80px rgba(0,0,0,0.25);
-}
-
-/* ================= ATMOSPHERE ================= */
-
-.spotlight {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    1200px circle at 50% 18%,
-    rgba(255,255,255,0.06),
-    transparent 60%
-  );
-}
-
-.particles {
-  position: absolute;
-  inset: 0;
-  opacity: 0.4;
-}
-
-.noise {
-  position: absolute;
-  inset: 0;
-  opacity: 0.05;
-}
-
-/* ================= JOURNEY / OCEAN ================= */
-
-.journey {
+/* Animated underline that wipes in left-to-right on hover/focus. */
+.link-underline {
   position: relative;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 200px 0 260px;
 }
-
-/* ================= ISLANDS ================= */
-
-.island {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120vh;
-}
-
-.island::before {
+.link-underline::after {
   content: "";
   position: absolute;
-  top: -48px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: rgba(90,70,40,0.9);
-  box-shadow: 0 0 0 8px rgba(90,70,40,0.15);
+  left: 0;
+  bottom: 0;
+  height: 1.5px;
+  width: 100%;
+  background-color: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.link-underline:hover::after,
+.link-underline:focus-visible::after {
+  transform: scaleX(1);
 }
 
-/* ================= OCEAN AMBIENCE ================= */
+/* ================= ACCESSIBILITY ================= */
 
-@keyframes oceanDrift {
-  0%   { transform: translateX(-2%) translateY(0); }
-  50%  { transform: translateX(2%) translateY(-1%); }
-  100% { transform: translateX(-2%) translateY(0); }
-}
-
-@keyframes particleRise {
-  from { transform: translateY(0); opacity: 0.4; }
-  to   { transform: translateY(-200px); opacity: 0; }
-}
-
-/* Utility helpers */
-.ocean-drift {
-  animation: oceanDrift 18s ease-in-out infinite;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

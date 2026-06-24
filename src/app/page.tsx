@@ -1,3860 +1,1059 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useRef, useMemo, useEffect, useCallback, type ReactNode } from "react";
-import { useActiveSection } from "./useActiveSection";
+import {
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import {
   motion,
   AnimatePresence,
+  useScroll,
   useMotionValue,
   useSpring,
-  useScroll,
-  useTransform,
 } from "framer-motion";
-import {
-  SiTypescript,
-  SiNextdotjs,
-  SiReact,
-  SiNodedotjs,
-  SiPython,
-  SiDjango,
-  SiOracle,
-  SiBitcoin,
-  SiWhatsapp,
-} from "react-icons/si";
+import { Icon } from "@iconify/react";
+import { SiGithub, SiLinkedin, SiWhatsapp, SiGmail } from "react-icons/si";
+import { useActiveSection } from "./useActiveSection";
+import SmoothScroll from "./SmoothScroll";
+import Aurora from "./Aurora";
+import InteractiveGrid from "./InteractiveGrid";
+import GitHubGraph from "./GitHubGraph";
+import { registerIcons } from "./iconData";
 
-/* ─────────────────────────────────────────────
-   Reusable animation helpers
-───────────────────────────────────────────── */
+// Make the bundled Devicon set available for synchronous SSR rendering.
+registerIcons();
 
-// Letter-by-letter reveal heading
-function AnimatedHeading({
-  text,
-  className = "",
-  as: Tag = "h2",
-  delay = 0,
-}: {
-  text: string;
-  className?: string;
-  as?: "h1" | "h2" | "h3";
-  delay?: number;
-}) {
-  const words = useMemo(() => text.split(" "), [text]);
-  const MotionTag = motion[Tag];
-  return (
-    <MotionTag
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.4 }}
-      transition={{ staggerChildren: 0.04, delayChildren: delay }}
-      className={className}
-      aria-label={text}
-    >
-      {words.map((word, wi) => (
-        <span key={wi} className="inline-block whitespace-nowrap">
-          {Array.from(word).map((ch, ci) => (
-            <motion.span
-              key={ci}
-              variants={{
-                hidden: { opacity: 0, y: "0.5em", filter: "blur(8px)" },
-                visible: { opacity: 1, y: 0, filter: "blur(0px)" },
-              }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              className="inline-block"
-            >
-              {ch}
-            </motion.span>
-          ))}
-          {wi < words.length - 1 && <span className="inline-block">&nbsp;</span>}
-        </span>
-      ))}
-    </MotionTag>
-  );
-}
+/* ─────────────────────────────────────────────────────────────
+   DATA  (from CV)
+───────────────────────────────────────────────────────────── */
 
-// 3D tilt that follows the cursor (used on the wanted poster)
-function TiltCard({
-  children,
-  className = "",
-  max = 12,
-  style,
-}: {
-  children: ReactNode;
-  className?: string;
-  max?: number;
-  style?: React.CSSProperties;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const rx = useMotionValue(0);
-  const ry = useMotionValue(0);
-  const srx = useSpring(rx, { stiffness: 150, damping: 16, mass: 0.5 });
-  const sry = useSpring(ry, { stiffness: 150, damping: 16, mass: 0.5 });
+const NAME = "Pavle Tošić";
+const ROLE = "Software Developer";
+const LOCATION = "Montenegro";
+const TAGLINE =
+  "I build web apps front to back — from Oracle APEX, .NET and C# to React and TypeScript.";
+const SUMMARY_SHORT =
+  "Software developer at Infostream, building web & enterprise applications.";
 
-  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = ref.current;
-    if (!el) return;
-    const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    ry.set(px * max);
-    rx.set(-py * max);
-  };
-  const onLeave = () => {
-    rx.set(0);
-    ry.set(0);
-  };
+const SOCIAL = {
+  email: "tosiicp@gmail.com",
+  github: "https://github.com/Toshkee",
+  linkedin: "https://www.linkedin.com/in/tosiicp/",
+  whatsapp: "https://wa.me/38267474438",
+};
 
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      style={{ ...style, rotateX: srx, rotateY: sry, transformPerspective: 1000, transformStyle: "preserve-3d" }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Letter parallax tilt
-───────────────────────────────────────────── */
-function LetterParallax({ children }: { children: ReactNode }) {
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const rotateX = useTransform(my, [0, 1], [6, -6]);
-  const rotateY = useTransform(mx, [0, 1], [-6, 6]);
-  const springRX = useSpring(rotateX, { stiffness: 100, damping: 20 });
-  const springRY = useSpring(rotateY, { stiffness: 100, damping: 20 });
-
-  const handleMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    mx.set((e.clientX - r.left) / r.width);
-    my.set((e.clientY - r.top) / r.height);
-  }, [mx, my]);
-
-  const handleLeave = useCallback(() => {
-    mx.set(0.5);
-    my.set(0.5);
-  }, [mx, my]);
-
-  return (
-    <motion.div
-      style={{ rotateX: springRX, rotateY: springRY, transformStyle: "preserve-3d" }}
-      className="[perspective:900px]"
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   EASTER EGGS
-───────────────────────────────────────────── */
-
-// Conqueror's Haki — Shift+H
-function HakiOverlay() {
-  const [active, setActive] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.shiftKey && e.key === "H") setActive(true);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  useEffect(() => {
-    if (!active) return;
-    const t = setTimeout(() => setActive(false), 2400);
-    return () => clearTimeout(t);
-  }, [active]);
-
-  return (
-    <AnimatePresence>
-      {active && (
-        <motion.div
-          key="haki"
-          className="pointer-events-none fixed inset-0 z-[999]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          {/* Dark veil */}
-          <motion.div
-            className="absolute inset-0 bg-black"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0.92, 0.78, 0.88, 0.55, 0] }}
-            transition={{ duration: 2.4, times: [0, 0.07, 0.2, 0.38, 0.72, 1] }}
-          />
-          {/* Lightning SVG */}
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <defs>
-              <filter id="hakiGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="1.2" result="blur" />
-                <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-            </defs>
-            {[
-              { d: "M8 0 L19 22 L12 22 L28 52 L18 52 L42 100", delay: 0 },
-              { d: "M50 0 L58 18 L52 18 L68 42 L61 42 L80 100", delay: 0.07 },
-              { d: "M82 3 L90 28 L83 28 L94 58 L87 58 L99 95", delay: 0.13 },
-              { d: "M28 0 L37 26 L30 26 L46 56 L38 56 L54 100", delay: 0.05 },
-              { d: "M0 18 L14 38 L7 38 L23 68 L15 68 L32 100", delay: 0.1 },
-            ].map(({ d, delay }, i) => (
-              <motion.path
-                key={i}
-                d={d}
-                stroke="rgba(170,100,255,0.95)"
-                strokeWidth="0.6"
-                fill="none"
-                filter="url(#hakiGlow)"
-                initial={{ opacity: 0, pathLength: 0 }}
-                animate={{ opacity: [0, 1, 0.8, 1, 0.4, 0], pathLength: [0, 1, 1, 1, 1, 1] }}
-                transition={{ duration: 1.8, delay, ease: "easeOut" }}
-              />
-            ))}
-          </svg>
-          {/* Title */}
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center"
-            initial={{ opacity: 0, scale: 0.65 }}
-            animate={{ opacity: [0, 1, 1, 0], scale: [0.65, 1.08, 1.02, 0.92] }}
-            transition={{ duration: 2.2, times: [0, 0.1, 0.65, 1] }}
-          >
-            <div className="text-center">
-              <p className="font-serif text-[11px] uppercase tracking-[0.6em] text-purple-300/75">Conqueror&apos;s</p>
-              <p className="font-serif text-6xl font-black tracking-wider text-white drop-shadow-[0_0_40px_rgba(190,100,255,0.95)] md:text-8xl">
-                HAKI
-              </p>
-              <p className="mt-1 font-serif text-[10px] uppercase tracking-[0.45em] text-purple-400/65">覇王色の覇気</p>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-// Poneglyph — triggered via custom DOM event
-const GLITCH_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-const PONEGLYPH_MESSAGE = `Monkey D. Luffy is a young pirate with an unshakable dream: to become the King of the Pirates. From the moment he set sail, his journey has been defined by freedom, loyalty, and relentless determination. Alongside his crew, the Straw Hat Pirates, Luffy travels across dangerous seas, facing powerful enemies and impossible odds, but never backing down.
-
-What makes his journey special isn't just the battles he wins, but the people he meets and the bonds he builds along the way. Every island shapes him a little more, pushing him closer to the legendary treasure known as the One Piece and the legacy of the Pirate King he hopes to surpass.
-
-But he's got another dream...`;
-
-function scrambleText(text: string) {
-  return text
-    .split("")
-    .map((c) => (/[A-Za-z0-9]/.test(c) ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : c))
-    .join("");
-}
-
-function PoneglyphModal() {
-  const [open, setOpen] = useState(false);
-  const [translated, setTranslated] = useState(false);
-  const [display, setDisplay] = useState(PONEGLYPH_MESSAGE);
-
-  useEffect(() => {
-    const on = () => {
-      setTranslated(false);
-      setDisplay(scrambleText(PONEGLYPH_MESSAGE));
-      setOpen(true);
-    };
-    window.addEventListener("show-poneglyph", on);
-    return () => window.removeEventListener("show-poneglyph", on);
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
-  // Idle shimmer — re-scramble while not translated
-  useEffect(() => {
-    if (!open || translated) return;
-    const id = setInterval(() => setDisplay(scrambleText(PONEGLYPH_MESSAGE)), 95);
-    return () => clearInterval(id);
-  }, [open, translated]);
-
-  // Decode animation
-  useEffect(() => {
-    if (!translated) return;
-    const target = PONEGLYPH_MESSAGE;
-    const total = target.length;
-    const step = Math.max(2, Math.floor(total / 90));
-    let revealed = 0;
-    const id = setInterval(() => {
-      revealed += step;
-      const out = target
-        .split("")
-        .map((c, i) => {
-          if (i < revealed) return c;
-          return /[A-Za-z0-9]/.test(c) ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)] : c;
-        })
-        .join("");
-      setDisplay(out);
-      if (revealed >= total) {
-        clearInterval(id);
-        setDisplay(target);
-      }
-    }, 32);
-    return () => clearInterval(id);
-  }, [translated]);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-[990] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="absolute inset-0 bg-black/82 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <motion.div
-            className="relative w-full max-w-3xl overflow-hidden rounded-xl border border-blue-400/28"
-            style={{
-              background: "radial-gradient(ellipse at 50% 0%, #091522 0%, #040c14 100%)",
-              boxShadow: "0 0 70px rgba(80,140,255,0.18), inset 0 0 50px rgba(0,0,0,0.6)",
-            }}
-            initial={{ scale: 0.85, y: 40 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.85, y: 40 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="relative max-h-[85vh] overflow-y-auto p-6 md:p-8">
-              <div className="mb-5 flex items-start justify-between">
-                <div>
-                  <p className="text-[9px] uppercase tracking-[0.6em] text-blue-400/55">Ancient Poneglyph</p>
-                  <p className="mt-0.5 font-serif text-sm text-blue-200/75">Road Stone · Laugh&apos;Tale Fragment</p>
-                </div>
-                <button onClick={() => setOpen(false)} className="text-blue-300/28 transition hover:text-blue-300 text-lg">✕</button>
-              </div>
-
-              <div
-                className={`whitespace-pre-wrap rounded-lg border p-5 md:p-6 font-mono text-[12px] md:text-sm leading-[1.85] transition-colors ${
-                  translated
-                    ? "border-blue-400/30 bg-blue-950/40 text-blue-100/90"
-                    : "border-blue-400/15 bg-blue-950/25 text-blue-300/60 tracking-[0.05em]"
-                }`}
-              >
-                {display}
-              </div>
-
-              {!translated ? (
-                <>
-                  <p className="mt-3 text-center text-[10px] text-blue-400/45">
-                    Only a few in the world&apos;s history could read poneglyphs...
-                  </p>
-                  <button
-                    onClick={() => setTranslated(true)}
-                    className="mt-3 w-full rounded-lg border border-blue-400/28 bg-blue-400/8 py-2.5 text-sm font-bold tracking-[0.25em] text-blue-300 transition hover:bg-blue-400/16"
-                  >
-                    🌸 Robin Translates
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="mt-3 text-right text-[10px] text-blue-400/45">— Nico Robin, Scholar of Ohara</p>
-                  <button
-                    onClick={() => {
-                      setTranslated(false);
-                      setDisplay(scrambleText(PONEGLYPH_MESSAGE));
-                    }}
-                    className="mt-3 w-full rounded-lg border border-blue-400/18 bg-transparent py-2 text-xs text-blue-400/45 transition hover:text-blue-400"
-                  >
-                    ← Back to ancient text
-                  </button>
-                </>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Navigation bar
-───────────────────────────────────────────── */
-const NAV_ITEMS = [
-  { id: "wanted",  label: "Wanted" },
-  { id: "journey", label: "Island" },
-  { id: "voyage",  label: "Voyage" },
-  { id: "crew",    label: "Crew" },
+const NAV = [
+  { id: "about", label: "About" },
+  { id: "stack", label: "Stack" },
+  { id: "work", label: "Work" },
+  { id: "github", label: "GitHub" },
+  { id: "experience", label: "Experience" },
   { id: "contact", label: "Contact" },
+] as const;
+
+const SECTION_IDS = NAV.map((s) => s.id);
+
+// Programming languages & tools with real logos (Devicon, bundled offline).
+// `tint` icons are recoloured to stay legible / avoid purple brand colours.
+type Tech = { name: string; icon: string; tint?: "amber" | "cream" | "stroke" };
+const STACK: { group: string; items: Tech[] }[] = [
+  {
+    group: "Languages",
+    items: [
+      { name: "JavaScript", icon: "devicon:javascript" },
+      { name: "TypeScript", icon: "devicon:typescript" },
+      { name: "C#", icon: "devicon-plain:csharp", tint: "amber" },
+      { name: "Python", icon: "devicon:python" },
+      { name: "SQL", icon: "tabler:sql", tint: "stroke" },
+    ],
+  },
+  {
+    group: "Frontend",
+    items: [
+      { name: "React", icon: "devicon:react" },
+      { name: "HTML5", icon: "devicon:html5" },
+      { name: "CSS3", icon: "devicon:css3" },
+    ],
+  },
+  {
+    group: "Backend & runtime",
+    items: [
+      { name: "Node.js", icon: "devicon:nodejs" },
+      { name: "Express", icon: "devicon:express", tint: "cream" },
+      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber" },
+    ],
+  },
+  {
+    group: "Platforms & tooling",
+    items: [
+      { name: "Oracle APEX", icon: "devicon:oracle" },
+      { name: "PostgreSQL", icon: "devicon:postgresql" },
+      { name: "Git", icon: "devicon:git" },
+    ],
+  },
 ];
 
-function NavBar() {
-  const active = useActiveSection(NAV_ITEMS.map((n) => n.id));
-  const [open, setOpen] = useState(false);
-
-  const scrollTo = useCallback((id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setOpen(false);
-  }, []);
-
-  return (
-    <>
-      {/* Desktop pill nav */}
-      <nav className="fixed top-4 left-1/2 z-[80] hidden -translate-x-1/2 items-center gap-1 rounded-full border border-amber-400/25 bg-black/70 px-3 py-2 backdrop-blur-md md:flex">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => scrollTo(item.id)}
-            className={`rounded-full px-4 py-1.5 font-serif text-sm transition-all duration-200 ${
-              active === item.id
-                ? "bg-amber-400/90 text-black font-bold"
-                : "text-amber-100/60 hover:text-amber-100"
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* Mobile hamburger button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        aria-label="Open navigation"
-        className="fixed right-4 top-4 z-[82] flex h-10 w-10 items-center justify-center rounded-full border border-amber-400/30 bg-black/80 backdrop-blur-md md:hidden"
-      >
-        <motion.svg
-          width="18" height="14" viewBox="0 0 18 14"
-          className="text-amber-200"
-          animate={open ? "open" : "closed"}
-        >
-          <motion.line x1="0" y1="1" x2="18" y2="1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            variants={{ open: { rotate: 45, y: 6, x: 0 }, closed: { rotate: 0, y: 0 } }}
-            style={{ originX: "0px", originY: "1px" }}
-          />
-          <motion.line x1="0" y1="7" x2="18" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            variants={{ open: { opacity: 0 }, closed: { opacity: 1 } }}
-          />
-          <motion.line x1="0" y1="13" x2="18" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"
-            variants={{ open: { rotate: -45, y: -6 }, closed: { rotate: 0, y: 0 } }}
-            style={{ originX: "0px", originY: "13px" }}
-          />
-        </motion.svg>
-      </button>
-
-      {/* Mobile full-screen drawer */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="fixed inset-0 z-[81] flex flex-col items-center justify-center gap-8 bg-black/96 backdrop-blur-md md:hidden"
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {/* Jolly Roger watermark */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-5">
-              <svg width="280" height="280" viewBox="0 0 72 72">
-                <ellipse cx="36" cy="28" rx="13" ry="12" fill="white" />
-                <circle cx="31" cy="28" r="3.5" fill="black" />
-                <circle cx="41" cy="28" r="3.5" fill="black" />
-                <path d="M30 35 Q36 39 42 35 L41 41 Q36 43 31 41 Z" fill="white" />
-                <line x1="14" y1="52" x2="30" y2="44" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-                <line x1="42" y1="44" x2="58" y2="52" stroke="white" strokeWidth="3.5" strokeLinecap="round" />
-                <circle cx="14" cy="52" r="3.5" fill="white" />
-                <circle cx="58" cy="52" r="3.5" fill="white" />
-                <circle cx="30" cy="44" r="3" fill="white" />
-                <circle cx="42" cy="44" r="3" fill="white" />
-              </svg>
-            </div>
-
-            <p className="font-serif text-[10px] uppercase tracking-[0.45em] text-amber-400/60">
-              ⚓ Chart a Course ⚓
-            </p>
-
-            {NAV_ITEMS.map((item, i) => (
-              <motion.button
-                key={item.id}
-                onClick={() => scrollTo(item.id)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                className={`font-serif text-3xl font-black uppercase tracking-[0.2em] transition-colors ${
-                  active === item.id ? "text-amber-400" : "text-amber-100/70 hover:text-amber-100"
-                }`}
-              >
-                {item.label}
-              </motion.button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Scroll progress bar
-───────────────────────────────────────────── */
-function ScrollProgressBar() {
-  const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
-  return (
-    <motion.div
-      className="pointer-events-none fixed top-0 left-0 right-0 z-[100] h-[3px] origin-left"
-      style={{
-        scaleX,
-        background: "linear-gradient(90deg, #f59e0b, #fbbf24, #fde68a)",
-        boxShadow: "0 0 8px rgba(251,191,36,0.7)",
-      }}
-    />
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Section reveal wrapper
-───────────────────────────────────────────── */
-function SectionReveal({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 48 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.06 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-// Tiny ship that sails down the right edge as the page scrolls
-function ScrollShip() {
-  const { scrollYProgress } = useScroll();
-  const top = useTransform(scrollYProgress, [0, 1], ["6%", "92%"]);
-  const sway = useSpring(top, { stiffness: 80, damping: 18, mass: 0.5 });
-  const tilt = useTransform(scrollYProgress, [0, 1], [-4, 4]);
-  return (
-    <motion.div
-      className="pointer-events-none fixed right-3 z-[60] hidden md:block"
-      style={{ top: sway }}
-    >
-      {/* Faint vertical rope/wake guide */}
-      <div className="absolute -left-[1px] top-1/2 h-[60vh] w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-amber-200/15 to-transparent" />
-      <motion.div style={{ rotate: tilt }} className="relative">
-        <svg width="36" height="40" viewBox="0 0 36 40" className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">
-          {/* Mast */}
-          <line x1="18" y1="4" x2="18" y2="22" stroke="#7a4a1a" strokeWidth="1.5" />
-          {/* Sail */}
-          <path d="M 18 6 L 30 18 L 18 22 Z" fill="#f3e3b8" stroke="#7a4a1a" strokeWidth="0.8" />
-          <path d="M 18 6 L 6 18 L 18 22 Z" fill="#e6c378" stroke="#7a4a1a" strokeWidth="0.8" />
-          {/* Hull */}
-          <path d="M 4 24 L 32 24 L 28 32 L 8 32 Z" fill="#5a3a1a" stroke="#2a1a0a" strokeWidth="0.8" />
-          {/* Wave under hull */}
-          <path d="M 2 34 Q 9 31 18 34 T 34 34" stroke="rgba(255,255,255,0.55)" strokeWidth="1" fill="none" />
-        </svg>
-      </motion.div>
-    </motion.div>
-  );
-}
-
-// Scroll-driven rope: a rope SVG that draws itself as the user scrolls past it
-function ScrollRope({ targetRef }: { targetRef: React.RefObject<HTMLDivElement | null> }) {
-  const { scrollYProgress } = useScroll({
-    target: targetRef,
-    offset: ["start 80%", "end 20%"],
-  });
-  const drawn = useSpring(scrollYProgress, { stiffness: 90, damping: 22, mass: 0.4 });
-
-  return (
-    <svg
-      className="pointer-events-none absolute top-0 left-3 h-full w-[18px] overflow-visible md:left-1/2 md:-translate-x-1/2"
-      preserveAspectRatio="none"
-      viewBox="0 0 18 1000"
-      fill="none"
-    >
-      <defs>
-        <linearGradient id="ropeGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(180,120,50,0)" />
-          <stop offset="6%" stopColor="rgba(180,120,50,0.85)" />
-          <stop offset="94%" stopColor="rgba(180,120,50,0.85)" />
-          <stop offset="100%" stopColor="rgba(180,120,50,0)" />
-        </linearGradient>
-        <pattern id="ropeTwist" width="6" height="14" patternUnits="userSpaceOnUse">
-          <path d="M 0 0 Q 3 7 6 14" stroke="rgba(70,40,15,0.55)" strokeWidth="1.2" fill="none" />
-        </pattern>
-      </defs>
-      {/* Faint base rope (always visible, very subtle) */}
-      <line x1="9" y1="0" x2="9" y2="1000" stroke="rgba(180,120,50,0.18)" strokeWidth="2" />
-      {/* Drawn rope — main thick strand */}
-      <motion.line
-        x1="9"
-        y1="0"
-        x2="9"
-        y2="1000"
-        stroke="url(#ropeGrad)"
-        strokeWidth="4"
-        strokeLinecap="round"
-        style={{ pathLength: drawn, scaleY: drawn, transformOrigin: "top" }}
-      />
-      {/* Twist overlay for rope texture */}
-      <motion.line
-        x1="9"
-        y1="0"
-        x2="9"
-        y2="1000"
-        stroke="url(#ropeTwist)"
-        strokeWidth="6"
-        strokeLinecap="round"
-        style={{ pathLength: drawn, scaleY: drawn, transformOrigin: "top", opacity: 0.6 }}
-      />
-    </svg>
-  );
-}
-
-// Sealed envelope — wraps a parchment that "comes out" of the envelope on click.
-// The envelope sits at the parchment's final size; clicking the wax seal lifts
-// the flap, slides the parchment up out of the pocket, and fades the envelope away.
-function SealedEnvelope({
-  children,
-  sealColor = "#b91c1c",
-  sealGlow = "rgba(220,38,38,0.55)",
-  sealLetter = "P",
-  label = "SEALED · TAP TO OPEN",
-  faceSrc,
-  faceAlt,
-  facePosition = "50% 30%",
-  faceTop = "72%",
-  faceSize = 96,
-}: {
-  children: ReactNode;
-  sealColor?: string;
-  sealGlow?: string;
-  sealLetter?: string;
-  label?: string;
-  faceSrc?: string;
-  faceAlt?: string;
-  faceTop?: string;
-  facePosition?: string;
-  faceSize?: number;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="relative w-full max-w-xl">
-      {/* The envelope itself — absolutely positioned over the parchment slot */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-20"
-        initial={false}
-        animate={{ opacity: open ? 0 : 1 }}
-        transition={{ duration: 0.45, ease, delay: open ? 0.5 : 0 }}
-        aria-hidden={open}
-      >
-        {/* Envelope body */}
-        <div
-          className="absolute inset-0 rounded-sm border-2 border-[#6b4a1f] shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 50% 30%, rgba(255,235,180,0.35), rgba(220,180,110,0) 70%), linear-gradient(180deg, #e8cf95 0%, #c9a05c 100%)",
-          }}
-        >
-          {/* Inner aging vignette */}
-          <div
-            className="pointer-events-none absolute inset-0 rounded-sm"
-            style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.55)" }}
-          />
-          {/* Side fold lines */}
-          <div className="pointer-events-none absolute inset-y-0 left-1/4 w-px bg-black/10" />
-          <div className="pointer-events-none absolute inset-y-0 right-1/4 w-px bg-black/10" />
-          {/* Bottom fold (V shape) suggesting the envelope pocket */}
-          <svg
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 w-full"
-            viewBox="0 0 100 50"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M0 0 L50 42 L100 0 L100 50 L0 50 Z"
-              fill="rgba(0,0,0,0.06)"
-            />
-            <path
-              d="M0 0 L50 42 L100 0"
-              stroke="rgba(60,40,15,0.45)"
-              strokeWidth="0.6"
-              fill="none"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-          {/* Face portrait — centered in the lower half (the envelope pocket area) */}
-          {faceSrc && (
-            <div
-              className="pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
-              style={{ top: faceTop }}
-            >
-              <div
-                className="relative overflow-hidden rounded-full border-[3px] border-[#6b4a1f] shadow-[0_6px_18px_rgba(0,0,0,0.55),inset_0_0_18px_rgba(120,80,30,0.45)]"
-                style={{
-                  width: faceSize,
-                  height: faceSize,
-                  background: "linear-gradient(180deg, #f0d7a0 0%, #c9a05c 100%)",
-                }}
-              >
-                <Image
-                  src={faceSrc}
-                  alt={faceAlt ?? ""}
-                  fill
-                  sizes="120px"
-                  className="object-cover"
-                  style={{ objectPosition: facePosition, filter: "sepia(0.35) contrast(1.05)" }}
-                />
-                {/* Sepia/age overlay */}
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-full"
-                  style={{
-                    background:
-                      "radial-gradient(circle at 50% 30%, transparent 50%, rgba(80,50,15,0.45) 100%)",
-                    mixBlendMode: "multiply",
-                  }}
-                />
-                {/* Inner gold ring */}
-                <div
-                  className="pointer-events-none absolute inset-1 rounded-full"
-                  style={{
-                    boxShadow: "inset 0 0 0 2px rgba(218,165,32,0.65)",
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          <p className="absolute inset-x-0 bottom-3 text-center text-[9px] font-bold tracking-[0.4em] text-black/55">
-            {label}
-          </p>
-        </div>
-
-        {/* Top flap — pivots up when opened */}
-        <motion.div
-          className="absolute inset-x-0 top-0 origin-top"
-          style={{ height: "55%", transformStyle: "preserve-3d", transformOrigin: "top center" }}
-          initial={false}
-          animate={{ rotateX: open ? -165 : 0 }}
-          transition={{ duration: 0.7, ease }}
-        >
-          <svg
-            viewBox="0 0 100 55"
-            preserveAspectRatio="none"
-            className="h-full w-full drop-shadow-[0_6px_8px_rgba(0,0,0,0.35)]"
-          >
-            <defs>
-              <linearGradient id="envFlapGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#dcbe7e" />
-                <stop offset="100%" stopColor="#b88e4a" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0 0 L100 0 L50 52 Z"
-              fill="url(#envFlapGrad)"
-              stroke="#6b4a1f"
-              strokeWidth="0.6"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-        </motion.div>
-
-        {/* Wax seal — the click target. Sits at the bottom point of the flap. */}
-        <motion.button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open the sealed message"
-          className="pointer-events-auto absolute left-1/2 top-1/2 z-30 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full font-serif text-xl font-black text-amber-50 transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-amber-200/70"
-          style={{
-            background: `radial-gradient(circle at 35% 30%, ${sealColor}cc, ${sealColor} 55%, #3a0a0a 100%)`,
-            boxShadow: `0 0 18px ${sealGlow}, 0 6px 14px rgba(0,0,0,0.55), inset 0 -3px 6px rgba(0,0,0,0.45), inset 0 3px 4px rgba(255,255,255,0.25)`,
-            border: "2px solid rgba(0,0,0,0.55)",
-          }}
-          initial={false}
-          animate={{ scale: open ? 0 : 1, opacity: open ? 0 : 1, rotate: open ? 25 : 0 }}
-          transition={{ duration: 0.35, ease }}
-        >
-          {/* Drip edges */}
-          <span
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              boxShadow: `inset 0 0 0 2px ${sealColor}88`,
-              clipPath:
-                "polygon(50% 0%, 62% 8%, 78% 4%, 86% 18%, 96% 30%, 92% 48%, 100% 62%, 88% 78%, 80% 92%, 62% 96%, 50% 100%, 38% 96%, 22% 92%, 12% 78%, 4% 62%, 8% 48%, 2% 30%, 14% 18%, 22% 4%, 38% 8%)",
-            }}
-          />
-          <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]">{sealLetter}</span>
-        </motion.button>
-      </motion.div>
-
-      {/* Parchment — clipped inside the envelope while sealed, slides up to reveal */}
-      <motion.div
-        className="relative"
-        initial={false}
-        animate={{ y: open ? 0 : 24, opacity: open ? 1 : 0 }}
-        transition={{ duration: 0.7, ease, delay: open ? 0.35 : 0 }}
-      >
-        {children}
-      </motion.div>
-
-      {/* Re-seal button (small, only when open) */}
-      {open && (
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          aria-label="Re-seal the message"
-          className="absolute -top-3 right-2 z-40 flex h-7 w-7 items-center justify-center rounded-full border border-black/40 bg-amber-100/90 text-xs text-black/70 shadow hover:bg-amber-200"
-        >
-          ↺
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Shared micro-components
-───────────────────────────────────────────── */
-
-// Red wax-seal pin used on parchment cards and posters
-function PinNail({ className = "absolute left-1/2 -top-2 -translate-x-1/2 h-3.5 w-3.5" }: { className?: string }) {
-  return (
-    <div className={`rounded-full bg-gradient-to-br from-red-300 via-red-500 to-red-800 shadow-md ring-2 ring-red-950/60 ${className}`} />
-  );
-}
-
-// Four corner iron nails on wooden boards
-function BoardNails() {
-  return (
-    <>
-      <div className="pointer-events-none absolute left-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-      <div className="pointer-events-none absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-      <div className="pointer-events-none absolute left-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-      <div className="pointer-events-none absolute right-3 bottom-3 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-zinc-300 to-zinc-600 ring-1 ring-black/60" />
-    </>
-  );
-}
-
-// Animated wave shimmer lines on ocean sections
-function WaveShimmer({ count = 10, colorClass = "bg-white/25", topStart = 60 }: {
-  count?: number;
-  colorClass?: string;
-  topStart?: number;
-}) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <motion.div
-          key={i}
-          className={`pointer-events-none absolute h-[1.5px] rounded-full ${colorClass}`}
-          style={{ top: `${topStart + ((i * 7) % 28)}%`, left: `${(i * 19 + 3) % 95}%`, width: 28 + ((i * 13) % 60) }}
-          animate={{ x: [0, 12, 0], opacity: [0.12, 0.3, 0.12] }}
-          transition={{ duration: 3 + (i % 4) * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
-        />
-      ))}
-    </>
-  );
-}
-
-// Shared wooden-board background (used on the WANTED board and QUEST BOARD)
-const WOOD_BOARD_STYLE = {
-  backgroundColor: "#6b4423",
-  backgroundImage: [
-    "repeating-linear-gradient(180deg, transparent 0 46px, rgba(0,0,0,0.28) 46px 48px)",
-    "repeating-linear-gradient(90deg, transparent 0 220px, rgba(0,0,0,0.18) 220px 222px)",
-    "linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0))",
-  ].join(", "),
-} as const;
-
-const TECH = [
-  { Icon: SiTypescript, label: "TypeScript" },
-  { Icon: SiReact, label: "React" },
-  { Icon: SiNextdotjs, label: "Next.js" },
-  { Icon: SiNodedotjs, label: "Node.js" },
-  { Icon: SiPython, label: "Python" },
-  { Icon: SiDjango, label: "Django" },
-  { Icon: SiOracle, label: "Oracle APEX" },
+const LANGUAGES = [
+  { label: "English", level: "Professional" },
+  { label: "Montenegrin", level: "Native" },
 ];
 
 const PROJECTS = [
   {
-    title: "One Piece Sword Duel",
-    description:
-      "Interactive browser-based game built with JavaScript, HTML, and CSS.",
-    stack: ["JavaScript", "HTML", "CSS"],
-    link: "https://toshkee.github.io/One-Piece-Sword-Duel/",
-    github: "https://github.com/Toshkee/One-Piece-Sword-Duel",
-    details:
-      "A turn-based browser sword-duel game set in the One Piece universe. Players choose a character, then exchange attacks and special moves with an AI opponent. All game logic, animations, and UI were hand-coded in vanilla JavaScript — no frameworks.",
-    highlights: [
-      "Character select with unique stat profiles",
-      "Turn-based combat loop with special-move cooldowns",
-      "CSS keyframe animations for attack sequences",
-      "Responsive layout that works on mobile",
-    ],
-  },
-  {
-    title: "Anime Watchlist",
-    description: "Frontend web app to browse and manage anime watchlists.",
-    stack: ["React", "Node.js"],
-    link: "https://animee-watchlist-app-724b6a827c81.herokuapp.com/",
-    github: "https://github.com/Toshkee/anime-watchlist",
-    details:
-      "A React SPA that lets users search for anime titles via the Jikan API (MyAnimeList), mark series as watching / completed / plan-to-watch, and persist their list across sessions.",
-    highlights: [
-      "Jikan REST API integration for live anime data",
-      "Local-storage persistence for watchlist state",
-      "Filter and sort by status, rating, or genre",
-      "Clean card-based UI with poster artwork",
-    ],
-  },
-  {
     title: "CryptoFlow",
-    description:
-      "Modern React app displaying live cryptocurrency data and trading.",
-    stack: ["React", "Python", "Django"],
-    link: "https://cryptofloww.netlify.app/",
-    github: "https://github.com/Toshkee/CryptoFlow",
-    details:
-      "A full-stack crypto-dashboard with a Django REST backend fetching live prices from CoinGecko and a React frontend charting price history. Built to practice real-time data pipelines and REST API design.",
-    highlights: [
-      "Django REST Framework endpoints for price & history",
-      "CoinGecko API integration with caching layer",
-      "Recharts price-history line graphs",
-      "Deployed frontend on Netlify, backend on Heroku",
-    ],
+    blurb:
+      "Full-stack simulated crypto-futures trading platform — React + Vite front end, a Django REST API with JWT auth, a virtual wallet, and live market data with interactive charts.",
+    stack: ["React", "Django", "Python", "PostgreSQL"],
+    live: "https://cryptofloww.netlify.app/",
+    code: "https://github.com/Toshkee/CryptoFlow",
+    tag: null as string | null,
   },
   {
     title: "Meet2Explore",
-    description:
-      "Travel-focused web app for discovering destinations and connecting with fellow explorers.",
-    stack: ["React", "Node.js", "MongoDB"],
-    link: "https://meet2explore.netlify.app/",
-    github: "https://github.com/Toshkee/meet2explore",
-    details:
-      "A community travel app where users can post destinations, share travel tips, and find companions for upcoming trips. Built as a full-stack General Assembly capstone project with a REST API backend.",
-    highlights: [
-      "JWT authentication with bcrypt password hashing",
-      "CRUD destinations with image upload via Cloudinary",
-      "User profiles and follower system",
-      "Express + MongoDB Atlas backend, React frontend",
-    ],
+    blurb:
+      "Full-stack React travel app to discover destinations and find companions — built collaboratively with a team of four.",
+    stack: ["React", "Node.js", "Express"],
+    live: "https://meet2explore.netlify.app/",
+    code: "https://github.com/Toshkee/meet2explore",
+    tag: "Team · 4 devs",
+  },
+  {
+    title: "One Piece Sword Duel",
+    blurb:
+      "Browser fighting game in vanilla JavaScript — hand-built game loop, state management, and DOM-driven combat. No frameworks.",
+    stack: ["JavaScript", "HTML", "CSS"],
+    live: "https://toshkee.github.io/One-Piece-Sword-Duel/",
+    code: "https://github.com/Toshkee/One-Piece-Sword-Duel",
+    tag: null,
+  },
+  {
+    title: "Anime Watchlist",
+    blurb:
+      "Full-stack app to browse anime and manage a personal watchlist — search, filter, and track what you're watching.",
+    stack: ["Node.js", "Express", "REST API"],
+    live: "https://animee-watchlist-app-724b6a827c81.herokuapp.com/",
+    code: "https://github.com/Toshkee/anime-watchlist",
+    tag: null,
   },
 ];
 
-const ease = [0.22, 1, 0.36, 1] as const;
+type Job = {
+  role: string;
+  org: string;
+  period: string;
+  current: boolean;
+  points: string[];
+  link?: { href: string; label: string };
+};
 
-const VOYAGE = [
+const EXPERIENCE: Job[] = [
   {
-    arc: "Grand Line Arc",
-    port: "Water 7",
-    period: "2025 – Present",
-    title: "Software Developer",
-    org: "Infostream Ltd",
+    role: "Software Developer",
+    org: "Infostream",
+    period: "2025 — Present",
     current: true,
-    bullets: [
-      "Oracle APEX",
-      "Collaborating within a professional development team",
+    points: [
+      "Build & maintain web and enterprise applications with Oracle APEX, .NET and C#, alongside JavaScript/TypeScript and React.",
+      "NGO Register Portal (Government of Montenegro) — produced the official user-guide video tutorials: e-signature client, document signing, online registration, and registry search.",
     ],
+    link: {
+      href: "https://ngo.gov.me/Uputstva/PreuzmiteSoftwareIUputstva",
+      label: "ngo.gov.me ↗",
+    },
   },
   {
-    arc: "Training Arc",
-    port: "Shells Town",
-    period: "Sept 2025 – Dec 2025",
-    title: "Fullstack Software Developer",
-    org: "General Assembly · Fullstack Software Engineering Bootcamp",
+    role: "Fullstack Software Engineering",
+    org: "General Assembly",
+    period: "Sep 2025 — Dec 2025",
     current: false,
-    bullets: [
-      "420+ hours of intensive fullstack software engineering bootcamp",
-      "JavaScript, React, HTML & CSS frontend development",
-      "Node.js, APIs, databases & security basics",
-      "Team projects and real-world application development",
+    points: [
+      "420+ hours of intensive training in frontend — JavaScript, React, HTML & CSS.",
+      "Backend fundamentals, APIs, databases & security basics; team-based real-world projects.",
     ],
   },
   {
-    arc: "Market Arc",
-    port: "Mock Town",
-    period: "2021 – Present",
-    title: "Crypto Trader",
-    org: "Independent · Self-Taught",
-    current: true,
-    bullets: [
-      "Trading cryptocurrency markets independently since 2021",
-      "Technical analysis & risk management strategies",
-      "Deep understanding of blockchain and DeFi concepts",
-    ],
-  },
-  {
-    arc: "Special Training",
-    port: "Orange Town",
-    period: "2022 – 2023",
-    title: "Ethical Hacking",
+    role: "Ethical Hacking",
     org: "Z-Security · Udemy",
+    period: "2023",
     current: false,
-    bullets: [
-      "Network security & penetration testing fundamentals",
-      "Vulnerability assessment and exploitation basics",
-      "Completed full course in concentrated sessions",
+    points: ["Completed a six-month, hands-on ethical-hacking course."],
+  },
+  {
+    role: "Secondary Education",
+    org: "Belgrade, RS · Podgorica, ME",
+    period: "",
+    current: false,
+    points: [
+      "Kosta Cukić Private High School, Belgrade — final two years.",
+      "Mirko Vešović Economics High School, Podgorica — first two years.",
     ],
   },
 ];
 
-function HangingLantern({ className, period = 4.5 }: { className?: string; period?: number }) {
+/* ─────────────────────────────────────────────────────────────
+   MOTION PRIMITIVES
+───────────────────────────────────────────────────────────── */
+
+// Hydration-safe prefers-reduced-motion (server snapshot = false).
+function usePrefersReducedMotion() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false
+  );
+}
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+// Single element that focuses in (blur + slide) when scrolled into view.
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+  y = 28,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  y?: number;
+}) {
+  const reduce = usePrefersReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
-      className={"absolute z-40 origin-top " + (className ?? "")}
-      animate={{ rotate: [-4, 4, -4] }}
-      transition={{ duration: period, repeat: Infinity, ease: "easeInOut" }}
-    >
-      <div className="mx-auto h-14 w-px bg-black/70" />
-      <div className="relative -mt-1 mx-auto h-12 w-9 rounded border border-black/70 bg-gradient-to-b from-[#2e1a08] to-[#0e0804] shadow-xl">
-        <motion.div
-          className="absolute inset-1 rounded bg-gradient-to-b from-yellow-200 via-amber-400 to-orange-600 blur-[1.5px]"
-          animate={{ opacity: [0.75, 1, 0.75] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -inset-4 rounded-full bg-yellow-300/35 blur-2xl"
-          animate={{ scale: [1, 1.18, 1], opacity: [0.55, 0.95, 0.55] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-    </motion.div>
-  );
-}
-
-function WantedFlipPhoto() {
-  const [current, setCurrent] = useState<"anime" | "real">("anime");
-  const [wiping, setWiping] = useState(false);
-
-  useEffect(() => {
-    const id = setInterval(() => setWiping(true), 2000);
-    return () => clearInterval(id);
-  }, []);
-
-  const currentSrc = current === "anime" ? "/images/me-anime.jpg" : "/images/me.jpg";
-  const otherSrc   = current === "anime" ? "/images/me.jpg" : "/images/me-anime.jpg";
-
-  return (
-    <div className="relative mt-3 aspect-[4/5] overflow-hidden border-4 border-[#5a3a1a] bg-black/20 shadow-inner">
-      {/* BEHIND — next poster, revealed as the wipe passes */}
-      <div className="absolute inset-0 overflow-hidden">
-        <Image
-          src={otherSrc}
-          alt=""
-          fill
-          priority
-          sizes="(max-width: 640px) 90vw, 360px"
-          className="object-cover"
-          style={{ objectPosition: "50% 22%" }}
-        />
-        <div className="absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/25" />
-      </div>
-
-      {/* FRONT — top poster, gets clipped away as the brush passes */}
-      <motion.div
-        key={current}
-        className="absolute inset-0 overflow-hidden"
-        initial={{ clipPath: "polygon(0% 0%, 130% 0%, 100% 100%, 0% 100%)" }}
-        animate={{
-          clipPath: wiping
-            ? "polygon(0% 0%, 0% 0%, -30% 100%, 0% 100%)"
-            : "polygon(0% 0%, 130% 0%, 100% 100%, 0% 100%)",
-        }}
-        transition={{ duration: 1.4, ease: [0.7, 0.05, 0.3, 1] }}
-        onAnimationComplete={() => {
-          if (wiping) {
-            setCurrent((c) => (c === "anime" ? "real" : "anime"));
-            setWiping(false);
-          }
-        }}
-      >
-        <Image
-          src={currentSrc}
-          alt="Pavle Tošić"
-          fill
-          priority
-          sizes="(max-width: 640px) 90vw, 360px"
-          className="object-cover"
-          style={{ objectPosition: "50% 22%" }}
-        />
-        <div className="absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/25" />
-      </motion.div>
-
-    </div>
-  );
-}
-
-function WantedPosterScene() {
-  return (
-    <section
-      id="wanted"
-      className="relative isolate min-h-[130vh] overflow-hidden"
-    >
-      {/* DAWN SKY — deep night → magenta → coral → gold */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #0e0a25 0%, #2a1745 18%, #5a2a5a 35%, #a04864 52%, #e08560 68%, #f4b07a 82%, #3d2814 100%)",
-        }}
-      />
-
-      {/* Stars (upper sky) */}
-      {Array.from({ length: 28 }).map((_, i) => {
-        const x = (i * 37 + 7) % 100;
-        const y = (i * 23 + 3) % 28;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-px w-px rounded-full bg-white"
-            style={{ left: `${x}%`, top: `${y}%`, boxShadow: "0 0 3px rgba(255,255,255,0.9)" }}
-            animate={{ opacity: [0.25, 1, 0.25] }}
-            transition={{ duration: 2 + (i % 5), repeat: Infinity, ease: "easeInOut", delay: i * 0.13 }}
-          />
-        );
-      })}
-
-      {/* Light rays radiating from horizon */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 bottom-[30%] overflow-hidden">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute left-1/2 top-[100%] h-[120vh] w-3 origin-bottom bg-gradient-to-t from-amber-200/35 via-amber-100/12 to-transparent blur-[2px]"
-            style={{ transform: `translateX(-50%) rotate(${(i - 4) * 14}deg)` }}
-            animate={{ opacity: [0.18, 0.5, 0.18] }}
-            transition={{ duration: 5 + i * 0.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
-          />
-        ))}
-      </div>
-
-      {/* Horizon fog band */}
-      <div className="pointer-events-none absolute inset-x-0 top-[68%] h-[5%] bg-white/22 blur-md" />
-
-      {/* SEA */}
-      <div className="absolute inset-x-0 top-[68%] bottom-0 bg-gradient-to-b from-[#5a3a5a] via-[#2a2a4a] to-[#0a1424]" />
-
-      {/* Distant island silhouettes (3) */}
-      <svg className="pointer-events-none absolute left-[8%] top-[64%] z-[3] w-32 opacity-65" viewBox="0 0 200 70" fill="#15102a">
-        <path d="M5 60 Q40 25 75 32 Q100 8 130 28 Q160 14 195 60 Z" />
-      </svg>
-      <svg className="pointer-events-none absolute right-[10%] top-[66%] z-[3] w-44 opacity-55" viewBox="0 0 200 70" fill="#15102a">
-        <path d="M5 60 Q35 30 70 35 Q110 10 140 30 Q170 20 195 60 Z" />
-      </svg>
-      <svg className="pointer-events-none absolute right-[36%] top-[67%] z-[3] w-24 opacity-45" viewBox="0 0 200 70" fill="#0e0a20">
-        <path d="M5 60 Q40 35 80 38 Q120 18 195 60 Z" />
-      </svg>
-
-      {/* Rising sun on the horizon */}
-      <motion.div
-        className="pointer-events-none absolute left-1/2 top-[60%] z-[2] -translate-x-1/2"
-        animate={{ y: [0, -3, 0] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <div className="relative h-[260px] w-[260px]">
-          <div className="absolute -inset-24 rounded-full bg-orange-300/25 blur-3xl" />
-          <div className="absolute -inset-12 rounded-full bg-amber-300/40 blur-2xl" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-100 via-amber-300 to-orange-500 shadow-[0_0_120px_60px_rgba(255,180,80,0.55)]" />
-          <motion.div
-            className="absolute -inset-2 rounded-full bg-amber-200/30 blur-xl"
-            animate={{ scale: [1, 1.12, 1], opacity: [0.55, 0.95, 0.55] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-          />
-        </div>
-      </motion.div>
-
-      {/* Sun reflection on water */}
-      <motion.div
-        className="pointer-events-none absolute left-1/2 top-[68%] z-[3] h-[24%] w-36 -translate-x-1/2 bg-gradient-to-b from-amber-200/55 via-amber-300/25 to-transparent blur-[3px]"
-        animate={{ opacity: [0.5, 0.9, 0.5], scaleY: [1, 1.06, 1] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Drifting clouds (lit by dawn) */}
-      <Cloud top="6%" width={250} duration={85} delay={0} />
-      <Cloud top="14%" width={170} duration={105} delay={-30} />
-      <Cloud top="20%" width={140} duration={95} delay={-60} />
-
-      {/* Seagulls */}
-      <Seagull top="32%" duration={22} delay={2} scale={0.85} />
-      <Seagull top="40%" duration={28} delay={8} reverse scale={0.65} />
-
-      <BirdFlock top="22%" duration={70} delay={-15} reverse scale={0.7} />
-
-      {/* Dust motes drifting up */}
-      {Array.from({ length: 14 }).map((_, i) => {
-        const left = (i * 13 + 4) % 100;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute z-[5] h-1 w-1 rounded-full bg-amber-200/70 blur-[1px]"
-            style={{ left: `${left}%`, top: "100%" }}
-            animate={{ y: [-50, -900], x: [0, i % 2 ? 30 : -30], opacity: [0, 0.85, 0] }}
-            transition={{ duration: 14 + (i % 5) * 2, repeat: Infinity, ease: "linear", delay: i * 0.9 }}
-          />
-        );
-      })}
-
-      {/* MAIN CONTENT */}
-      <div className="relative z-10 mx-auto flex min-h-[130vh] w-full max-w-[1400px] flex-col items-center justify-center px-4 pb-40 pt-24">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, ease }}
-          className="mb-16 text-center sm:mb-24 md:mb-28"
-        >
-          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-100/80 sm:text-xs sm:tracking-[0.45em]">
-            By Order of the World Government
-          </p>
-          <AnimatedHeading
-            as="h1"
-            text="WANTED"
-            className="mt-3 font-serif text-5xl font-black tracking-[0.14em] text-white drop-shadow-[0_4px_25px_rgba(255,150,80,0.55)] sm:text-6xl sm:tracking-[0.18em] md:text-7xl"
-          />
-          <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-amber-200/75 sm:text-xs sm:tracking-[0.35em]">
-            Dead or Alive • Bounty Active
-          </p>
-        </motion.div>
-
-        {/* BOUNTY BOARD */}
-        <div className="relative w-[min(1100px,96%)]">
-          {/* Tall posts */}
-          <div className="absolute -left-3 -top-10 -bottom-40 z-10 w-8 rounded bg-gradient-to-r from-[#2e1a08] via-[#5a3819] to-[#2e1a08] shadow-[0_15px_40px_rgba(0,0,0,0.7)]" />
-          <div className="absolute -right-3 -top-10 -bottom-40 z-10 w-8 rounded bg-gradient-to-r from-[#2e1a08] via-[#5a3819] to-[#2e1a08] shadow-[0_15px_40px_rgba(0,0,0,0.7)]" />
-
-          {/* Top crossbeam */}
-          <div className="absolute -left-7 -right-7 -top-11 z-20 h-10 rounded border border-black/60 bg-gradient-to-b from-[#5a3819] via-[#3d2410] to-[#1f1208] shadow-[0_8px_20px_rgba(0,0,0,0.6)]" />
-
-          {/* Top banner */}
-          <div className="absolute left-1/2 -top-9 z-30 -translate-x-1/2 whitespace-nowrap">
-            <div className="rounded-md border-y-4 border-[#2a1808] bg-gradient-to-b from-[#7a4a22] to-[#4a2a12] px-5 py-2 shadow-2xl sm:px-12 sm:py-2.5">
-              <p className="font-serif text-[11px] tracking-[0.3em] text-amber-100 sm:text-sm sm:tracking-[0.45em]">⚓ MOST WANTED</p>
-            </div>
-          </div>
-
-          {/* Hanging lanterns from crossbeam */}
-          <HangingLantern className="-top-5 left-[26%]" period={4.6} />
-          <HangingLantern className="-top-5 right-[10%]" period={5.1} />
-
-          {/* The wooden board */}
-          <div
-            className="relative rounded-md border-4 border-[#2a1808] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.7)] sm:p-6 md:p-10"
-            style={WOOD_BOARD_STYLE}
-          >
-            {/* Inner shadow vignette */}
-            <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_60px_rgba(0,0,0,0.55)]" />
-
-            {/* Decorative corner nails */}
-            <BoardNails />
-
-            {/* Layout: bio | wanted poster | skills */}
-            <div className="relative grid items-start gap-6 lg:grid-cols-[1fr_auto_1fr]">
-              {/* LEFT — Captain's Log (bio + links) */}
-              <motion.div
-                initial={{ opacity: 0, y: 26, rotate: -4 }}
-                whileInView={{ opacity: 1, y: 0, rotate: -2.5 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.8, delay: 0.45, ease }}
-                whileHover={{ y: -6, rotate: 0, scale: 1.03, zIndex: 20, transition: { duration: 0.25, ease } }}
-                style={{ transformOrigin: "top center" }}
-                className="relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
-              >
-                <PinNail />
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-sm"
-                  style={{ boxShadow: "inset 0 0 35px rgba(120,80,30,0.32)" }}
-                />
-                <div className="relative">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">Captain&apos;s Log</div>
-                  <h3 className="mt-1 font-serif text-lg font-bold text-black/90">About the Pirate</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-black/75">
-                    A pirate who set sail on the Grand Line of software — charting frontends, conquering backends, and leaving no bug alive. TypeScript, React, Next.js up front; Python and SQL in the engine room. Still searching for the One Piece.
-                  </p>
-                  <div className="mt-5 flex flex-col gap-2">
-                    <a
-                      href="https://github.com/Toshkee"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
-                    >
-                      <span>GitHub</span>
-                      <span>→</span>
-                    </a>
-                    <a
-                      href="https://www.linkedin.com/in/tosiicp/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded border border-black/30 bg-black/10 px-3 py-2 text-xs font-medium text-black/80 transition-colors hover:bg-black/25"
-                    >
-                      <span>LinkedIn</span>
-                      <span>→</span>
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* CENTER — WANTED poster (the bounty) */}
-              <motion.div
-                initial={{ opacity: 0, y: 36, scale: 0.96 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 1, delay: 0.2, ease }}
-                className="relative w-[min(360px,90vw)]"
-              >
-                <TiltCard
-                  max={10}
-                  className="relative rounded-sm border-2 border-[#7a5722] shadow-[0_24px_60px_rgba(0,0,0,0.75)]"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.55), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-                  }}
-                >
-                {/* Two pins at top */}
-                <PinNail className="absolute left-6 -top-2 h-3.5 w-3.5" />
-                <PinNail className="absolute right-6 -top-2 h-3.5 w-3.5" />
-
-                {/* Aging vignette */}
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={{ boxShadow: "inset 0 0 55px rgba(120,80,30,0.5)" }}
-                />
-
-                <div className="relative p-5">
-                  <h2 className="text-center font-serif text-3xl font-black tracking-[0.18em] text-black">
-                    WANTED
-                  </h2>
-                  <p className="mt-0.5 text-center text-[10px] tracking-[0.4em] text-black/70">
-                    DEAD OR ALIVE
-                  </p>
-
-                  {/* Photo — auto-flips between anime & real */}
-                  <WantedFlipPhoto />
-
-                  {/* Name */}
-                  <h3 className="mt-3 text-center font-serif text-2xl font-extrabold tracking-wide text-black">
-                    PAVLE TOŠIĆ
-                  </h3>
-
-                  <div className="mt-2 flex items-center justify-center gap-2">
-                    <div className="h-px w-10 bg-black/50" />
-                    <p className="text-[10px] uppercase tracking-[0.35em] text-black/70">
-                      Full-Stack Pirate
-                    </p>
-                    <div className="h-px w-10 bg-black/50" />
-                  </div>
-
-                  {/* Bounty */}
-                  <div className="mt-3 flex items-baseline justify-center gap-1.5">
-                    <span className="font-serif text-base text-black/70">฿</span>
-                    <span className="font-serif text-3xl font-black tracking-wider text-black">30,000,000</span>
-                    <span className="font-serif text-base text-black/70">-</span>
-                  </div>
-                  <p className="text-center text-[9px] tracking-[0.3em] text-black/55">— BERRIES —</p>
-
-                  {/* Marine seal footer */}
-                  <div className="mt-3 flex items-center justify-center gap-3 border-t border-black/30 pt-3">
-                    <span className="text-[9px] tracking-[0.25em] text-black/55">MARINE HQ</span>
-                    <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-red-800/70 bg-red-700/10">
-                      <span className="text-[8px] font-black text-red-900/80">M</span>
-                    </div>
-                    <span className="text-[9px] tracking-[0.25em] text-black/55">GRAND LINE</span>
-                  </div>
-                </div>
-                </TiltCard>
-              </motion.div>
-
-              {/* RIGHT — Devil Fruits / Skills */}
-              <motion.div
-                initial={{ opacity: 0, y: 26, rotate: 4 }}
-                whileInView={{ opacity: 1, y: 0, rotate: 2.5 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.8, delay: 0.6, ease }}
-                whileHover={{ y: -6, rotate: 0, scale: 1.03, zIndex: 20, transition: { duration: 0.25, ease } }}
-                style={{ transformOrigin: "top center" }}
-                className="relative rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]"
-              >
-                <PinNail />
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-sm"
-                  style={{ boxShadow: "inset 0 0 35px rgba(120,80,30,0.32)" }}
-                />
-                <div className="relative">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-black/50">
-                    Devil Fruits
-                  </p>
-                  <h3 className="mt-1 font-serif text-lg font-bold text-black/90">Powers Wielded</h3>
-                  <p className="mt-2 text-xs leading-relaxed text-black/65">
-                    Devil Fruits devoured on the voyage.
-                  </p>
-                  <div className="mt-4 flex flex-col gap-2">
-                    {TECH.map(({ Icon, label }) => (
-                      <div
-                        key={label}
-                        className="flex items-center gap-2 rounded border border-black/20 bg-black/5 px-3 py-1.5 text-xs text-black/80"
-                      >
-                        <Icon className="text-base" />
-                        <span>{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll hint */}
-        <motion.div
-          className="mt-16 text-center"
-          animate={{ y: [0, 6, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <p className="text-xs uppercase tracking-[0.4em] text-amber-100/65">
-            Scroll to set sail ↓
-          </p>
-        </motion.div>
-      </div>
-
-      {/* Wooden dock planks at bottom */}
-      <div
-        className="absolute inset-x-0 bottom-0 z-[2] h-24"
-        style={{
-          backgroundColor: "#3d2410",
-          backgroundImage: [
-            "repeating-linear-gradient(90deg, transparent 0 120px, rgba(0,0,0,0.5) 120px 122px)",
-            "linear-gradient(180deg, #5a3819 0%, #2e1a08 100%)",
-          ].join(", "),
-          boxShadow: "inset 0 8px 12px rgba(0,0,0,0.6), 0 -8px 20px rgba(0,0,0,0.4)",
-        }}
-      />
-    </section>
-  );
-}
-
-function Compass() {
-  return (
-    <div className="relative h-36 w-36">
-      {/* Outer brass ring */}
-      <div className="absolute inset-0 rounded-full border-[6px] border-[#8b6a32] bg-gradient-to-br from-[#5a3819] to-[#1f1208] shadow-[0_15px_40px_rgba(0,0,0,0.7)]" />
-      {/* Inner face */}
-      <div
-        className="absolute inset-3 rounded-full"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 35% 30%, #fbe8b8, #d6a85a 70%, #b08840 100%)",
-          boxShadow: "inset 0 0 25px rgba(80,50,15,0.6)",
-        }}
-      />
-
-      {/* Cardinal letters */}
-      <div className="absolute inset-3 font-serif text-[11px] font-black tracking-wider text-black/80">
-        <span className="absolute left-1/2 top-1.5 -translate-x-1/2">N</span>
-        <span className="absolute left-1/2 bottom-1.5 -translate-x-1/2">S</span>
-        <span className="absolute left-1.5 top-1/2 -translate-y-1/2">W</span>
-        <span className="absolute right-1.5 top-1/2 -translate-y-1/2">E</span>
-      </div>
-
-      {/* Tick marks */}
-      <svg className="absolute inset-3" viewBox="-50 -50 100 100">
-        {Array.from({ length: 24 }).map((_, i) => {
-          const a = (i * 360) / 24;
-          const long = i % 6 === 0;
-          return (
-            <line
-              key={i}
-              x1="0" y1={-44}
-              x2="0" y2={long ? -38 : -41}
-              stroke="rgba(60,40,15,0.65)"
-              strokeWidth={long ? 1.5 : 0.8}
-              transform={`rotate(${a})`}
-            />
-          );
-        })}
-      </svg>
-
-      {/* Spinning needle */}
-      <motion.div
-        className="absolute inset-0 flex items-center justify-center"
-        animate={{ rotate: [0, 8, -5, 12, -3, 6, 0] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <div className="relative h-24 w-1.5">
-          <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-full bg-gradient-to-b from-red-500 to-red-800 shadow-md" />
-          <div className="absolute inset-x-0 bottom-0 h-1/2 rounded-b-full bg-gradient-to-t from-zinc-900 to-zinc-600" />
-        </div>
-      </motion.div>
-
-      {/* Center pin */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-3.5 w-3.5 rounded-full bg-gradient-to-br from-amber-200 via-amber-500 to-amber-800 ring-2 ring-black/70 shadow" />
-      </div>
-
-      {/* Glass shine */}
-      <div className="pointer-events-none absolute inset-3 rounded-full bg-gradient-to-br from-white/30 via-transparent to-transparent" />
-    </div>
-  );
-}
-
-function JourneyTransition() {
-  return (
-    <section
-      id="journey-transition"
-      className="relative isolate min-h-[80vh] overflow-hidden"
-    >
-      {/* Bright midday sea — bridges dock planks above (dark) to golden afternoon below */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #1a1a2e 0%, #1a3a6a 12%, #1a5a9a 30%, #2270b0 55%, #1a5078 80%, #1a2e4a 100%)",
-        }}
-      />
-
-      {/* Drifting clouds */}
-      <Cloud top="10%" width={220} duration={70} delay={0} />
-      <Cloud top="20%" width={160} duration={92} delay={-28} />
-      <Cloud top="7%" width={130} duration={110} delay={-52} />
-
-      {/* Seagulls */}
-      <Seagull top="36%" duration={24} delay={2} scale={0.7} />
-      <Seagull top="28%" duration={32} delay={10} reverse scale={0.5} />
-
-      <BirdFlock top="18%" duration={80} delay={-10} scale={0.65} />
-
-      {/* Shanks's Red Force sailing past his letter */}
-      <RedForce top="48%" duration={150} delay={-30} scale={0.7} opacity={0.85} />
-      <GoingMerry top="56%" duration={180} delay={-90} reverse scale={0.55} opacity={0.7} />
-
-      {/* Midday sun — high overhead */}
-      <motion.div
-        className="pointer-events-none absolute left-[18%] top-[8%] z-[4]"
-        animate={{ y: [0, -3, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <div className="relative h-20 w-20">
-          <div className="absolute -inset-10 rounded-full bg-yellow-200/20 blur-3xl" />
-          <div className="absolute -inset-4 rounded-full bg-amber-200/25 blur-xl" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-100 via-amber-200 to-amber-400 shadow-[0_0_50px_25px_rgba(255,210,100,0.35)]" />
-        </div>
-      </motion.div>
-
-      {/* Horizon fog */}
-      <div className="pointer-events-none absolute inset-x-0 top-[62%] h-[4%] bg-white/18 blur-md" />
-
-      {/* Sea — fades to QuestBoard's sky top color for a seamless seam */}
-      <div className="absolute inset-x-0 top-[64%] bottom-0 bg-gradient-to-b from-[#1a6888] via-[#1a4060] to-[#1a2e4a]" />
-
-      {/* Sun reflection */}
-      <motion.div
-        className="pointer-events-none absolute left-[13%] top-[64%] h-[22%] w-20 bg-gradient-to-b from-amber-100/40 via-amber-200/15 to-transparent blur-[3px]"
-        animate={{ opacity: [0.4, 0.7, 0.4], scaleY: [1, 1.05, 1] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Ship on the horizon */}
-      <motion.div
-        className="pointer-events-none absolute top-[61%] z-[3] text-zinc-900/50"
-        initial={{ x: "-12vw" }}
-        animate={{ x: "112vw" }}
-        transition={{ duration: 55, repeat: Infinity, ease: "linear" }}
-      >
-        <motion.svg
-          width="56" height="44" viewBox="0 0 60 48" fill="currentColor"
-          animate={{ y: [0, -2, 0, -1, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <path d="M8 32 L52 32 L46 40 L14 40 Z" opacity="0.75" />
-          <rect x="29" y="6" width="2" height="26" />
-          <path d="M30 8 L44 30 L30 30 Z" opacity="0.85" />
-          <path d="M30 10 L18 30 L30 30 Z" opacity="0.55" />
-          <path d="M30 4 L34 7 L30 7 Z" />
-        </motion.svg>
-      </motion.div>
-
-      {/* Wave shimmer */}
-      <WaveShimmer count={10} colorClass="bg-cyan-100/35" topStart={68} />
-
-      {/* Centered content */}
-      <div className="relative z-10 mx-auto flex min-h-[80vh] max-w-5xl flex-col items-center justify-center gap-10 px-6 py-20 md:flex-row md:gap-14">
-        {/* Compass */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 1, ease }}
-        >
-          <Compass />
-        </motion.div>
-
-        {/* Parchment — Shanks / Red Hair Pirates (sealed in envelope) */}
-        <motion.div
-          initial={{ opacity: 0, y: 24, rotate: -1 }}
-          whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 1, delay: 0.25, ease }}
-          className="w-full max-w-xl"
-        >
-          <LetterParallax>
-          <SealedEnvelope
-            sealColor="#b91c1c"
-            sealGlow="rgba(220,38,38,0.55)"
-            sealLetter="S"
-            label="RED HAIR PIRATES · TAP TO OPEN"
-            faceSrc="/images/shanks.jpg"
-            faceAlt="Shanks"
-            faceTop="74%"
-            faceSize={98}
-          >
-            <div
-              className="relative rounded-sm border-2 border-[#8b6a32] p-8 shadow-[0_24px_60px_rgba(0,0,0,0.65)]"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-              }}
-            >
-              <div
-                className="pointer-events-none absolute inset-0 rounded-sm"
-                style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
-              />
-              <PinNail />
-
-              <div className="relative text-center">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-black/70">Intercepted Message · Red Hair Pirates</p>
-                <h2 className="mt-3 font-serif text-3xl font-extrabold text-black md:text-4xl">
-                  My Gift for You
-                </h2>
-                <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
-                  &ldquo;I&apos;ll leave this hat with you. It&apos;s dear to me. Take good care of it! Come bring it back to me someday, once you&apos;ve become a great pirate!&rdquo;
-                </p>
-                <div className="mt-5 flex justify-center">
-                  <div className="overflow-hidden rounded border-2 border-[#8b6a32] shadow-[0_4px_16px_rgba(0,0,0,0.45)]" style={{ width: 160 }}>
-                    <Image src="/images/shanks-hat.jpg" alt="Shanks gives Luffy the straw hat" width={160} height={160} className="object-cover w-full" />
-                  </div>
-                </div>
-                <p className="mt-4 text-xs font-bold tracking-[0.3em] text-black/80">
-                  — &apos;RED-HAIR&apos; SHANKS · CAPTAIN, RED HAIR PIRATES
-                </p>
-                <div className="mt-4 flex items-center justify-center gap-3">
-                  <div className="h-px w-12 bg-black/50" />
-                  <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">RAISE YOUR FLAG</span>
-                  <div className="h-px w-12 bg-black/50" />
-                </div>
-              </div>
-            </div>
-          </SealedEnvelope>
-          </LetterParallax>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function PalmTree({ className, scale = 1, flip = false }: { className?: string; scale?: number; flip?: boolean }) {
-  return (
-    <svg
-      width={90 * scale}
-      height={130 * scale}
-      viewBox="0 0 90 130"
       className={className}
-      style={{ transform: flip ? "scaleX(-1)" : undefined }}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.8, delay, ease: EASE }}
     >
-      {/* Trunk */}
-      <path d="M44 130 C42 110 38 90 40 70 C41 55 45 40 44 20" stroke="#7a5230" strokeWidth="6" strokeLinecap="round"/>
-      {/* Leaves */}
-      <path d="M44 20 C30 10 10 5 2 15 C12 18 28 22 44 28" fill="#2d6a2d"/>
-      <path d="M44 20 C55 8 75 2 82 14 C70 16 55 22 44 28" fill="#2d6a2d"/>
-      <path d="M44 20 C38 5 32 -5 18 2 C26 10 36 18 44 28" fill="#3a8a3a"/>
-      <path d="M44 20 C50 5 58 -4 70 4 C62 12 52 18 44 28" fill="#3a8a3a"/>
-      <path d="M44 20 C28 18 12 24 8 36 C20 32 34 28 44 30" fill="#4aa84a"/>
-      <path d="M44 20 C60 18 76 24 80 36 C68 32 55 28 44 30" fill="#4aa84a"/>
-      {/* Coconuts */}
-      <circle cx="40" cy="27" r="4" fill="#8B6914"/>
-      <circle cx="47" cy="25" r="3.5" fill="#7a5c10"/>
-    </svg>
-  );
-}
-
-function Rock({ className, scale = 1 }: { className?: string; scale?: number }) {
-  return (
-    <svg width={60 * scale} height={35 * scale} viewBox="0 0 60 35" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <ellipse cx="30" cy="28" rx="28" ry="8" fill="#5a5a5a" opacity="0.3"/>
-      <path d="M5 28 C5 16 12 6 22 4 C28 2 34 2 40 5 C50 9 56 18 55 27 Z" fill="#888"/>
-      <path d="M5 28 C5 16 12 6 22 4 C28 2 34 2 40 5 C50 9 56 18 55 27 Z" fill="url(#rockGrad)"/>
-      <path d="M15 10 C20 7 30 6 38 10" stroke="#aaa" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
-      <defs>
-        <linearGradient id="rockGrad" x1="10" y1="4" x2="50" y2="28" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#aaa"/>
-          <stop offset="100%" stopColor="#666"/>
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-function Grass({ className }: { className?: string }) {
-  return (
-    <svg width="80" height="30" viewBox="0 0 80 30" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M10 30 C10 20 8 10 12 2" stroke="#4a9a4a" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M18 30 C18 18 20 8 16 0" stroke="#3d8a3d" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M26 30 C26 22 24 12 28 4" stroke="#56a856" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M34 30 C34 20 36 10 32 2" stroke="#4a9a4a" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M42 30 C42 18 44 8 40 1" stroke="#3d8a3d" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M50 30 C50 22 48 12 52 4" stroke="#56a856" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M58 30 C58 20 60 10 56 2" stroke="#4a9a4a" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M66 30 C66 18 68 8 64 0" stroke="#3d8a3d" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-  );
-}
-
-function Sun() {
-  return (
-    <motion.div
-      className="pointer-events-none absolute right-[18%] top-[10%] z-[5]"
-      animate={{ y: [0, -4, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-    >
-      <div className="relative h-28 w-28">
-        <div className="absolute -inset-12 rounded-full bg-amber-300/20 blur-3xl" />
-        <div className="absolute -inset-6 rounded-full bg-yellow-200/30 blur-2xl" />
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-100 via-amber-300 to-orange-400 shadow-[0_0_60px_30px_rgba(255,200,100,0.45)]" />
-        <motion.div
-          className="absolute -inset-3 rounded-full bg-yellow-200/25 blur-xl"
-          animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0.9, 0.5] }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
+      {children}
     </motion.div>
   );
 }
 
-function Cloud({ top, width, duration, delay }: { top: string; width: number; duration: number; delay: number }) {
+// Per-item variant for staggered groups (lists, grids). Opacity + slide only
+// (no filter:blur — it would stack on the .glass backdrop-filter and jank).
+const ITEM_VARIANTS = {
+  hidden: { opacity: 0, y: 22 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: EASE },
+  },
+};
+
+// Container that staggers its <StaggerItem> children in as it enters view.
+function StaggerGroup({
+  children,
+  className = "",
+  amount = 0.2,
+}: {
+  children: ReactNode;
+  className?: string;
+  amount?: number;
+}) {
+  const reduce = usePrefersReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
   return (
     <motion.div
-      className="pointer-events-none absolute h-10 rounded-full bg-white/35 blur-2xl"
-      style={{ top, width }}
-      initial={{ x: "120vw" }}
-      animate={{ x: "-30vw" }}
-      transition={{ duration, repeat: Infinity, ease: "linear", delay }}
+      className={className}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount }}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Heading whose words slide up from behind a mask (smooth, not per-character).
+function RevealHeading({
+  text,
+  className = "",
+  as = "h2",
+  trigger = "view",
+  delay = 0,
+}: {
+  text: string;
+  className?: string;
+  as?: "h1" | "h2";
+  trigger?: "view" | "mount";
+  delay?: number;
+}) {
+  const reduce = usePrefersReducedMotion();
+  const words = text.split(" ");
+
+  if (reduce) {
+    return as === "h1" ? (
+      <h1 className={className}>{text}</h1>
+    ) : (
+      <h2 className={className}>{text}</h2>
+    );
+  }
+
+  const Tag = as === "h1" ? motion.h1 : motion.h2;
+  const play =
+    trigger === "mount"
+      ? { animate: "visible" as const }
+      : {
+          whileInView: "visible" as const,
+          // "some" (fires when any part enters) so a heading taller than the
+          // viewport (small/zoomed screens) can never stay clipped/hidden.
+          viewport: { once: true, amount: "some" as const },
+        };
+
+  return (
+    <Tag
+      className={className}
+      aria-label={text}
+      initial="hidden"
+      {...play}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.07, delayChildren: delay } },
+      }}
+    >
+      {words.map((w, i) => (
+        <span
+          key={i}
+          aria-hidden
+          className="mr-[0.28em] inline-block overflow-hidden pb-[0.12em] align-bottom -mb-[0.12em] last:mr-0"
+        >
+          <motion.span
+            className="inline-block will-change-transform"
+            variants={{ hidden: { y: "115%" }, visible: { y: 0 } }}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            {w}
+          </motion.span>
+        </span>
+      ))}
+    </Tag>
+  );
+}
+
+// Thin progress bar that fills as the page scrolls.
+function ScrollProgress() {
+  const reduce = usePrefersReducedMotion();
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 30,
+    mass: 0.3,
+  });
+  if (reduce) return null;
+  return (
+    <motion.div
+      aria-hidden
+      className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-accent"
+      style={{ scaleX }}
     />
   );
 }
 
-function Seagull({ top, duration, delay, reverse = false, scale = 1 }: { top: string; duration: number; delay: number; reverse?: boolean; scale?: number }) {
-  const w = 30 * scale;
-  return (
-    <motion.svg
-      className="pointer-events-none absolute z-[6] text-white/70"
-      style={{ top }}
-      width={w} height={w * 0.4} viewBox="0 0 30 12"
-      initial={{ x: reverse ? "110vw" : "-10vw" }}
-      animate={{ x: reverse ? "-10vw" : "110vw", y: [0, -10, 0, -6, 0] }}
-      transition={{ duration, repeat: Infinity, ease: "easeInOut", delay }}
-    >
-      <motion.path
-        stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round"
-        animate={{
-          d: [
-            "M2 7 C7 2 11 2 15 6 C19 2 23 2 28 7",
-            "M2 5 C7 9 11 9 15 4 C19 9 23 9 28 5",
-            "M2 7 C7 2 11 2 15 6 C19 2 23 2 28 7",
-          ],
-        }}
-        transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </motion.svg>
-  );
-}
-
-function DistantShip() {
-  return (
-    <motion.div
-      className="pointer-events-none absolute left-[14%] top-[44%] z-[4] text-white/40"
-      animate={{ x: [0, 40, 0], y: [0, -2, 0] }}
-      transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-    >
-      <svg width="46" height="34" viewBox="0 0 46 34" fill="currentColor">
-        <path d="M6 24 L40 24 L34 31 L12 31 Z" opacity="0.7" />
-        <rect x="22" y="6" width="1.5" height="18" />
-        <path d="M23 8 L33 22 L23 22 Z" opacity="0.85" />
-        <path d="M23 10 L15 22 L23 22 Z" opacity="0.55" />
-        <path d="M23 4 L26 7 L23 7 Z" />
-      </svg>
-    </motion.div>
-  );
-}
-
-function ShipImage({
-  src, alt, width, height, top, duration, delay, reverse = false, scale = 1, opacity = 0.85,
+// Element that eases toward the cursor on hover.
+function Magnetic({
+  children,
+  className = "",
+  strength = 0.35,
 }: {
-  src: string; alt: string; width: number; height: number;
-  top: string; duration: number; delay: number; reverse?: boolean; scale?: number; opacity?: number;
+  children: ReactNode;
+  className?: string;
+  strength?: number;
 }) {
-  const w = width * scale;
-  const h = height * scale;
+  const reduce = usePrefersReducedMotion();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 200, damping: 14, mass: 0.4 });
+  const sy = useSpring(y, { stiffness: 200, damping: 14, mass: 0.4 });
+
+  if (reduce) return <span className={className}>{children}</span>;
+
   return (
-    <motion.div
-      className="pointer-events-none absolute z-[5]"
-      style={{ top, opacity }}
-      initial={{ x: reverse ? "115vw" : "-15vw" }}
-      animate={{ x: reverse ? "-15vw" : "115vw", y: [0, -4, 0, -2, 0] }}
-      transition={{ duration, repeat: Infinity, ease: "linear", delay, y: { duration: 5, repeat: Infinity, ease: "easeInOut" } }}
+    <motion.span
+      className={`inline-block ${className}`}
+      style={{ x: sx, y: sy }}
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        x.set((e.clientX - (r.left + r.width / 2)) * strength);
+        y.set((e.clientY - (r.top + r.height / 2)) * strength);
+      }}
+      onMouseLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
     >
-      <div
-        style={{
-          width: w,
-          height: h,
-          transform: reverse ? "scaleX(-1)" : undefined,
-          filter: "drop-shadow(0 8px 14px rgba(0,0,0,0.55))",
-        }}
-      >
-        <Image src={src} alt={alt} width={width} height={height} className="h-full w-full object-contain" />
-      </div>
-    </motion.div>
+      {children}
+    </motion.span>
   );
 }
 
-function GoingMerry(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
-  return <ShipImage src="/images/going-merry.png" alt="Going Merry" width={180} height={120} {...props} />;
-}
-function ThousandSunny(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
-  return <ShipImage src="/images/thousand-sunny.png" alt="Thousand Sunny" width={170} height={159} {...props} />;
-}
-function MobyDick(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
-  return <ShipImage src="/images/moby-dick.png" alt="Moby Dick" width={180} height={156} {...props} />;
-}
-function RedForce(props: Omit<Parameters<typeof ShipImage>[0], "src" | "alt" | "width" | "height">) {
-  return <ShipImage src="/images/red-force.png" alt="Red Force" width={200} height={117} {...props} />;
-}
+/* ─────────────────────────────────────────────────────────────
+   NAV + depth rail
+───────────────────────────────────────────────────────────── */
 
-function BirdFlock({ top, duration, delay, reverse = false, scale = 1 }: { top: string; duration: number; delay: number; reverse?: boolean; scale?: number }) {
-  const s = scale;
-  // V-formation positions (relative offsets in px before scaling)
-  const birds = [
-    { dx: 0, dy: 0 },
-    { dx: 14, dy: 6 },
-    { dx: -14, dy: 6 },
-    { dx: 28, dy: 12 },
-    { dx: -28, dy: 12 },
-    { dx: 42, dy: 18 },
-  ];
-  return (
-    <motion.div
-      className="pointer-events-none absolute z-[6] text-white/65"
-      style={{ top }}
-      initial={{ x: reverse ? "115vw" : "-15vw" }}
-      animate={{ x: reverse ? "-15vw" : "115vw", y: [0, -6, 0, -3, 0] }}
-      transition={{ duration, repeat: Infinity, ease: "linear", delay, y: { duration: 6, repeat: Infinity, ease: "easeInOut" } }}
-    >
-      <svg width={120 * s} height={40 * s} viewBox="0 0 120 40" style={{ transform: reverse ? "scaleX(-1)" : undefined }}>
-        {birds.map((b, i) => (
-          <motion.path
-            key={i}
-            d="M0 6 C3 1 5 1 7 4 C9 1 11 1 14 6"
-            stroke="currentColor" strokeWidth="1.3" fill="none" strokeLinecap="round"
-            transform={`translate(${50 + b.dx} ${10 + b.dy})`}
-            animate={{
-              d: [
-                "M0 6 C3 1 5 1 7 4 C9 1 11 1 14 6",
-                "M0 4 C3 8 5 8 7 3 C9 8 11 8 14 4",
-                "M0 6 C3 1 5 1 7 4 C9 1 11 1 14 6",
-              ],
-            }}
-            transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", delay: i * 0.05 }}
-          />
-        ))}
-      </svg>
-    </motion.div>
-  );
-}
-
-function IslandLandmass() {
-  return (
-    <svg viewBox="0 0 1200 600" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-[78%] w-full">
-      <defs>
-        <linearGradient id="mtnGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5d8567"/>
-          <stop offset="55%" stopColor="#365940"/>
-          <stop offset="100%" stopColor="#1f3a28"/>
-        </linearGradient>
-        <linearGradient id="mtnShade" x1="0" y1="0" x2="1" y2="0.4">
-          <stop offset="0%" stopColor="rgba(255,220,160,0.35)"/>
-          <stop offset="60%" stopColor="rgba(0,0,0,0)"/>
-          <stop offset="100%" stopColor="rgba(0,0,0,0.45)"/>
-        </linearGradient>
-        <linearGradient id="jungleGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5fa05a"/>
-          <stop offset="100%" stopColor="#2f6a36"/>
-        </linearGradient>
-        <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8fc97a"/>
-          <stop offset="100%" stopColor="#5e9a4f"/>
-        </linearGradient>
-        <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f3e0b0"/>
-          <stop offset="60%" stopColor="#e0c684"/>
-          <stop offset="100%" stopColor="#b89856"/>
-        </linearGradient>
-      </defs>
-
-      {/* Mountain (back) */}
-      <path d="M380 470 L460 230 L520 300 L590 150 L660 270 L730 220 L820 470 Z" fill="url(#mtnGrad)" />
-      <path d="M380 470 L460 230 L520 300 L590 150 L660 270 L730 220 L820 470 Z" fill="url(#mtnShade)" />
-      {/* Snow caps */}
-      <path d="M460 230 L482 268 L440 270 Z" fill="rgba(255,255,255,0.92)" />
-      <path d="M590 150 L618 200 L562 204 Z" fill="rgba(255,255,255,0.95)" />
-      <path d="M660 270 L678 304 L644 306 Z" fill="rgba(255,255,255,0.85)" />
-
-      {/* Jungle canopy mid-hill */}
-      <path d="M180 470 C260 410 360 395 460 415 C540 430 640 410 760 420 C880 432 980 420 1040 470 Z" fill="url(#jungleGrad)" />
-      <ellipse cx="320" cy="430" rx="70" ry="22" fill="#4a8a4a" opacity="0.85" />
-      <ellipse cx="430" cy="420" rx="55" ry="18" fill="#5fa05a" opacity="0.9" />
-      <ellipse cx="560" cy="425" rx="60" ry="20" fill="#3a7a40" opacity="0.85" />
-      <ellipse cx="700" cy="420" rx="65" ry="20" fill="#4a8a4a" opacity="0.9" />
-      <ellipse cx="830" cy="430" rx="70" ry="22" fill="#3f7d44" opacity="0.85" />
-      <ellipse cx="940" cy="440" rx="55" ry="18" fill="#5fa05a" opacity="0.85" />
-
-      {/* Grassy plateau */}
-      <ellipse cx="600" cy="490" rx="500" ry="55" fill="url(#grassGrad)" />
-
-      {/* Sand beach */}
-      <ellipse cx="600" cy="525" rx="560" ry="42" fill="url(#sandGrad)" />
-
-      {/* Wet shore (darker rim) */}
-      <ellipse cx="600" cy="555" rx="585" ry="22" fill="#a07f4a" opacity="0.55" />
-    </svg>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Project deep-dive modal
-───────────────────────────────────────────── */
-function ProjectModal({ project, onClose }: { project: typeof PROJECTS[number] | null; onClose: () => void }) {
-  useEffect(() => {
-    if (!project) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [project, onClose]);
+function NavBar({ active }: { active: string }) {
+  const [open, setOpen] = useState(false);
+  const reduce = usePrefersReducedMotion();
 
   return (
-    <AnimatePresence>
-      {project && (
-        <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          onClick={onClose}
+    <div className="fixed inset-x-0 top-0 z-50 border-b border-line/70 bg-bg/70 backdrop-blur-xl lg:hidden">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+        <a
+          href="#home"
+          className="group flex items-center gap-2 text-ink"
+          aria-label="Back to top"
         >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+          <span
+            className="h-2.5 w-2.5 rounded-full bg-accent transition-transform group-hover:scale-125"
+            aria-hidden
+          />
+          <span className="font-display font-semibold tracking-tight">
+            Pavle Tošić
+          </span>
+        </a>
 
-          {/* Panel */}
-          <motion.div
-            className="relative z-10 w-full max-w-lg overflow-hidden rounded-sm border border-[#b08b4f] bg-[#f3e3b8] shadow-[0_30px_80px_rgba(0,0,0,0.7)]"
-            initial={{ opacity: 0, y: 32, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            onClick={(e) => e.stopPropagation()}
-            style={{ boxShadow: "inset 0 0 50px rgba(120,80,30,0.28), 0 30px 80px rgba(0,0,0,0.7)" }}
+        <ul className="hidden items-center gap-1 md:flex">
+          {NAV.map((item) => (
+            <li key={item.id}>
+              <a
+                href={`#${item.id}`}
+                className={`link-underline block px-3.5 py-2 text-sm transition-colors ${
+                  active === item.id
+                    ? "text-accent-ink"
+                    : "text-muted hover:text-ink"
+                }`}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="rounded-full border border-line-strong px-4 py-1.5 text-sm text-muted md:hidden"
+          aria-label="Toggle navigation menu"
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+        >
+          {open ? "Close" : "Menu"}
+        </button>
+      </nav>
+
+      <AnimatePresence>
+        {open && (
+          <motion.ul
+            id="mobile-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.25 }}
+            className="overflow-hidden border-t border-line bg-bg/95 backdrop-blur-xl md:hidden"
           >
-            {/* Parchment vignette */}
-            <div className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 45px rgba(120,80,30,0.32)" }} />
-
-            {/* Pin */}
-            <PinNail className="absolute left-1/2 -top-2 -translate-x-1/2 z-20 h-3.5 w-3.5" />
-
-            <div className="relative p-7 pt-8">
-              {/* Close */}
-              <button
-                onClick={onClose}
-                className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-full border border-black/20 bg-black/10 text-black/60 transition hover:bg-black/20"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-
-              <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">{project.stack.join(" · ")}</div>
-              <h2 className="mt-1 font-serif text-2xl font-black text-black/90">{project.title}</h2>
-
-              <p className="mt-3 text-sm leading-relaxed text-black/75">{project.details}</p>
-
-              {project.highlights && (
-                <ul className="mt-4 space-y-1.5">
-                  {project.highlights.map((h) => (
-                    <li key={h} className="flex items-start gap-2 text-sm text-black/70">
-                      <span className="mt-0.5 text-amber-700">⚓</span>
-                      <span>{h}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="mt-6 flex flex-wrap gap-3">
+            {NAV.map((item) => (
+              <li key={item.id}>
                 <a
-                  href={project.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded border border-black/30 bg-black/10 px-4 py-2 text-xs font-medium tracking-wide text-black/80 transition hover:bg-black/20"
+                  href={`#${item.id}`}
+                  onClick={() => setOpen(false)}
+                  className={`block px-6 py-3.5 ${
+                    active === item.id ? "text-accent-ink" : "text-body"
+                  }`}
                 >
-                  Live Demo →
+                  {item.label}
                 </a>
-                {project.github && (
-                  <a
-                    href={project.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded border border-black/30 bg-black/10 px-4 py-2 text-xs font-medium tracking-wide text-black/80 transition hover:bg-black/20"
-                  >
-                    GitHub →
-                  </a>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function QuestBoard({ projects }: { projects: typeof PROJECTS }) {
-  const [active, setActive] = useState<typeof PROJECTS[number] | null>(null);
-  return (
-    <div className="relative w-full max-w-3xl">
-      <ProjectModal project={active} onClose={() => setActive(null)} />
-      {/* Wooden support posts */}
-      <div className="absolute -left-3 -top-6 -bottom-16 z-10 w-7 rounded bg-gradient-to-r from-[#2e1a08] via-[#5a3819] to-[#2e1a08] shadow-[0_10px_30px_rgba(0,0,0,0.6)]" />
-      <div className="absolute -right-3 -top-6 -bottom-16 z-10 w-7 rounded bg-gradient-to-r from-[#2e1a08] via-[#5a3819] to-[#2e1a08] shadow-[0_10px_30px_rgba(0,0,0,0.6)]" />
-
-      {/* Top banner: QUEST BOARD */}
-      <div className="absolute left-1/2 -top-7 z-30 -translate-x-1/2 whitespace-nowrap">
-        <div className="rounded-md border-y-4 border-[#2a1808] bg-gradient-to-b from-[#7a4a22] to-[#4a2a12] px-4 py-2 shadow-2xl sm:px-10 sm:py-2.5">
-          <p className="font-serif text-[11px] tracking-[0.3em] text-amber-100 sm:text-sm sm:tracking-[0.45em]">⚓ QUEST BOARD ⚓</p>
-        </div>
-      </div>
-
-      {/* The wooden board */}
-      <div
-        className="relative rounded-md border-4 border-[#2a1808] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.65)] sm:p-6 md:p-8"
-        style={WOOD_BOARD_STYLE}
-      >
-        {/* Inner shadow vignette */}
-        <div className="pointer-events-none absolute inset-0 rounded-md shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]" />
-
-        {/* Decorative corner nails */}
-        <BoardNails />
-
-        <div className="relative grid gap-7 md:grid-cols-2">
-          {projects.map((p, i) => {
-            const baseRot = i % 2 === 0 ? -2.5 : 2;
-            return (
-              <motion.div
-                key={p.title}
-                initial={{ opacity: 0, y: 24, rotate: baseRot - 1 }}
-                whileInView={{ opacity: 1, y: 0, rotate: baseRot }}
-                viewport={{ once: true, amount: 0.4 }}
-                transition={{ delay: 0.25 + i * 0.15, duration: 0.7, ease }}
-                whileHover={{ y: -8, rotate: 0, scale: 1.04, zIndex: 20, transition: { duration: 0.25, ease } }}
-                style={{ transformOrigin: "top center" }}
-                className={
-                  "relative cursor-pointer rounded-sm border border-[#b08b4f] bg-[#f3e3b8] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.55)]" +
-                  (projects.length % 2 === 1 && i === projects.length - 1
-                    ? " md:col-span-2 md:mx-auto md:max-w-[62%]"
-                    : "")
-                }
-                onClick={() => setActive(p)}
-              >
-                {/* Pinned nail at top */}
-                <PinNail />
-
-                {/* Parchment aging vignette */}
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-sm"
-                  style={{ boxShadow: "inset 0 0 35px rgba(120,80,30,0.32)" }}
-                />
-
-                {/* Content */}
-                <div className="relative">
-                  <div className="text-[10px] uppercase tracking-[0.3em] text-black/50">Quest {String(i + 1).padStart(2, "0")}</div>
-                  <h3 className="mt-1 font-serif text-xl font-bold text-black/90">{p.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-black/70">{p.description}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {p.stack.map((tech) => (
-                      <span key={tech} className="rounded-full border border-black/20 bg-black/10 px-3 py-1 text-[11px] text-black/80">
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setActive(p); }}
-                      className="rounded border border-black/30 bg-black/10 px-4 py-1.5 text-xs font-medium tracking-wide text-black/80 transition-colors hover:bg-black/25"
-                    >
-                      Read Log →
-                    </button>
-                    <a
-                      href={p.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="rounded border border-black/30 bg-black/5 px-4 py-1.5 text-xs font-medium tracking-wide text-black/60 transition-colors hover:bg-black/15"
-                    >
-                      Live ↗
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
-
-      <HangingLantern className="-top-3 right-[10%]" />
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function QuestBoardIsland() {
+/* ─────────────────────────────────────────────────────────────
+   LEFT RAIL — pinned profile + vertical nav
+───────────────────────────────────────────────────────────── */
+
+function IconLink({
+  href,
+  label,
+  children,
+}: {
+  href: string;
+  label: string;
+  children: ReactNode;
+}) {
   return (
-    <section
-      id="journey"
-      className="relative isolate min-h-[120vh] overflow-hidden"
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="flex h-11 w-11 items-center justify-center rounded-full text-lg text-muted transition-colors hover:bg-surface hover:text-ink"
     >
-      {/* SKY (top) — golden hour gradient */}
-      <div className="absolute inset-x-0 top-0 h-[55%] bg-gradient-to-b from-[#1a2e4a] via-[#3d5a7a] via-50% to-[#e8a06a] to-100%" />
-      {/* warm horizon haze */}
-      <div className="absolute inset-x-0 top-[40%] h-[18%] bg-gradient-to-b from-transparent via-[#ffb37a]/25 to-[#ff8c5a]/15" />
-
-      {/* horizon fog band */}
-      <div className="absolute inset-x-0 top-[55%] h-[3%] bg-white/15 blur-md" />
-
-      {/* OCEAN (bottom) — painted gradient */}
-      <div className="absolute inset-x-0 top-[55%] bottom-0 bg-gradient-to-b from-[#3d6d8e] via-[#1e466a] to-[#08182c]" />
-
-      {/* Sun reflection on water */}
-      <motion.div
-        className="pointer-events-none absolute right-[15%] top-[55%] h-[28%] w-32 -translate-x-0 bg-gradient-to-b from-amber-200/55 via-amber-300/25 to-transparent blur-[3px]"
-        animate={{ opacity: [0.5, 0.85, 0.5], scaleY: [1, 1.06, 1] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Subtle wave shimmer on ocean */}
-      {Array.from({ length: 14 }).map((_, i) => {
-        const t = 60 + (i * 13) % 32;
-        const l = (i * 17) % 95;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-[1.5px] rounded-full bg-white"
-            style={{ top: `${t}%`, left: `${l}%`, width: 30 + ((i * 11) % 70), opacity: 0.18 + (i % 3) * 0.08 }}
-            animate={{ x: [0, 14, 0], opacity: [0.12, 0.32, 0.12] }}
-            transition={{ duration: 3 + (i % 5) * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
-          />
-        );
-      })}
-
-      {/* Sun */}
-      <Sun />
-
-      {/* Drifting clouds */}
-      <Cloud top="10%" width={220} duration={70} delay={0} />
-      <Cloud top="18%" width={150} duration={90} delay={-25} />
-      <Cloud top="14%" width={180} duration={110} delay={-50} />
-      <Cloud top="24%" width={120} duration={80} delay={-15} />
-
-      {/* Distant ship */}
-      <DistantShip />
-
-      {/* Seagulls flying */}
-      <Seagull top="22%" duration={20} delay={0} />
-      <Seagull top="28%" duration={26} delay={6} reverse scale={0.75} />
-      <Seagull top="16%" duration={32} delay={12} scale={0.6} />
-
-      {/* Pirate ships rolling past the island */}
-      <GoingMerry top="46%" duration={130} delay={-20} scale={0.7} opacity={0.85} />
-      <ThousandSunny top="50%" duration={170} delay={-70} reverse scale={0.55} opacity={0.7} />
-      <RedForce top="42%" duration={200} delay={-120} reverse scale={0.6} opacity={0.7} />
-      <BirdFlock top="12%" duration={75} delay={-25} scale={0.75} />
-      <BirdFlock top="20%" duration={95} delay={-5} reverse scale={0.55} />
-
-      {/* THE ISLAND SCENE */}
-      <div className="relative z-10 mx-auto flex min-h-[120vh] w-full max-w-[1400px] flex-col items-center justify-end px-4 pb-24 pt-32">
-        {/* Section heading floating above */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, ease }}
-          className="mb-12 text-center"
-        >
-          <p className="text-[10px] uppercase tracking-[0.3em] text-amber-100/80 sm:text-xs sm:tracking-[0.4em]">Land Ho! • Loguetown</p>
-          <AnimatedHeading
-            text="Quest Board"
-            className="mt-3 font-serif text-4xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)] sm:text-5xl md:text-6xl"
-          />
-          <p className="mt-3 text-sm text-zinc-200/90">
-            Pinned to the village board — quests completed across the Grand Line.
-          </p>
-        </motion.div>
-
-        {/* Island stage: contains landmass + decorations + quest board */}
-        <motion.div
-          initial={{ opacity: 0, y: 80 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 1.2, ease }}
-          className="relative min-h-[860px] w-full xs:min-h-[780px] sm:min-h-0 sm:aspect-[3/2] md:aspect-[2/1]"
-        >
-          {/* Landmass SVG */}
-          <IslandLandmass />
-
-          {/* Foam line at shore (front) */}
-          <motion.div
-            className="pointer-events-none absolute bottom-[2%] left-1/2 h-3 w-[90%] -translate-x-1/2 rounded-full bg-white/70 blur-[3px]"
-            animate={{ scaleX: [1, 1.04, 1], opacity: [0.55, 0.85, 0.55] }}
-            transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="pointer-events-none absolute bottom-[5%] left-1/2 h-2 w-[78%] -translate-x-1/2 rounded-full bg-white/45 blur-[2px]"
-            animate={{ scaleX: [1, 1.06, 1], opacity: [0.4, 0.7, 0.4] }}
-            transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-          />
-
-          {/* Background palms (smaller, on the hills) */}
-          <motion.div
-            className="absolute left-[28%] top-[42%] z-[15] origin-bottom"
-            animate={{ rotate: [-1.5, 1.5, -1.5] }}
-            transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <PalmTree scale={0.55} />
-          </motion.div>
-          <motion.div
-            className="absolute right-[26%] top-[44%] z-[15] origin-bottom"
-            animate={{ rotate: [1.5, -1.5, 1.5] }}
-            transition={{ duration: 4.6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <PalmTree scale={0.5} flip />
-          </motion.div>
-
-          {/* Foreground palms (on the beach) */}
-          <motion.div
-            className="absolute left-[6%] top-[58%] z-[25] origin-bottom"
-            animate={{ rotate: [-2.5, 2.5, -2.5] }}
-            transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <PalmTree scale={1.2} />
-          </motion.div>
-          <motion.div
-            className="absolute right-[5%] top-[55%] z-[25] origin-bottom"
-            animate={{ rotate: [2.5, -2.5, 2.5] }}
-            transition={{ duration: 3.6, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <PalmTree scale={1.3} flip />
-          </motion.div>
-          <motion.div
-            className="absolute left-[18%] top-[68%] z-[26] origin-bottom"
-            animate={{ rotate: [-2, 2, -2] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <PalmTree scale={0.9} />
-          </motion.div>
-
-          {/* Grass tufts */}
-          <div className="absolute left-[12%] top-[78%] z-[24]"><Grass /></div>
-          <div className="absolute right-[14%] top-[80%] z-[24]"><Grass /></div>
-          <div className="absolute left-[35%] top-[82%] z-[24] opacity-80"><Grass /></div>
-
-          {/* Rocks at shoreline */}
-          <div className="absolute left-[8%] top-[86%] z-[27]"><Rock scale={0.95} /></div>
-          <div className="absolute right-[9%] top-[88%] z-[27]"><Rock scale={0.7} /></div>
-          <div className="absolute left-[40%] top-[90%] z-[27]"><Rock scale={0.55} /></div>
-          <div className="absolute right-[36%] top-[91%] z-[27]"><Rock scale={0.5} /></div>
-
-          {/* Campfire glow near the board */}
-          <motion.div
-            className="pointer-events-none absolute left-[22%] top-[72%] z-[22] h-16 w-16 rounded-full bg-orange-400/40 blur-2xl"
-            animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.8, 0.4] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-          />
-
-          {/* THE QUEST BOARD — centerpiece, planted on the grass */}
-          <div className="absolute left-1/2 top-[8%] z-[30] w-[min(720px,92%)] -translate-x-1/2 sm:top-[18%] sm:w-[min(720px,82%)]">
-            <QuestBoard projects={PROJECTS} />
-          </div>
-        </motion.div>
-      </div>
-    </section>
+      {children}
+    </a>
   );
 }
 
-function GrandLineTransition() {
+function VerticalNav({ active }: { active: string }) {
   return (
-    <section className="relative isolate min-h-[90vh] overflow-hidden">
-      {/* Dawn — holds QuestBoard's deep night ocean at the top, then gradually rises into morning blue toward VoyageLog */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #08182c 0%, #0c2440 12%, #143358 24%, #1e466a 38%, #2a5a85 55%, #3070b0 75%, #2a6aad 100%)",
-        }}
-      />
-
-      {/* Drifting clouds */}
-      <Cloud top="14%" width={210} duration={75} delay={0} />
-      <Cloud top="22%" width={155} duration={95} delay={-30} />
-      <Cloud top="9%" width={120} duration={115} delay={-55} />
-
-      {/* Seagulls */}
-      <Seagull top="32%" duration={26} delay={3} scale={0.65} />
-      <Seagull top="38%" duration={34} delay={11} reverse scale={0.5} />
-
-      <BirdFlock top="14%" duration={85} delay={-15} scale={0.65} />
-
-      {/* Ships drifting past Law's letter */}
-      <ThousandSunny top="50%" duration={155} delay={-25} scale={0.6} opacity={0.8} />
-      <MobyDick top="60%" duration={185} delay={-100} reverse scale={0.55} opacity={0.7} />
-
-      {/* Sun — afternoon, slightly past peak */}
-      <motion.div
-        className="pointer-events-none absolute right-[14%] top-[40%] z-[4]"
-        animate={{ y: [0, -3, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <div className="relative h-20 w-20">
-          <div className="absolute -inset-10 rounded-full bg-yellow-200/20 blur-3xl" />
-          <div className="absolute -inset-4 rounded-full bg-amber-200/25 blur-xl" />
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-100 via-amber-200 to-amber-400 shadow-[0_0_50px_25px_rgba(255,210,100,0.35)]" />
-        </div>
-      </motion.div>
-
-      {/* Sun reflection on water */}
-      <motion.div
-        className="pointer-events-none absolute right-[16%] top-[72%] z-[3] h-[20%] w-20 bg-gradient-to-b from-amber-100/35 via-amber-200/12 to-transparent blur-[3px]"
-        animate={{ opacity: [0.4, 0.7, 0.4], scaleY: [1, 1.05, 1] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Subtle horizon haze */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[28%] h-[3%] bg-white/10 blur-2xl" />
-
-      {/* Wave shimmer */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const t = 76 + ((i * 7) % 18);
-        const l = (i * 23 + 9) % 94;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-px rounded-full bg-white/20"
-            style={{ top: `${t}%`, left: `${l}%`, width: 24 + ((i * 15) % 55) }}
-            animate={{ x: [0, 10, 0], opacity: [0.08, 0.25, 0.08] }}
-            transition={{ duration: 3.5 + (i % 4) * 0.5, repeat: Infinity, ease: "easeInOut", delay: i * 0.45 }}
-          />
-        );
-      })}
-
-      {/* Lone ship on the horizon sailing toward the Grand Line */}
-      <motion.div
-        className="pointer-events-none absolute top-[68%] z-[3] text-zinc-200/35"
-        initial={{ x: "-10vw" }}
-        animate={{ x: "108vw" }}
-        transition={{ duration: 70, repeat: Infinity, ease: "linear", delay: -20 }}
-      >
-        <motion.svg
-          width="48" height="38" viewBox="0 0 60 48" fill="currentColor"
-          animate={{ y: [0, -2, 0, -1, 0] }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <path d="M8 32 L52 32 L46 40 L14 40 Z" opacity="0.75" />
-          <rect x="29" y="6" width="2" height="26" />
-          <path d="M30 8 L44 30 L30 30 Z" opacity="0.85" />
-          <path d="M30 10 L18 30 L30 30 Z" opacity="0.55" />
-          <path d="M30 4 L34 7 L30 7 Z" />
-        </motion.svg>
-      </motion.div>
-
-      {/* Large faded compass rose watermark */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.04]">
-        <svg width="420" height="420" viewBox="0 0 90 90" fill="#f0d7a0">
-          <polygon points="45,5 50,40 45,35 40,40" />
-          <polygon points="45,85 50,50 45,55 40,50" />
-          <polygon points="5,45 40,40 35,45 40,50" />
-          <polygon points="85,45 50,40 55,45 50,50" />
-          <polygon points="45,15 47,38 45,36 43,38" opacity="0.5" />
-          <polygon points="45,75 47,52 45,54 43,52" opacity="0.5" />
-          <polygon points="15,45 38,43 36,45 38,47" opacity="0.5" />
-          <polygon points="75,45 52,43 54,45 52,47" opacity="0.5" />
-          <circle cx="45" cy="45" r="8" fill="none" stroke="#f0d7a0" strokeWidth="1.5" />
-          <circle cx="45" cy="45" r="14" fill="none" stroke="#f0d7a0" strokeWidth="0.8" opacity="0.5" />
-          <circle cx="45" cy="45" r="20" fill="none" stroke="#f0d7a0" strokeWidth="0.5" opacity="0.3" />
-        </svg>
-      </div>
-
-      {/* Centered content */}
-      <div className="relative z-10 flex min-h-[90vh] items-center justify-center px-6 pt-64 pb-24">
-        <motion.div
-          initial={{ opacity: 0, y: 28 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.4 }}
-          transition={{ duration: 1.1, ease }}
-          className="w-full max-w-lg"
-        >
-          <LetterParallax>
-          <SealedEnvelope
-            sealColor="#eab308"
-            sealGlow="rgba(234,179,8,0.55)"
-            sealLetter="L"
-            label="HEART PIRATES · TAP TO OPEN"
-            faceSrc="/images/law.jpg"
-            faceAlt="Trafalgar Law"
-            faceSize={106}
-          >
-            <div
-              className="relative rounded-sm border-2 border-[#8b6a32] p-10 text-center shadow-[0_24px_70px_rgba(0,0,0,0.7)]"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-              }}
-            >
-              <div
-                className="pointer-events-none absolute inset-0 rounded-sm"
-                style={{ boxShadow: "inset 0 0 60px rgba(120,80,30,0.5)" }}
-              />
-              {/* Pin */}
-              <PinNail />
-
-              <div className="relative">
-                <p className="text-[10px] uppercase tracking-[0.45em] text-black/70">Intercepted Den Den Mushi · Heart Pirates</p>
-                <h2 className="mt-3 font-serif text-4xl font-extrabold text-black md:text-5xl">
-                  The Grand Line<br />Awaits
-                </h2>
-                <div className="mt-4 flex items-center justify-center gap-3">
-                  <div className="h-px w-10 bg-black/50" />
-                  <span className="text-[10px] tracking-[0.3em] text-black/60">✦ ✦ ✦</span>
-                  <div className="h-px w-10 bg-black/50" />
-                </div>
-                <p className="mt-5 font-serif text-base italic leading-relaxed text-black md:text-lg">
-                  &ldquo;A man only truly dies when he is forgotten. Carry the will of those who came before — and decide your own death yourself.&rdquo;
-                </p>
-                <div className="mt-5 flex justify-center">
-                  <div className="overflow-hidden rounded border-2 border-[#8b6a32] shadow-[0_4px_16px_rgba(0,0,0,0.45)]" style={{ width: 260 }}>
-                    <Image src="/images/corazon-law.jpg" alt="Corazon and Law" width={260} height={146} className="object-cover w-full" />
-                  </div>
-                </div>
-                <p className="mt-4 text-xs font-bold tracking-[0.28em] text-black/80">
-                  — TRAFALGAR D. WATER LAW · SURGEON OF DEATH, HEART PIRATES
-                </p>
-                <div className="mt-4 flex items-center justify-center gap-3">
-                  <div className="h-px w-14 bg-black/50" />
-                  <span className="text-[10px] font-bold tracking-[0.4em] text-black/70">LOG OPEN</span>
-                  <div className="h-px w-14 bg-black/50" />
-                </div>
-              </div>
-            </div>
-          </SealedEnvelope>
-          </LetterParallax>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function VoyageLog() {
-  const timelineRef = useRef<HTMLDivElement>(null);
-  return (
-    <section id="voyage" className="relative isolate min-h-[120vh] overflow-hidden">
-      {/* Continuous ocean sky → night gradient (no horizon seam) */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #2a6aad 0%, #4a90c8 18%, #6aaee0 40%, #4d8fbe 55%, #2c5f8c 68%, #163a62 80%, #0c0e1a 100%)",
-        }}
-      />
-
-      {/* Old map grid overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.055]"
-        style={{
-          backgroundImage:
-            "linear-gradient(90deg, #c8b87a 1px, transparent 1px), linear-gradient(180deg, #c8b87a 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-        }}
-      />
-
-      {/* Soft atmospheric haze in the mid-band (purely a glow, no boundary) */}
-      <div className="pointer-events-none absolute inset-x-0 top-[48%] h-[14%] bg-gradient-to-b from-white/8 via-white/4 to-transparent blur-2xl" />
-
-      {/* Wave shimmer */}
-      <WaveShimmer count={10} colorClass="bg-white/25" topStart={60} />
-
-      {/* Drifting clouds */}
-      <Cloud top="10%" width={200} duration={75} delay={0} />
-      <Cloud top="18%" width={140} duration={95} delay={-28} />
-
-      {/* Seagulls */}
-      <Seagull top="28%" duration={22} delay={1} scale={0.75} />
-      <Seagull top="34%" duration={30} delay={9} reverse scale={0.55} />
-
-      {/* Companions on the open sea */}
-      <BirdFlock top="20%" duration={90} delay={-12} reverse scale={0.6} />
-
-      {/* Compass rose (decorative, bottom-left corner) */}
-      <div className="pointer-events-none absolute bottom-32 left-8 z-[4] opacity-20">
-        <svg width="90" height="90" viewBox="0 0 90 90" fill="#f0d7a0">
-          <polygon points="45,5 50,40 45,35 40,40" />
-          <polygon points="45,85 50,50 45,55 40,50" />
-          <polygon points="5,45 40,40 35,45 40,50" />
-          <polygon points="85,45 50,40 55,45 50,50" />
-          <circle cx="45" cy="45" r="6" />
-          <circle cx="45" cy="45" r="3" fill="#c8a85a" />
-          <text x="45" y="20" textAnchor="middle" fontSize="8" fontFamily="serif" fill="#f0d7a0">N</text>
-        </svg>
-      </div>
-
-      {/* CONTENT */}
-      <SectionReveal className="relative z-10 mx-auto flex min-h-[120vh] w-full max-w-[1200px] flex-col items-center px-4 pb-32 pt-24">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, ease }}
-          className="mb-12 text-center sm:mb-20"
-        >
-          <p className="text-[10px] uppercase tracking-[0.3em] text-amber-100/80 sm:text-xs sm:tracking-[0.4em]">
-            The Grand Line · Captain&apos;s Log
-          </p>
-          <AnimatedHeading
-            text="Voyage Log"
-            className="mt-3 font-serif text-4xl font-extrabold text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.5)] sm:text-5xl md:text-6xl"
-          />
-          <p className="mt-3 text-sm text-zinc-200/85">
-            Every port shaped the journey. Every arc built the crew.
-          </p>
-        </motion.div>
-
-        {/* Timeline */}
-        <div ref={timelineRef} className="relative w-full max-w-3xl">
-          {/* Animated rope drawn as you scroll */}
-          <ScrollRope targetRef={timelineRef} />
-
-          {VOYAGE.map((entry, i) => (
-            <div
-              key={i}
-              className={`relative mb-12 flex items-start md:mb-16 ${
-                i % 2 === 0 ? "md:justify-end" : "md:justify-start"
-              } justify-start pl-12 md:pl-0`}
-            >
-              {/* Anchor marker on the rope */}
-              <div className="absolute left-3 top-7 z-20 md:left-1/2 md:-translate-x-1/2">
-                <motion.div
-                  className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#3d2410] bg-gradient-to-br from-amber-300 via-amber-500 to-amber-800 shadow-[0_0_14px_rgba(255,180,80,0.5)]"
-                  animate={{ scale: [1, 1.08, 1] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: i * 1 }}
-                >
-                  <span className="text-sm">⚓</span>
-                </motion.div>
-              </div>
-
-              {/* Connector line to card — only shown on md+ where the card sits across the rope */}
-              <div
-                className={`absolute top-[2.15rem] hidden h-[2px] w-[calc(50%-1.25rem)] bg-gradient-to-r from-amber-700/80 to-transparent md:block ${
-                  i % 2 === 0
-                    ? "right-1/2 translate-x-[-1.25rem] bg-gradient-to-l"
-                    : "left-1/2 translate-x-[1.25rem]"
-                }`}
-              />
-
-              {/* Parchment card */}
-              <motion.div
-                initial={{ opacity: 0, x: i % 2 === 0 ? -28 : 28 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.85, delay: 0.15, ease }}
-                whileHover={{ y: -5, scale: 1.02 }}
-                className={`relative w-full rounded-sm border border-[#b08b4f] p-5 shadow-[0_14px_35px_rgba(0,0,0,0.55)] sm:p-6 md:w-[calc(50%-2.5rem)] ${
-                  i % 2 === 0 ? "md:mr-[calc(50%+1.25rem)]" : "md:ml-[calc(50%+1.25rem)]"
-                }`}
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 50% 0%, rgba(255,235,180,0.4), rgba(220,180,110,0) 70%), linear-gradient(180deg, #f3e3b8 0%, #e8d098 100%)",
-                }}
-              >
-                {/* Pin */}
-                <PinNail className={`absolute -top-2 h-3.5 w-3.5 ${i % 2 === 0 ? "right-6" : "left-6"}`} />
-                {/* Aging vignette */}
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-sm"
-                  style={{ boxShadow: "inset 0 0 30px rgba(120,80,30,0.3)" }}
+    <nav className="mt-10 hidden lg:block" aria-label="In-page navigation">
+      <ul className="space-y-1">
+        {NAV.map((item) => {
+          const on = active === item.id;
+          return (
+            <li key={item.id}>
+              <a href={`#${item.id}`} className="group flex items-center py-2">
+                <span
+                  aria-hidden
+                  className={`mr-4 h-px transition-all duration-300 ${
+                    on
+                      ? "w-14 bg-ink"
+                      : "w-7 bg-faint group-hover:w-14 group-hover:bg-ink"
+                  }`}
                 />
+                <span
+                  className={`text-sm transition-colors ${
+                    on
+                      ? "font-semibold text-ink"
+                      : "text-muted group-hover:text-ink"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
 
-                <div className="relative">
-                  {entry.current && (
-                    <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-700/80 px-2.5 py-0.5">
-                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
-                      <span className="text-[8px] uppercase tracking-[0.3em] text-emerald-100">Currently Sailing</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[9px] uppercase tracking-[0.3em] text-black/50">
-                      {entry.arc}
-                    </span>
-                    <span className="text-[9px] uppercase tracking-[0.22em] text-black/45">
-                      {entry.port}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[10px] tracking-[0.2em] text-black/60">
-                    {entry.period}
-                  </p>
-                  <h3 className="mt-2 font-serif text-xl font-bold text-black/90">
-                    {entry.title}
-                  </h3>
-                  <p className="mt-0.5 text-sm font-medium text-black/65">
-                    {entry.org}
-                  </p>
-                  <ul className="mt-3 space-y-1.5">
-                    {entry.bullets.map((b) => (
-                      <li key={b} className="flex items-start gap-1.5 text-xs leading-relaxed text-black/72">
-                        <span className="mt-0.5 shrink-0 text-[#8b5a2b]">▸</span>
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
-            </div>
-          ))}
-
-          {/* "Now Sailing" end marker */}
-          <motion.div
-            className="relative flex flex-col items-center"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.4 }}
-          >
-            <motion.button
-              onClick={() => window.dispatchEvent(new Event("show-poneglyph"))}
-              className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-amber-400/80 bg-gradient-to-br from-amber-300/40 to-amber-600/40 shadow-[0_0_20px_rgba(255,180,80,0.5)] transition hover:scale-110 hover:shadow-[0_0_30px_rgba(255,180,80,0.7)]"
-              animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              title="Something stirs here..."
+function LeftRail({ active }: { active: string }) {
+  const reduce = usePrefersReducedMotion();
+  return (
+    <header
+      id="home"
+      className="pt-24 pb-10 lg:sticky lg:top-0 lg:flex lg:max-h-screen lg:w-[40%] lg:shrink-0 lg:flex-col lg:justify-between lg:overflow-y-auto lg:py-20"
+    >
+      <motion.div
+        initial={reduce ? false : "hidden"}
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+        }}
+      >
+        <motion.div
+          variants={ITEM_VARIANTS}
+          className="relative mb-6 h-24 w-24 overflow-hidden rounded-2xl border border-line-strong"
+        >
+          <Image
+            src="/images/me.jpg"
+            alt={NAME}
+            fill
+            sizes="96px"
+            className="scale-150 object-cover object-[50%_-30%]"
+            priority
+          />
+        </motion.div>
+        <RevealHeading
+          as="h1"
+          trigger="mount"
+          text={NAME}
+          delay={0.2}
+          className="text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl"
+        />
+        <motion.p
+          variants={ITEM_VARIANTS}
+          className="mt-3 text-lg font-medium text-ink"
+        >
+          {ROLE} <span className="text-faint">·</span>{" "}
+          <span className="text-muted">{LOCATION}</span>
+        </motion.p>
+        <motion.p
+          variants={ITEM_VARIANTS}
+          className="mt-5 max-w-sm text-[15px] leading-relaxed text-body"
+        >
+          {TAGLINE}
+        </motion.p>
+        <motion.div
+          variants={ITEM_VARIANTS}
+          className="mt-7 flex flex-wrap items-center gap-3"
+        >
+          <Magnetic strength={0.3}>
+            <a
+              href="#work"
+              className="block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
             >
-              <span className="text-lg">🧭</span>
-            </motion.button>
-            <p className="mt-4 text-xs uppercase tracking-[0.4em] text-amber-100/70">
-              Where It All Began · East Blue
+              View work
+            </a>
+          </Magnetic>
+          <Magnetic strength={0.3}>
+            <a
+              href="#contact"
+              className="block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-accent hover:text-accent-ink"
+            >
+              Get in touch
+            </a>
+          </Magnetic>
+        </motion.div>
+        <VerticalNav active={active} />
+      </motion.div>
+
+      <motion.div
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7, duration: 0.6 }}
+        className="mt-10 flex items-center gap-1 lg:mt-0"
+      >
+        <IconLink href={SOCIAL.github} label="GitHub">
+          <SiGithub />
+        </IconLink>
+        <IconLink href={SOCIAL.linkedin} label="LinkedIn">
+          <SiLinkedin />
+        </IconLink>
+        <IconLink href={`mailto:${SOCIAL.email}`} label="Email">
+          <SiGmail />
+        </IconLink>
+        <IconLink href={SOCIAL.whatsapp} label="WhatsApp">
+          <SiWhatsapp />
+        </IconLink>
+      </motion.div>
+    </header>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ABOUT
+───────────────────────────────────────────────────────────── */
+
+function About() {
+  return (
+    <section id="about" className="scroll-mt-24 py-12 lg:py-16">
+      <RevealHeading
+        text="About"
+        className="mb-8 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+      />
+      <Reveal>
+        <div className="glass rounded-2xl p-7 sm:p-9">
+          <h3 className="font-display text-2xl font-bold leading-snug tracking-tight text-ink sm:text-3xl">
+            I turn ideas into{" "}
+            <span className="text-gradient">shipped, working software</span>.
+          </h3>
+          <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-body sm:text-base">
+            <p>
+              Software developer at{" "}
+              <span className="font-medium text-ink">Infostream</span>, working
+              mostly with{" "}
+              <span className="font-medium text-ink">Oracle APEX</span>,{" "}
+              <span className="font-medium text-ink">.NET</span>, and{" "}
+              <span className="font-medium text-ink">C#</span>.{" "}
+              <span className="font-medium text-ink">JavaScript</span> and{" "}
+              <span className="font-medium text-ink">TypeScript</span> are my
+              strongest area, and I&apos;m happy to pick up whatever framework
+              or library a project needs instead of sticking to one.
             </p>
-            <motion.p
-              className="mt-2 text-[10px] uppercase tracking-[0.4em] text-amber-300/80"
-              animate={{ opacity: [0.55, 1, 0.55] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              Press the pulsing compass
-            </motion.p>
-          </motion.div>
+            <p>
+              I build web apps front to back, and with AI tools and MCPs I move
+              fast and cover the design and UX side too, not just the
+              programming. Open to full-time or part-time, remote work.
+            </p>
+          </div>
+          <div className="mt-8 flex flex-wrap gap-8">
+            {LANGUAGES.map((l) => (
+              <div key={l.label}>
+                <div className="text-sm font-medium text-ink">{l.label}</div>
+                <div className="text-xs text-muted">{l.level}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </SectionReveal>
+      </Reveal>
     </section>
   );
 }
 
-/* ─────────────────────────────────────────────
-   CREW QUARTERS — Personal Life Island
-───────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   STACK — language icons with names
+───────────────────────────────────────────────────────────── */
 
-const HOBBIES = [
-  {
-    id: "mma",
-    label: "Martial Arts",
-    tag: "Wrestling · Boxing · MMA",
-    icon: "🥊",
-    color: "#c0392b",
-    glow: "rgba(192,57,43,0.55)",
-    accent: "#e74c3c",
-    description:
-      "Training at MMA Team Zabjelo in Podgorica, Montenegro. Wrestling and boxing are the foundation — MMA sparring sharpens the edges. Discipline forged on the mat carries into every line of code.",
-    stat1: { label: "Team", value: "MMA Team Zabjelo" },
-    stat2: { label: "Location", value: "Podgorica, Montenegro" },
-    image: "/images/mma.jpg",
-    details: [
-      "Athlete my whole life — bodybuilding and powerlifting background before combat sports.",
-      "Wrestling is my favorite of the three. Nothing humbles you like getting controlled on the mat.",
-      "Favorite MMA fighter: Ilia Topuria. Favorite boxer: Canelo Álvarez.",
-      "Home gym: MMA Team Zabjelo, Podgorica.",
-      "Discipline forged in the gym is the same discipline that ships clean code.",
-    ],
-  },
-  {
-    id: "gaming",
-    label: "Competitive Gaming",
-    tag: "Valorant · CS2 · Twitch",
-    icon: "🎮",
-    color: "#8b5cf6",
-    glow: "rgba(139,92,246,0.55)",
-    accent: "#a78bfa",
-    description:
-      "Peaked Immortal 3 in Valorant. FACEIT Level 10 in CS2. Previously streamed on Twitch — high-level competitive gaming is pure systems thinking, reading opponents and adapting mid-round.",
-    stat1: { label: "Valorant", value: "Immortal 3" },
-    stat2: { label: "CS2 FACEIT", value: "Level 10" },
-    videos: [
-      { label: "Valorant", src: "/video/gaming.mp4" },
-      { label: "CS2", src: "/video/cs2.mp4" },
-    ],
-    details: [
-      "Gaming my whole life — grew up on Counter-Strike, still in love with the genre.",
-      "Streamed on Twitch for a while. Live feedback loops are unbeatable practice.",
-      "Favorite Valorant agent: Jett. Movement, dash, knife — pure pressure.",
-      "Favorite Valorant team: Sentinels.",
-      "Sharp aim matters less than reading the round and adapting mid-fight.",
-    ],
-  },
-  {
-    id: "crypto",
-    label: "Crypto & Markets",
-    tag: "Trading · DeFi · Blockchain",
-    icon: <SiBitcoin />,
-    color: "#f59e0b",
-    glow: "rgba(245,158,11,0.55)",
-    accent: "#fbbf24",
-    description:
-      "Been around crypto since 2021. Still learning every day — DeFi, web3, how the whole thing actually works. Not claiming to be a pro, just genuinely interested in where it's going. (That's Vitalik Buterin, co-founder of Ethereum, in the picture.)",
-    stat1: { label: "Since", value: "2021" },
-    stat2: { label: "Focus", value: "DeFi · Web3" },
-    image: "/images/crypto.jpg",
-    imagePosition: "top" as const,
-    details: [
-      "Hobby trader, not a guru. Markets are humbling and that's part of the appeal.",
-      "Biggest single trade win so far: ~$1.2k. Small numbers, big lessons.",
-      "Most of the fun is in reading about projects, watching the tech evolve, and learning how value moves on-chain.",
-      "Long-term curious about Ethereum and what programmable money turns into next.",
-    ],
-  },
-];
-
-type Hobby = (typeof HOBBIES)[number];
-
-function HobbyCard({ h, index }: { h: Hobby; index: number }) {
-  const isEven = index % 2 === 0;
-  const videos = "videos" in h ? h.videos : undefined;
-  const image = "image" in h ? h.image : undefined;
-  const imagePosition = "imagePosition" in h ? h.imagePosition : "center";
-  const details = "details" in h ? h.details : [];
-  const [videoIdx, setVideoIdx] = useState(0);
-  const [zoomed, setZoomed] = useState(false);
-  const [flipped, setFlipped] = useState(false);
-  const activeVideo = videos?.[videoIdx];
-
-  // Lightbox sizing — videos fill the screen; small source images scale up by height
-  const lightboxMediaClass = activeVideo
-    ? "max-h-[90vh] max-w-[92vw] rounded-xl shadow-[0_0_80px_rgba(0,0,0,0.7)]"
-    : "h-[85vh] w-auto max-w-[92vw] rounded-xl object-cover shadow-[0_0_80px_rgba(0,0,0,0.7)]";
-
-  const stop = (e: React.MouseEvent) => e.stopPropagation();
-
+function TechTile({ t }: { t: Tech }) {
+  const reduce = usePrefersReducedMotion();
+  const tintClass =
+    t.tint === "amber"
+      ? "text-accent"
+      : t.tint === "cream"
+        ? "text-ink"
+        : t.tint === "stroke"
+          ? "text-accent"
+          : "";
+  // Devicon logos are filled paths (tint via fill); tabler line icons are
+  // strokes (tint via text colour only — filling would blob them).
+  const isStroke = t.tint === "stroke";
   return (
     <motion.div
-      initial={{ opacity: 0, y: 60 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.9, delay: index * 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className={`relative flex flex-col gap-6 sm:gap-8 lg:flex-row ${isEven ? "" : "lg:flex-row-reverse"} items-center`}
+      variants={reduce ? undefined : ITEM_VARIANTS}
+      whileHover={reduce ? undefined : { y: -5 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="glass group flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:border-accent/60"
     >
-      {/* Media panel — flippable */}
-      <div className="relative w-full lg:w-1/2" style={{ perspective: "1400px" }}>
-        <motion.div
-          animate={{ rotateY: flipped ? 180 : 0 }}
-          transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          className="relative h-64 w-full sm:h-72 lg:h-80"
-          style={{ transformStyle: "preserve-3d", WebkitTransformStyle: "preserve-3d" }}
-        >
-          {/* FRONT — media */}
-          <div
-            className="absolute inset-0 overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
-            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "translateZ(0)", boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)` }}
-          >
-            {activeVideo ? (
-              <video
-                key={activeVideo.src}
-                className="h-full w-full object-cover"
-                src={activeVideo.src}
-                autoPlay
-                muted
-                loop
-                playsInline
-              />
-            ) : image ? (
-              <img
-                src={image}
-                alt={h.label}
-                className="h-full w-full object-cover"
-                style={{ objectPosition: imagePosition }}
-              />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center"
-                style={{ background: `linear-gradient(135deg, ${h.color}22, ${h.color}44)` }}
-              >
-                <span className="text-7xl opacity-40">{h.icon}</span>
-              </div>
-            )}
-            {/* Overlay gradient */}
-            <div
-              className="pointer-events-none absolute inset-0"
-              style={{ background: `linear-gradient(to top, ${h.color}88 0%, transparent 50%)` }}
-            />
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center text-[26px] opacity-90 transition-transform duration-300 group-hover:scale-110 ${
+          t.tint ? `${isStroke ? "" : "icon-fill-current "}${tintClass}` : ""
+        }`}
+      >
+        <Icon icon={t.icon} aria-hidden />
+      </span>
+      <span className="text-sm font-medium text-ink">{t.name}</span>
+    </motion.div>
+  );
+}
 
-            {/* Top-right control cluster */}
-            <div className="absolute right-3 top-3 flex items-center gap-1.5">
-              {videos && videos.length > 1 && (
-                <div
-                  className="flex gap-1 rounded-full bg-black/55 p-1 backdrop-blur-md"
-                  onClick={stop}
-                >
-                  {videos.map((v, idx) => (
-                    <button
-                      key={v.label}
-                      onClick={() => setVideoIdx(idx)}
-                      className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.15em] transition"
-                      style={{
-                        background: idx === videoIdx ? h.color : "transparent",
-                        color: idx === videoIdx ? "#fff" : "rgba(255,255,255,0.7)",
-                        border: `1px solid ${idx === videoIdx ? h.accent : "rgba(255,255,255,0.18)"}`,
-                      }}
-                    >
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button
-                onClick={(e) => { stop(e); setZoomed(true); }}
-                title="View full"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition hover:bg-black/80"
-                style={{ border: `1px solid ${h.accent}55` }}
-              >
-                ⤢
-              </button>
-              <button
-                onClick={(e) => { stop(e); setFlipped(true); }}
-                title="More info"
-                className="flex h-8 items-center gap-1 rounded-full bg-black/55 px-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md transition hover:bg-black/80"
-                style={{ border: `1px solid ${h.accent}55` }}
-              >
-                ↻ Flip
-              </button>
-            </div>
+function Stack() {
+  return (
+    <section id="stack" className="scroll-mt-24 py-12 lg:py-16">
+      <RevealHeading
+        text="The stack"
+        className="text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+      />
+      <Reveal delay={0.1}>
+        <p className="mt-3 max-w-xl text-body">
+          The languages and tools I reach for — across the front end, the back
+          end, and the database.
+        </p>
+      </Reveal>
 
-            {/* Tag pill */}
-            <div
-              className="absolute bottom-4 left-4 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-white backdrop-blur-md"
-              style={{ background: `${h.color}99`, border: `1px solid ${h.accent}66` }}
-            >
-              {h.tag}
-            </div>
+      <div className="mt-12 space-y-10">
+        {STACK.map((group) => (
+          <div key={group.group}>
+            <Reveal>
+              <h3 className="mb-4 text-sm font-medium text-muted">
+                {group.group}
+              </h3>
+            </Reveal>
+            <StaggerGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {group.items.map((t) => (
+                <TechTile key={t.name} t={t} />
+              ))}
+            </StaggerGroup>
           </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
-          {/* BACK — extended info */}
-          <div
-            className="absolute inset-0 flex flex-col gap-3 overflow-y-auto rounded-2xl border border-white/10 p-6 shadow-2xl"
-            style={{
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-              WebkitTransform: "rotateY(180deg)",
-              background: `linear-gradient(145deg, ${h.color}22 0%, rgba(10,15,30,0.92) 60%, rgba(10,15,30,0.96) 100%)`,
-              boxShadow: `0 0 60px ${h.glow}, 0 20px 60px rgba(0,0,0,0.6)`,
-            }}
+/* ─────────────────────────────────────────────────────────────
+   WORK
+───────────────────────────────────────────────────────────── */
+
+function ProjectCard({ p }: { p: (typeof PROJECTS)[number] }) {
+  const reduce = usePrefersReducedMotion();
+  return (
+    <motion.div
+      variants={reduce ? undefined : ITEM_VARIANTS}
+      whileHover={reduce ? undefined : { y: -5 }}
+      transition={{ type: "spring", stiffness: 300, damping: 22 }}
+      className="glass group flex h-full flex-col rounded-2xl p-6 transition-colors hover:border-accent/50 sm:p-7"
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <h3 className="font-display text-2xl font-bold tracking-tight text-ink transition-colors group-hover:text-accent-ink">
+          {p.title}
+        </h3>
+        {p.tag && (
+          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent-ink">
+            {p.tag}
+          </span>
+        )}
+      </div>
+      <p className="mt-3 text-[15px] leading-relaxed text-body">{p.blurb}</p>
+      <ul className="mt-4 flex flex-wrap gap-2">
+        {p.stack.map((s) => (
+          <li
+            key={s}
+            className="rounded-md border border-line px-2 py-0.5 font-mono text-xs text-muted"
           >
-            <div className="flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-[0.4em]" style={{ color: h.accent }}>
-                Inside the Log
-              </p>
-              <button
-                onClick={(e) => { stop(e); setFlipped(false); }}
-                title="Back"
-                className="flex h-7 items-center gap-1 rounded-full bg-white/10 px-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-white/20"
-              >
-                ← Back
-              </button>
-            </div>
-            <h4 className="font-serif text-xl font-bold text-white">{h.label}</h4>
-            <p className="text-xs leading-relaxed text-zinc-300">{h.description}</p>
-            {details.length > 0 && (
-              <ul className="mt-1 space-y-1.5">
-                {details.map((d) => (
-                  <li key={d} className="flex items-start gap-2 text-xs leading-relaxed text-zinc-200/90">
-                    <span className="mt-1 h-1 w-1 shrink-0 rounded-full" style={{ background: h.accent }} />
-                    {d}
+            {s}
+          </li>
+        ))}
+      </ul>
+      <div className="mt-6 flex items-center gap-5 pt-2 text-sm">
+        <a
+          href={p.live}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="link-underline font-medium text-accent-ink"
+        >
+          Live demo{" "}
+          <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+            ↗
+          </span>
+        </a>
+        <a
+          href={p.code}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
+        >
+          <SiGithub aria-hidden /> Code
+        </a>
+      </div>
+    </motion.div>
+  );
+}
+
+function Work() {
+  return (
+    <section id="work" className="scroll-mt-24 py-12 lg:py-16">
+      <RevealHeading
+        text="Things I've built"
+        className="mb-10 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+      />
+      <StaggerGroup className="grid gap-5 sm:grid-cols-2">
+        {PROJECTS.map((p) => (
+          <ProjectCard key={p.title} p={p} />
+        ))}
+      </StaggerGroup>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GITHUB
+───────────────────────────────────────────────────────────── */
+
+function GitHub() {
+  return (
+    <section id="github" className="scroll-mt-24 py-12 lg:py-16">
+      <RevealHeading
+        text="On GitHub"
+        className="mb-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+      />
+      <Reveal>
+        <p className="mb-8 max-w-xl text-body">
+          Where I build in the open — a year of commits across personal
+          projects, games and experiments.
+        </p>
+        <GitHubGraph />
+      </Reveal>
+    </section>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EXPERIENCE
+───────────────────────────────────────────────────────────── */
+
+function Experience() {
+  const reduce = usePrefersReducedMotion();
+  const ref = useRef<HTMLOListElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 0.85", "end 0.55"],
+  });
+  const lineScaleY = useSpring(scrollYProgress, {
+    stiffness: 120,
+    damping: 30,
+    mass: 0.3,
+  });
+
+  return (
+    <section id="experience" className="scroll-mt-24 py-12 lg:py-16">
+      <RevealHeading
+        text="Where I've been"
+        className="mb-10 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+      />
+      <ol ref={ref} className="relative ml-2 pl-0">
+        <motion.span
+          aria-hidden
+          className="absolute left-0 top-0 h-full w-px origin-top bg-line-strong"
+          style={{ scaleY: reduce ? 1 : lineScaleY }}
+        />
+        {EXPERIENCE.map((e, i) => (
+          <li key={e.role} className="relative pb-12 pl-8 last:pb-0">
+            <span
+              className={`absolute -left-[6.5px] top-1.5 h-3 w-3 rounded-full ring-4 ring-bg ${
+                e.current ? "bg-accent" : "bg-line-strong"
+              }`}
+              aria-hidden
+            />
+            <Reveal delay={i * 0.05}>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h3 className="text-lg font-semibold text-ink">{e.role}</h3>
+                {e.current && (
+                  <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-ink">
+                    Current
+                  </span>
+                )}
+              </div>
+              <div className="mt-0.5 text-sm text-muted">
+                {e.org}
+                {e.period && <> · {e.period}</>}
+              </div>
+              <ul className="mt-3 space-y-2">
+                {e.points.map((pt) => (
+                  <li
+                    key={pt}
+                    className="relative pl-5 text-[15px] leading-relaxed text-body before:absolute before:left-0 before:top-2.5 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
+                  >
+                    {pt}
                   </li>
                 ))}
               </ul>
-            )}
-          </div>
-        </motion.div>
+              {e.link && (
+                <a
+                  href={e.link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-underline mt-3 inline-block text-sm font-medium text-accent-ink"
+                >
+                  {e.link.label}
+                </a>
+              )}
+            </Reveal>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
 
-        {/* Floating glow orb behind panel */}
-        <div
-          className="pointer-events-none absolute -inset-8 -z-10 rounded-3xl blur-3xl opacity-30"
-          style={{ background: h.color }}
+/* ─────────────────────────────────────────────────────────────
+   CONTACT
+───────────────────────────────────────────────────────────── */
+
+function Contact() {
+  const items = [
+    {
+      Icon: SiGmail,
+      label: "Email",
+      value: SOCIAL.email,
+      href: `mailto:${SOCIAL.email}`,
+    },
+    {
+      Icon: SiGithub,
+      label: "GitHub",
+      value: "github.com/Toshkee",
+      href: SOCIAL.github,
+    },
+    {
+      Icon: SiLinkedin,
+      label: "LinkedIn",
+      value: "in/tosiicp",
+      href: SOCIAL.linkedin,
+    },
+    {
+      Icon: SiWhatsapp,
+      label: "WhatsApp",
+      value: "Message me",
+      href: SOCIAL.whatsapp,
+    },
+  ];
+
+  return (
+    <section id="contact" className="scroll-mt-24 py-16 lg:py-24">
+      <div className="relative mx-auto max-w-2xl text-center">
+        <RevealHeading
+          text="Let's build something."
+          className="text-3xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl"
         />
-      </div>
-
-      {/* Lightbox */}
-      <AnimatePresence>
-        {zoomed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
-            onClick={() => setZoomed(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.92, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="relative"
-              onClick={stop}
-            >
-              {activeVideo ? (
-                <>
-                  <video
-                    key={activeVideo.src}
-                    src={activeVideo.src}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    controls
-                    className={lightboxMediaClass}
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: [0, 1, 1, 0], y: [-8, 0, 0, -8] }}
-                    transition={{ duration: 4, times: [0, 0.1, 0.85, 1], ease: "easeInOut" }}
-                    className="pointer-events-none absolute left-1/2 top-3 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/70 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur-md"
-                    style={{ border: `1px solid ${h.accent}66` }}
-                  >
-                    🔊 Sound available — unmute in the player below
-                  </motion.div>
-                </>
-              ) : image ? (
-                <img src={image} alt={h.label} className={lightboxMediaClass} />
-              ) : null}
-              <button
-                onClick={() => setZoomed(false)}
-                className="absolute -top-3 -right-3 flex h-9 w-9 items-center justify-center rounded-full bg-white text-black text-lg font-bold shadow-xl hover:scale-110 transition"
-                aria-label="Close"
+        <Reveal delay={0.1}>
+          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-body">
+            Open to full-time or part-time, remote. The fastest way to reach me
+            is email — I usually reply within a day.
+          </p>
+          <div className="mt-8 flex justify-center">
+            <Magnetic strength={0.3}>
+              <a
+                href={`mailto:${SOCIAL.email}`}
+                className="block rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
               >
-                ×
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Text panel */}
-      <div className="flex w-full flex-col gap-5 px-1 sm:px-2 lg:w-1/2 lg:px-6">
-        {/* Icon + heading */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <motion.div
-            animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: index * 0.8 }}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl shadow-lg sm:h-14 sm:w-14 sm:text-3xl"
-            style={{
-              background: `linear-gradient(135deg, ${h.color}44, ${h.color}88)`,
-              border: `1px solid ${h.accent}55`,
-              boxShadow: `0 0 24px ${h.glow}`,
-            }}
-          >
-            {h.icon}
-          </motion.div>
-          <div className="min-w-0">
-            <p
-              className="text-[9px] uppercase tracking-[0.3em] font-medium sm:text-[10px] sm:tracking-[0.4em]"
-              style={{ color: h.accent }}
-            >
-              {h.tag}
-            </p>
-            <h3 className="font-serif text-xl font-extrabold text-white sm:text-2xl md:text-3xl">
-              {h.label}
-            </h3>
+                {SOCIAL.email}
+              </a>
+            </Magnetic>
           </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-sm leading-relaxed text-zinc-300">{h.description}</p>
-
-        {/* Stat chips */}
-        <div className="flex flex-wrap gap-3">
-          {[h.stat1, h.stat2].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-lg px-4 py-2.5 backdrop-blur-sm"
-              style={{
-                background: `${h.color}22`,
-                border: `1px solid ${h.accent}44`,
-              }}
-            >
-              <p className="text-[9px] uppercase tracking-[0.3em] text-zinc-400">{s.label}</p>
-              <p className="mt-0.5 text-sm font-bold" style={{ color: h.accent }}>
-                {s.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Animated accent line */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.3 + index * 0.15 }}
-          className="h-[2px] w-24 origin-left rounded-full"
-          style={{ background: `linear-gradient(to right, ${h.color}, transparent)` }}
-        />
-      </div>
-    </motion.div>
-  );
-}
-
-function CrewQuarters() {
-  return (
-    <section id="crew" className="relative isolate min-h-screen overflow-hidden">
-      {/* Deep night sky — new distinct palette: indigo/navy */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #0c0e1a 0%, #111827 30%, #0f1e38 60%, #0c0e1a 100%)",
-        }}
-      />
-
-      {/* Star field */}
-      {Array.from({ length: 60 }).map((_, i) => {
-        const x = (i * 41 + 11) % 100;
-        const y = (i * 29 + 7) % 70;
-        const size = i % 5 === 0 ? 2 : 1;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute rounded-full bg-white"
-            style={{
-              left: `${x}%`,
-              top: `${y}%`,
-              width: size,
-              height: size,
-              opacity: 0.3 + (i % 4) * 0.15,
-            }}
-            animate={{ opacity: [0.2, 0.9, 0.2] }}
-            transition={{
-              duration: 2 + (i % 6),
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 0.07,
-            }}
-          />
-        );
-      })}
-
-      {/* Subtle aurora bands */}
-      {[
-        { color: "#8b5cf633", top: "15%", rotate: "-8deg" },
-        { color: "#c0392b22", top: "35%", rotate: "5deg" },
-        { color: "#f59e0b1a", top: "55%", rotate: "-4deg" },
-      ].map((band, i) => (
-        <motion.div
-          key={i}
-          className="pointer-events-none absolute inset-x-0 h-32 blur-3xl"
-          style={{ top: band.top, background: band.color, transform: `rotate(${band.rotate})` }}
-          animate={{ opacity: [0.4, 0.8, 0.4], scaleY: [1, 1.3, 1] }}
-          transition={{ duration: 7 + i * 2, repeat: Infinity, ease: "easeInOut", delay: i * 1.5 }}
-        />
-      ))}
-
-      {/* Floating particles */}
-      {Array.from({ length: 18 }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="pointer-events-none absolute h-1 w-1 rounded-full bg-white/40"
-          style={{ left: `${(i * 19 + 5) % 98}%`, top: "100%" }}
-          animate={{ y: [-20, -600], opacity: [0, 0.6, 0] }}
-          transition={{ duration: 12 + (i % 7) * 2, repeat: Infinity, ease: "linear", delay: i * 1.1 }}
-        />
-      ))}
-
-      {/* Horizontal divider line top */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-      {/* CONTENT */}
-      <SectionReveal className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1200px] flex-col items-center px-4 pb-32 pt-24">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-6 text-center"
-        >
-          <p className="text-[10px] uppercase tracking-[0.3em] text-violet-300/80 sm:text-xs sm:tracking-[0.45em]">
-            Beyond The Code · The Captain Himself
-          </p>
-          <AnimatedHeading
-            text="Beyond The Bounty"
-            className="mt-3 font-serif text-4xl font-extrabold text-white drop-shadow-[0_4px_30px_rgba(139,92,246,0.4)] sm:text-5xl md:text-6xl"
-          />
-          <p className="mt-3 text-sm text-zinc-400">
-            What sharpens the mind outside the ship.
-          </p>
-        </motion.div>
-
-        {/* Animated separator */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-20 h-px w-48 origin-center rounded-full bg-gradient-to-r from-transparent via-violet-400/60 to-transparent"
-        />
-
-        {/* Hobby cards */}
-        <div className="flex w-full flex-col gap-16 sm:gap-20 lg:gap-24">
-          {HOBBIES.map((h, i) => (
-            <HobbyCard key={h.id} h={h} index={i} />
-          ))}
-        </div>
-      </SectionReveal>
-    </section>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   LAUGHTALE — Final island & contact
-───────────────────────────────────────────── */
-
-const CREW = [
-  { id: "luffy",   name: "Monkey D. Luffy",   role: "Captain",       img: "/images/luffy.jpg",   face: "50% 14%", bounty: "3,000,000,000", color: "#dc2626", glow: "rgba(220,38,38,0.55)",  initial: "L" },
-  { id: "zoro",    name: "Roronoa Zoro",      role: "Swordsman",     img: "/images/zoro.jpg",    face: "50% 0%",  bounty: "1,111,000,000", color: "#16a34a", glow: "rgba(22,163,74,0.55)",  initial: "Z" },
-  { id: "nami",    name: "Nami",              role: "Navigator",     img: "/images/nami.jpg",    face: "50% 0%",  bounty: "366,000,000",   color: "#f59e0b", glow: "rgba(245,158,11,0.55)", initial: "N" },
-  { id: "usopp",   name: "Usopp",             role: "Sniper",        img: "/images/usopp.jpg",   face: "50% 0%",  bounty: "500,000,000",   color: "#a16207", glow: "rgba(161,98,7,0.55)",   initial: "U" },
-  { id: "sanji",   name: "Sanji",             role: "Cook",          img: "/images/sanji.jpg",   face: "50% 0%",  bounty: "1,032,000,000", color: "#facc15", glow: "rgba(250,204,21,0.55)", initial: "S" },
-  { id: "chopper", name: "Tony Tony Chopper", role: "Doctor",        img: "/images/chopper.jpg", face: "50% 30%", bounty: "1,000",         color: "#fb7185", glow: "rgba(251,113,133,0.55)",initial: "C" },
-  { id: "robin",   name: "Nico Robin",        role: "Archaeologist", img: "/images/robin.jpg",   face: "50% 0%",  bounty: "930,000,000",   color: "#7c3aed", glow: "rgba(124,58,237,0.55)", initial: "R" },
-  { id: "franky",  name: "Franky",            role: "Shipwright",    img: "/images/franky.jpg",  face: "50% 8%",  bounty: "394,000,000",   color: "#06b6d4", glow: "rgba(6,182,212,0.55)",  initial: "F" },
-  { id: "brook",   name: "Brook",             role: "Musician",      img: "/images/brook.jpg",   face: "50% 8%",  bounty: "383,000,000",   color: "#e5e7eb", glow: "rgba(229,231,235,0.55)",initial: "B" },
-  { id: "jinbe",   name: "Jinbe",             role: "Helmsman",      img: "/images/jinbe.jpg",   face: "50% 14%", bounty: "1,100,000,000", color: "#1d4ed8", glow: "rgba(29,78,216,0.55)",  initial: "J" },
-];
-
-function LaughtaleTransition() {
-  return (
-    <section aria-hidden className="relative h-[110vh] overflow-hidden">
-      {/* Dawn returns — mirror of the opening dawn, deep night → magenta → coral → peach */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, " +
-            "#0c0e1a 0%, " +
-            "#0f1028 8%, " +
-            "#1a1340 17%, " +
-            "#2a1745 26%, " +
-            "#43204e 36%, " +
-            "#6a2c54 47%, " +
-            "#9a4256 58%, " +
-            "#c2604c 68%, " +
-            "#df8456 78%, " +
-            "#efa672 88%, " +
-            "#f5c089 100%)",
-        }}
-      />
-
-      {/* Stars in the upper portion, fading as dawn arrives */}
-      {Array.from({ length: 36 }).map((_, i) => {
-        const x = (i * 37 + 11) % 100;
-        const y = (i * 23 + 7) % 35;
-        return (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-px w-px rounded-full bg-white"
-            style={{ left: `${x}%`, top: `${y}%`, boxShadow: "0 0 3px rgba(255,255,255,0.9)" }}
-            animate={{ opacity: [0.45, 1, 0.1] }}
-            transition={{ duration: 5 + (i % 4), repeat: Infinity, ease: "easeInOut", delay: i * 0.12 }}
-          />
-        );
-      })}
-
-      {/* Distant horizon glow — the sun rising right at the bottom edge so it
-         visually continues into the island section across the seam. */}
-      <motion.div
-        initial={{ y: 80, opacity: 0 }}
-        whileInView={{ y: 0, opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.8, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute left-1/2 bottom-[-12vh] h-[60vh] w-[60vh] -translate-x-1/2 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,235,170,0.95) 0%, rgba(255,200,120,0.7) 25%, rgba(255,170,80,0.35) 50%, rgba(255,150,80,0.1) 70%, rgba(255,140,60,0) 85%)",
-          filter: "blur(8px)",
-        }}
-      />
-      {/* Tail haze pushing the warm peach color into the next section */}
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-[10vh]"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(245,192,137,0) 0%, rgba(245,192,137,1) 100%)",
-        }}
-      />
-
-      {/* Subtle drifting wisps */}
-      {Array.from({ length: 4 }).map((_, i) => (
-        <motion.div
-          key={`wisp-${i}`}
-          className="pointer-events-none absolute h-12 w-[40vw] rounded-full bg-white/15 blur-3xl"
-          style={{ top: `${30 + i * 15}%`, left: i % 2 === 0 ? "-20%" : "60%" }}
-          animate={{ x: i % 2 === 0 ? [0, 200, 0] : [0, -200, 0] }}
-          transition={{ duration: 30 + i * 6, repeat: Infinity, ease: "easeInOut", delay: i * 3 }}
-        />
-      ))}
-
-      {/* Foreshadowing text in the upper third */}
-      <div className="absolute inset-x-0 top-[18%] flex items-center justify-center">
-        <motion.p
-          initial={{ opacity: 0, letterSpacing: "0.2em" }}
-          whileInView={{ opacity: 1, letterSpacing: "0.45em" }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-          className="font-serif text-xs uppercase text-amber-100/85 drop-shadow-md md:text-sm"
-        >
-          A New Dawn Rises…
-        </motion.p>
-      </div>
-
-      {/* Second tag lower down once the warm tones hit */}
-      <div className="absolute inset-x-0 top-[64%] flex flex-col items-center justify-center gap-3 px-4 text-center">
-        <motion.p
-          initial={{ opacity: 0, y: 14 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.4, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="font-serif text-xl font-extrabold uppercase tracking-[0.2em] text-amber-50 drop-shadow-[0_4px_18px_rgba(0,0,0,0.85)] sm:text-2xl sm:tracking-[0.35em] md:text-4xl"
-          style={{
-            textShadow:
-              "0 2px 4px rgba(0,0,0,0.9), 0 4px 22px rgba(255,170,80,0.55), 0 0 1px rgba(0,0,0,0.95)",
-          }}
-        >
-          We Arrive at Laughtale
-        </motion.p>
-        <motion.div
-          initial={{ scaleX: 0, opacity: 0 }}
-          whileInView={{ scaleX: 1, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, delay: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="h-px w-48 origin-center bg-amber-50/80 md:w-64"
-        />
-      </div>
-    </section>
-  );
-}
-
-function CallMeFlipCard() {
-  const [flipped, setFlipped] = useState(false);
-  const number = "+382 67 474 438";
-  const waNumber = "38267474438";
-
-  return (
-    <div
-      className="relative w-full sm:w-[260px]"
-      style={{ perspective: 1200, height: 50 }}
-    >
-      <motion.div
-        className="relative h-full w-full"
-        style={{ transformStyle: "preserve-3d" }}
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {/* FRONT — Contact Me button */}
-        <button
-          type="button"
-          onClick={() => setFlipped(true)}
-          className="absolute inset-0 flex items-center justify-center gap-2 rounded-lg border-2 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-50 shadow-[0_6px_20px_rgba(0,0,0,0.45)] transition hover:scale-[1.03]"
-          style={{
-            background:
-              "linear-gradient(180deg, #4a2e14 0%, #2e1b08 100%)",
-            borderColor: "#7a5210",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-          }}
-        >
-          ☎ Contact Me
-        </button>
-
-        {/* BACK — Number + WhatsApp */}
-        <div
-          className="absolute inset-0 flex items-center justify-between gap-2 rounded-lg border-2 px-3 py-2 text-amber-50 shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
-          style={{
-            background:
-              "linear-gradient(180deg, #1a3a1a 0%, #0a1f0a 100%)",
-            borderColor: "#25d366",
-            transform: "rotateY(180deg)",
-            backfaceVisibility: "hidden",
-            WebkitBackfaceVisibility: "hidden",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setFlipped(false)}
-            aria-label="Flip back"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-50/30 text-amber-50/70 transition hover:scale-110 hover:text-amber-50"
-          >
-            ↺
-          </button>
-          <a
-            href={`tel:+${waNumber}`}
-            className="font-mono text-sm font-bold tracking-wider text-amber-50 transition hover:text-white"
-          >
-            {number}
-          </a>
-          <a
-            href={`https://wa.me/${waNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="WhatsApp"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25d366] text-black shadow-[0_0_12px_rgba(37,211,102,0.7)] transition hover:scale-110"
-          >
-            <SiWhatsapp className="h-4 w-4" />
-          </a>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
-function TreasureChest() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50, rotateX: 12 }}
-      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-      className="relative w-full max-w-[640px]"
-      style={{ perspective: 1400 }}
-    >
-      {/* Soft golden aura behind the chest */}
-      <div
-        className="pointer-events-none absolute -inset-12 -z-10 rounded-full opacity-80 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 60% at 50% 60%, rgba(255,210,120,0.7), rgba(255,160,60,0.25) 50%, transparent 80%)",
-        }}
-      />
-
-      {/* OPEN LID — tilted back behind the body */}
-      <div
-        className="relative mx-auto h-20 w-[88%] origin-bottom"
-        style={{ transform: "rotateX(-65deg) translateY(8px)", transformStyle: "preserve-3d" }}
-      >
-        <div
-          className="h-full w-full rounded-t-[160px_70px] border-2 border-[#3d2410] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]"
-          style={{
-            background:
-              "linear-gradient(180deg, #5a3a1a 0%, #74491f 40%, #8b5a2b 100%)",
-          }}
-        >
-          {/* Gold band on the lid */}
-          <div
-            className="mx-auto mt-3 h-2 w-[92%] rounded-sm"
-            style={{
-              background:
-                "linear-gradient(180deg, #ffe48a 0%, #d4a747 50%, #8a6618 100%)",
-              boxShadow: "0 1px 0 rgba(255,255,255,0.4) inset, 0 -1px 0 rgba(0,0,0,0.3) inset",
-            }}
-          />
-        </div>
-      </div>
-
-      {/* CHEST BODY */}
-      <div
-        className="relative -mt-2 overflow-hidden rounded-b-2xl rounded-t-md border-2 border-[#3d2410] shadow-[0_30px_70px_rgba(60,30,10,0.6)]"
-        style={{
-          background:
-            "repeating-linear-gradient(90deg, #6a4220 0px, #7a4d28 18px, #5e3a1c 19px, #6a4220 36px), linear-gradient(180deg, #5a3a1a, #4a2e14)",
-          backgroundBlendMode: "multiply",
-        }}
-      >
-        {/* Wood grain overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-30 mix-blend-overlay"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(90deg, rgba(0,0,0,0.25) 0 1px, transparent 1px 22px), repeating-linear-gradient(180deg, rgba(255,200,140,0.15) 0 2px, transparent 2px 30px)",
-          }}
-        />
-
-        {/* Top gold band */}
-        <div
-          className="absolute inset-x-0 top-0 h-3"
-          style={{
-            background:
-              "linear-gradient(180deg, #ffe48a 0%, #d4a747 50%, #8a6618 100%)",
-            boxShadow: "0 2px 0 rgba(255,255,255,0.35) inset, 0 -2px 6px rgba(0,0,0,0.4)",
-          }}
-        />
-
-        {/* Bottom gold band */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-4"
-          style={{
-            background:
-              "linear-gradient(180deg, #ffe48a 0%, #d4a747 50%, #8a6618 100%)",
-            boxShadow: "0 2px 0 rgba(255,255,255,0.35) inset, 0 -2px 6px rgba(0,0,0,0.4)",
-          }}
-        />
-
-        {/* Vertical corner straps */}
-        {["left-2", "right-2"].map((p) => (
-          <div
-            key={p}
-            className={`pointer-events-none absolute ${p} top-0 bottom-0 w-3`}
-            style={{
-              background:
-                "linear-gradient(90deg, #b07f25 0%, #ffe48a 50%, #b07f25 100%)",
-              boxShadow: "0 0 0 1px rgba(60,30,5,0.6)",
-            }}
-          >
-            {/* Rivets */}
-            {[8, 28, 48, 68, 88].map((t) => (
-              <div
-                key={t}
-                className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full"
-                style={{
-                  top: `${t}%`,
-                  background: "radial-gradient(circle at 30% 30%, #fff8c4, #b07f25 70%, #5a3a05)",
-                  boxShadow: "0 1px 1px rgba(0,0,0,0.6)",
-                }}
-              />
+          <div className="mt-12 grid gap-3 sm:grid-cols-2">
+            {items.map(({ Icon: I, label, value, href }) => (
+              <a
+                key={label}
+                href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="glass group flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:border-accent/60"
+              >
+                <I
+                  className="text-lg text-muted transition-colors group-hover:text-accent-ink"
+                  aria-hidden
+                />
+                <span className="text-sm font-medium text-ink">{label}</span>
+                <span className="ml-auto truncate text-sm text-muted">
+                  {value}
+                </span>
+              </a>
             ))}
           </div>
-        ))}
-
-        {/* Inside warm glow at the top edge */}
-        <div
-          className="pointer-events-none absolute inset-x-6 top-3 h-12 rounded-full opacity-90 blur-2xl"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 100% at 50% 0%, rgba(255,225,140,0.85), rgba(255,180,80,0) 75%)",
-          }}
-        />
-
-        {/* CONTENT inside the chest */}
-        <div className="relative px-7 py-10 md:px-10 md:py-12">
-          <div className="text-center mb-6">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-amber-200/85">Treasure Inside</p>
-            <h3 className="mt-2 font-serif text-3xl font-extrabold text-amber-50 drop-shadow-[0_2px_10px_rgba(255,180,60,0.6)] md:text-4xl">
-              Set Sail Together
-            </h3>
-            <p className="mt-2 text-sm text-amber-100/80">
-              Open to projects, collabs, or a chat about code, combat, or crypto.
-            </p>
-          </div>
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <a
-              href="mailto:tosiicp@gmail.com"
-              className="w-full rounded-lg border-2 px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-amber-950 shadow-[0_6px_20px_rgba(255,200,80,0.45)] transition hover:scale-[1.02] text-center sm:w-auto"
-              style={{
-                background: "linear-gradient(180deg, #ffeaa0 0%, #f4c75a 55%, #c08820 100%)",
-                borderColor: "#7a5210",
-              }}
-            >
-              ✉ Send Message
-            </a>
-            <CallMeFlipCard />
-          </div>
-        </div>
-
-        {/* LOCK PLATE — center front */}
-        <div className="pointer-events-none absolute left-1/2 top-1 -translate-x-1/2">
-          <div
-            className="relative h-8 w-12 rounded-b-md border-2 border-[#5a3a05]"
-            style={{
-              background:
-                "linear-gradient(180deg, #ffe48a 0%, #d4a747 60%, #8a6618 100%)",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.4) inset",
-            }}
-          >
-            {/* Keyhole */}
-            <div className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2">
-              <div className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-[#1a0c02]" />
-              <div className="absolute left-1/2 bottom-0 h-2 w-1 -translate-x-1/2 bg-[#1a0c02]" />
-            </div>
-          </div>
-        </div>
-
-        {/* Floating sparkles inside the chest */}
-        {Array.from({ length: 8 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="pointer-events-none absolute h-1 w-1 rounded-full bg-amber-100"
-            style={{
-              left: `${15 + (i * 11) % 70}%`,
-              top: `${20 + (i * 13) % 60}%`,
-              boxShadow: "0 0 6px rgba(255,220,140,0.95)",
-            }}
-            animate={{ opacity: [0.2, 1, 0.2], scale: [0.6, 1.3, 0.6] }}
-            transition={{ duration: 2 + (i % 3), repeat: Infinity, ease: "easeInOut", delay: i * 0.25 }}
-          />
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-function LaughtaleIsland() {
-  return (
-    <section id="contact" className="relative isolate -mt-px overflow-hidden">
-      {/* Dawn sky → green island gradient */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, " +
-            "#f5c089 0%, " +
-            "#f0b478 10%, " +
-            "#e8a468 22%, " +
-            "#dd9258 34%, " +
-            "#cc7e48 44%, " +
-            "#b8703e 52%, " +
-            "#946a3a 60%, " +
-            "#6e8a44 66%, " +
-            "#4a7a36 74%, " +
-            "#3a6a2c 84%, " +
-            "#2c5824 100%)",
-        }}
-      />
-
-      {/* Rising sun continuation — same sun that started in the transition,
-         now cresting into the island sky. Centered above the section so the
-         glow visually continues across the seam. */}
-      <div
-        className="pointer-events-none absolute left-1/2 top-[-28vh] h-[60vh] w-[120vw] max-w-[1600px] -translate-x-1/2 rounded-full"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(255,235,170,0.8) 0%, rgba(255,200,120,0.55) 22%, rgba(255,170,90,0.3) 42%, rgba(255,170,90,0) 70%)",
-          filter: "blur(8px)",
-        }}
-      />
-      {/* Soft top haze that blends into the transition — eliminates any seam */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[8vh]"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(245,192,137,0.95) 0%, rgba(245,192,137,0) 100%)",
-        }}
-      />
-
-      {/* Distant island silhouettes on the horizon */}
-      <svg
-        className="pointer-events-none absolute inset-x-0 top-[42%] mx-auto opacity-50"
-        viewBox="0 0 1200 60"
-        width="100%"
-        preserveAspectRatio="none"
-        style={{ height: 60 }}
-      >
-        <path
-          d="M 0 60 L 0 38 Q 100 22 200 30 Q 300 12 400 24 Q 500 30 600 18 Q 700 24 820 28 Q 920 14 1040 26 Q 1140 30 1200 22 L 1200 60 Z"
-          fill="rgba(70,40,20,0.45)"
-        />
-      </svg>
-
-      {/* Floating golden particles */}
-      {Array.from({ length: 28 }).map((_, i) => (
-        <motion.div
-          key={i}
-          className="pointer-events-none absolute h-1 w-1 rounded-full bg-amber-200"
-          style={{ left: `${(i * 17 + 5) % 98}%`, top: "100%" }}
-          animate={{ y: [-50, -1100], opacity: [0, 0.85, 0] }}
-          transition={{ duration: 16 + (i % 6) * 2, repeat: Infinity, ease: "linear", delay: i * 0.7 }}
-        />
-      ))}
-
-      {/* CONTENT */}
-      <SectionReveal className="relative z-10 mx-auto flex w-full max-w-[1200px] flex-col items-center px-4 pb-16 pt-24">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-4 text-center"
-        >
-          <p
-            className="text-xs font-bold uppercase tracking-[0.45em] text-white"
-            style={{ textShadow: "0 2px 10px rgba(70,30,5,0.85), 0 0 14px rgba(70,30,5,0.5)" }}
-          >
-            The Final Island · Where The One Piece Awaits
-          </p>
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.4 }}
-          className="mt-6 max-w-2xl text-center text-base font-medium text-white md:text-lg"
-          style={{ textShadow: "0 2px 8px rgba(70,30,5,0.85), 0 0 14px rgba(70,30,5,0.4)" }}
-        >
-          The journey&apos;s end. The Strawhats are docked, and the captain wants a word with you. Drop your message — every great adventure starts with a hello.
-        </motion.p>
-
-        {/* Crew showcase — individual wanted posters per Strawhat */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mt-16 w-full max-w-[1100px]"
-        >
-          {/* Soft warm aura behind the whole wall */}
-          <div
-            className="pointer-events-none absolute -inset-8 -z-10 rounded-[40px] blur-3xl"
-            style={{ background: "radial-gradient(ellipse, rgba(255,200,120,0.45), transparent 70%)" }}
-          />
-
-          <div className="mb-10 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="flex items-center justify-center gap-3"
-            >
-              <span className="h-px w-10 bg-amber-200/60 sm:w-20" />
-              <span className="font-serif text-[10px] uppercase tracking-[0.45em] text-amber-100/90 sm:text-xs">
-                ⚓ Most Wanted ⚓
-              </span>
-              <span className="h-px w-10 bg-amber-200/60 sm:w-20" />
-            </motion.div>
-
-            <motion.h3
-              initial={{ opacity: 0, scale: 0.92 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-3 font-serif text-4xl font-black uppercase tracking-[0.22em] text-amber-50 sm:text-5xl md:text-6xl"
-              style={{
-                color: "#fff3d6",
-                textShadow:
-                  "0 0 24px rgba(255,180,90,0.55), 0 4px 18px rgba(120,40,5,0.85), 0 2px 0 rgba(60,20,5,0.9)",
-                WebkitTextStroke: "1px rgba(70,30,5,0.55)",
-              }}
-            >
-              Wanted — Dead or Alive
-            </motion.h3>
-
-            <p className="mt-2 font-serif text-base font-bold tracking-[0.25em] text-amber-200/95 drop-shadow md:text-lg">
-              THE STRAWHAT PIRATES
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {CREW.map((m, i) => (
-              <motion.div
-                key={m.id}
-                initial={{ opacity: 0, y: 24, rotate: i % 2 === 0 ? -2 : 2 }}
-                whileInView={{ opacity: 1, y: 0, rotate: i % 2 === 0 ? -1.2 : 1.2 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.6, delay: 0.05 * i, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ y: -6, rotate: 0, scale: 1.04 }}
-                className="relative overflow-hidden rounded-md border-4 border-[#5a3a1a] shadow-[0_14px_30px_rgba(60,30,5,0.55)]"
-                style={{
-                  background: "linear-gradient(180deg, #f0d7a0 0%, #e6c378 100%)",
-                  boxShadow: `0 14px 30px rgba(60,30,5,0.55), 0 0 22px ${m.glow}`,
-                }}
-              >
-                {/* Pins */}
-                <PinNail className="absolute left-3 -top-1.5 z-10 h-3 w-3" />
-                <PinNail className="absolute right-3 -top-1.5 z-10 h-3 w-3" />
-
-                <div className="relative p-2">
-                  <p className="text-center font-serif text-[8px] uppercase tracking-[0.35em] text-amber-950/70">
-                    Wanted
-                  </p>
-                  <p className="mt-0.5 text-center font-serif text-[16px] font-black tracking-[0.2em] text-amber-950">
-                    WANTED
-                  </p>
-
-                  {/* Face crop */}
-                  <div
-                    className="relative mt-1.5 aspect-square overflow-hidden rounded-sm border-2 border-[#5a3a1a] bg-black/15 shadow-inner"
-                    style={{ boxShadow: `inset 0 0 0 1px ${m.color}55` }}
-                  >
-                    <img
-                      src={m.img}
-                      alt={m.name}
-                      className="block h-full w-full object-cover"
-                      style={{ objectPosition: m.face }}
-                    />
-                    {/* Sepia tint */}
-                    <div className="pointer-events-none absolute inset-0 bg-amber-900/15 mix-blend-multiply" />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-                    {/* Captain star */}
-                    {m.id === "luffy" && (
-                      <span className="absolute right-1.5 top-1.5 rounded-full bg-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-950 shadow">
-                        ★ Captain
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-2 truncate text-center font-serif text-[12px] font-black tracking-[0.05em] text-amber-950 sm:text-[13px]">
-                    {m.name}
-                  </p>
-                  <p className="text-center text-[8px] uppercase tracking-[0.25em] text-amber-900/75 sm:text-[9px]">
-                    {m.role}
-                  </p>
-
-                  {/* Color stripe */}
-                  <div
-                    className="mx-auto mt-1.5 h-0.5 w-10 rounded-full"
-                    style={{ background: m.color, boxShadow: `0 0 6px ${m.glow}` }}
-                  />
-
-                  {/* Bounty bar */}
-                  <div className="mt-2 flex items-center justify-center gap-1 border-t-2 border-dashed border-[#5a3a1a]/60 pt-1.5">
-                    <span className="font-serif text-[11px] font-black text-amber-950 sm:text-[13px]">฿</span>
-                    <span className="font-mono text-[10px] font-black tracking-tight text-amber-950 sm:text-[11px]">
-                      {m.bounty}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-center text-[7px] uppercase tracking-[0.3em] text-amber-900/70 sm:text-[8px]">
-                    Berries · Dead or Alive
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </SectionReveal>
-
-      {/* GREEN ISLAND with chest */}
-      <div className="relative z-10 mt-8">
-        {/* Island grass mound (SVG) */}
-        <svg
-          className="pointer-events-none absolute inset-x-0 -top-6 mx-auto"
-          viewBox="0 0 1200 240"
-          preserveAspectRatio="none"
-          width="100%"
-          style={{ height: 240 }}
-        >
-          <defs>
-            <linearGradient id="grassGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#76a64a" />
-              <stop offset="50%" stopColor="#4a8a3e" />
-              <stop offset="100%" stopColor="#2c5824" />
-            </linearGradient>
-            <linearGradient id="sandGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#e6c98a" />
-              <stop offset="100%" stopColor="#b0925a" />
-            </linearGradient>
-          </defs>
-          {/* Sand strip under the grass */}
-          <path
-            d="M 0 240 L 0 170 Q 200 140 350 152 Q 500 130 600 138 Q 700 130 850 150 Q 1000 140 1200 168 L 1200 240 Z"
-            fill="url(#sandGrad)"
-            opacity="0.6"
-          />
-          {/* Grass island */}
-          <path
-            d="M 80 240 L 80 130 Q 220 78 380 92 Q 500 64 600 76 Q 700 64 820 92 Q 980 78 1120 130 L 1120 240 Z"
-            fill="url(#grassGrad)"
-          />
-          {/* Grass tufts highlight */}
-          {Array.from({ length: 18 }).map((_, i) => {
-            const x = 100 + i * 60 + (i % 3) * 8;
-            return (
-              <path
-                key={i}
-                d={`M ${x} 130 q 4 -10 8 0`}
-                stroke="#a8d272"
-                strokeWidth="2"
-                fill="none"
-                opacity="0.7"
-              />
-            );
-          })}
-        </svg>
-
-        {/* Palm trees flanking the chest */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex max-w-[1200px] items-end justify-between px-4">
-          <div className="hidden md:block">
-            <PalmTree scale={0.85} />
-          </div>
-          <div className="hidden md:block">
-            <PalmTree scale={0.85} flip />
-          </div>
-        </div>
-
-        {/* Chest container */}
-        <div className="relative flex flex-col items-center px-4 pt-32 pb-20">
-          <TreasureChest />
-
-          {/* Closing line */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.2, delay: 0.4 }}
-            className="mt-16 max-w-2xl text-center font-serif text-lg italic text-amber-50/95 drop-shadow md:text-xl"
-          >
-            &ldquo;You want the One Piece? Then take it. It&apos;s yours.&rdquo;
-          </motion.p>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.4em] text-amber-50/85 drop-shadow">
-            — Gol D. Roger, Pirate King
-          </p>
-          <p className="mt-10 text-[9px] uppercase tracking-[0.35em] text-amber-200/30">
-            ⚑ Scholars say an ancient stone glows beneath the voyage compass...
-          </p>
-        </div>
+        </Reveal>
       </div>
     </section>
   );
 }
 
-export default function Page() {
+function Footer() {
   return (
-    <main className="bg-black text-zinc-50 overflow-x-hidden">
-      {/* Easter eggs — global overlays */}
-      <HakiOverlay />
-      <PoneglyphModal />
-      <ScrollProgressBar />
-      <NavBar />
-      <ScrollShip />
-      <WantedPosterScene />
-      <JourneyTransition />
-      <QuestBoardIsland />
-      <GrandLineTransition />
-      <VoyageLog />
-      <CrewQuarters />
-      <LaughtaleTransition />
-      <LaughtaleIsland />
-    </main>
+    <footer className="border-t border-line px-5 sm:px-8">
+      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 py-8 sm:flex-row">
+        <p className="text-sm text-muted">
+          © 2026 {NAME} — {SUMMARY_SHORT}
+        </p>
+      </div>
+    </footer>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   PAGE
+───────────────────────────────────────────────────────────── */
+
+export default function Home() {
+  const active = useActiveSection(SECTION_IDS);
+
+  return (
+    <>
+      <Aurora />
+      <InteractiveGrid />
+      <SmoothScroll />
+      <ScrollProgress />
+      <NavBar active={active} />
+
+      <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:flex lg:gap-14 lg:px-10">
+        <LeftRail active={active} />
+        <main id="content" className="pb-16 lg:flex-1 lg:py-28">
+          <About />
+          <Stack />
+          <Work />
+          <GitHub />
+          <Experience />
+          <Contact />
+        </main>
+      </div>
+      <Footer />
+    </>
+  );
+}

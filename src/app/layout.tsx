@@ -1,34 +1,34 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+// Mononoki — self-hosted monospace used across the whole site.
+const mononoki = localFont({
+  src: [
+    { path: "./fonts/mononoki-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/mononoki-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "./fonts/mononoki-700.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/mononoki-700-italic.woff2", weight: "700", style: "italic" },
+  ],
+  variable: "--font-mononoki",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const DESCRIPTION =
+  "Software developer at Infostream (Montenegro · Remote) — Oracle APEX, .NET, C#, JavaScript/TypeScript and React. I build web apps front to back.";
 
 export const metadata: Metadata = {
-  title: "Pavle Tošić — Full-Stack Developer",
-  description:
-    "Full-stack developer (React, Next.js, TypeScript, Python, Django) sailing the Grand Line.",
+  title: "Pavle Tošić — Software Developer",
+  description: DESCRIPTION,
   metadataBase: new URL("https://pavletosic.com"),
   openGraph: {
-    title: "Pavle Tošić — Full-Stack Developer",
-    description:
-      "Full-stack developer (React, Next.js, TypeScript, Python, Django) sailing the Grand Line.",
+    title: "Pavle Tošić — Software Developer",
+    description: DESCRIPTION,
     url: "https://pavletosic.com",
     siteName: "Pavle Tošić",
     images: [
       {
-        url: "/images/me-anime.jpg",
-        width: 912,
-        height: 1178,
+        url: "/images/me.jpg",
         alt: "Pavle Tošić",
       },
     ],
@@ -36,11 +36,20 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pavle Tošić — Full-Stack Developer",
-    description:
-      "Full-stack developer (React, Next.js, TypeScript, Python, Django) sailing the Grand Line.",
-    images: ["/images/me-anime.jpg"],
+    title: "Pavle Tošić — Software Developer",
+    description: DESCRIPTION,
+    images: ["/images/me.jpg"],
   },
+};
+
+export const viewport: Viewport = {
+  // width/initialScale are REQUIRED here: exporting a custom `viewport` makes
+  // Next.js drop its default <meta name="viewport"> entirely, so without these
+  // phones fall back to a ~980px layout and render the desktop layout shrunk.
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#f3ecdf",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -50,9 +59,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-zinc-50`}
-      >
+      <body className={`${mononoki.variable} antialiased`}>
+        {/* Progressive enhancement: scroll-reveal animations ship with
+            opacity:0 / transforms inline. If JS never runs, force everything
+            visible so the page is never blank. Only applies with JS disabled. */}
+        <noscript>
+          <style>{`
+            [style*="opacity:0"], [style*="opacity: 0"] { opacity: 1 !important; }
+            [style*="translateY"], [style*="translateX"] { transform: none !important; }
+            [style*="blur"] { filter: none !important; }
+          `}</style>
+        </noscript>
         {children}
       </body>
     </html>
