@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import ConsoleSignature from "./ConsoleSignature";
 
 // Mononoki — self-hosted monospace used across the whole site.
 const mononoki = localFont({
@@ -28,8 +29,10 @@ export const metadata: Metadata = {
     siteName: "Pavle Tošić",
     images: [
       {
-        url: "/images/me.jpg",
-        alt: "Pavle Tošić",
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Pavle Tošić — Software Developer",
       },
     ],
     type: "website",
@@ -38,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pavle Tošić — Software Developer",
     description: DESCRIPTION,
-    images: ["/images/me.jpg"],
+    images: ["/og.png"],
   },
 };
 
@@ -48,8 +51,8 @@ export const viewport: Viewport = {
   // phones fall back to a ~980px layout and render the desktop layout shrunk.
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f3ecdf",
-  colorScheme: "light",
+  themeColor: "#0a0e0c",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -70,6 +73,7 @@ export default function RootLayout({
             [style*="blur"] { filter: none !important; }
           `}</style>
         </noscript>
+        <ConsoleSignature />
         {children}
       </body>
     </html>

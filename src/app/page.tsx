@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import {
+  useEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -19,9 +21,23 @@ import { SiGithub, SiLinkedin, SiWhatsapp, SiGmail } from "react-icons/si";
 import { useActiveSection } from "./useActiveSection";
 import SmoothScroll from "./SmoothScroll";
 import Aurora from "./Aurora";
-import InteractiveGrid from "./InteractiveGrid";
+import SectionDivider from "./SectionDivider";
 import GitHubGraph from "./GitHubGraph";
 import { registerIcons } from "./iconData";
+
+// Defer the always-on canvas and the hero typing panel past hydration — both
+// are client-only and below the critical first paint, so this trims the
+// initial JS without affecting layout (canvas is fixed; the panel reserves
+// its height via the loading placeholder).
+const InteractiveGrid = dynamic(() => import("./InteractiveGrid"), {
+  ssr: false,
+});
+const HeroTerminal = dynamic(() => import("./HeroTerminal"), {
+  ssr: false,
+  loading: () => (
+    <div className="mt-8 h-[202px] rounded-xl border border-line bg-[#0b110d]" />
+  ),
+});
 
 // Make the bundled Devicon set available for synchronous SSR rendering.
 registerIcons();
@@ -44,6 +60,9 @@ const SOCIAL = {
   linkedin: "https://www.linkedin.com/in/tosiicp/",
   whatsapp: "https://wa.me/38267474438",
 };
+
+// Downloadable CV (lives in public/).
+const RESUME = "/pavle-tosic-cv.pdf";
 
 const NAV = [
   { id: "about", label: "About" },
@@ -106,37 +125,53 @@ const PROJECTS = [
     title: "CryptoFlow",
     blurb:
       "Full-stack simulated crypto-futures trading platform — React + Vite front end, a Django REST API with JWT auth, a virtual wallet, and live market data with interactive charts.",
+    role: "Solo build",
+    context: "General Assembly · 2025",
     stack: ["React", "Django", "Python", "PostgreSQL"],
     live: "https://cryptofloww.netlify.app/",
     code: "https://github.com/Toshkee/CryptoFlow",
-    tag: null as string | null,
+    shot: "/images/projects/cryptoflow.jpg",
+    video: "/video/projects/cryptoflow.mp4" as string | null,
+    domain: "cryptofloww.netlify.app",
   },
   {
     title: "Meet2Explore",
     blurb:
       "Full-stack React travel app to discover destinations and find companions — built collaboratively with a team of four.",
+    role: "Team of 4 · front end",
+    context: "General Assembly · 2025",
     stack: ["React", "Node.js", "Express"],
     live: "https://meet2explore.netlify.app/",
     code: "https://github.com/Toshkee/meet2explore",
-    tag: "Team · 4 devs",
+    shot: "/images/projects/meet2explore.jpg",
+    video: "/video/projects/meet2explore.mp4",
+    domain: "meet2explore.netlify.app",
   },
   {
     title: "One Piece Sword Duel",
     blurb:
       "Browser fighting game in vanilla JavaScript — hand-built game loop, state management, and DOM-driven combat. No frameworks.",
+    role: "Solo build",
+    context: "General Assembly · 2025",
     stack: ["JavaScript", "HTML", "CSS"],
     live: "https://toshkee.github.io/One-Piece-Sword-Duel/",
     code: "https://github.com/Toshkee/One-Piece-Sword-Duel",
-    tag: null,
+    shot: "/images/projects/sword-duel.jpg",
+    video: "/video/projects/sword-duel.mp4",
+    domain: "toshkee.github.io",
   },
   {
     title: "Anime Watchlist",
     blurb:
       "Full-stack app to browse anime and manage a personal watchlist — search, filter, and track what you're watching.",
+    role: "Solo build",
+    context: "General Assembly · 2025",
     stack: ["Node.js", "Express", "REST API"],
     live: "https://animee-watchlist-app-724b6a827c81.herokuapp.com/",
     code: "https://github.com/Toshkee/anime-watchlist",
-    tag: null,
+    shot: "/images/projects/anime-watchlist.jpg",
+    video: "/video/projects/anime-watchlist.mp4",
+    domain: "herokuapp.com",
   },
 ];
 
@@ -285,21 +320,27 @@ function RevealHeading({
   as = "h2",
   trigger = "view",
   delay = 0,
+  id,
 }: {
   text: string;
   className?: string;
   as?: "h1" | "h2";
   trigger?: "view" | "mount";
   delay?: number;
+  id?: string;
 }) {
   const reduce = usePrefersReducedMotion();
   const words = text.split(" ");
 
   if (reduce) {
     return as === "h1" ? (
-      <h1 className={className}>{text}</h1>
+      <h1 id={id} className={className}>
+        {text}
+      </h1>
     ) : (
-      <h2 className={className}>{text}</h2>
+      <h2 id={id} className={className}>
+        {text}
+      </h2>
     );
   }
 
@@ -316,6 +357,7 @@ function RevealHeading({
 
   return (
     <Tag
+      id={id}
       className={className}
       aria-label={text}
       initial="hidden"
@@ -385,6 +427,8 @@ function Magnetic({
     <motion.span
       className={`inline-block ${className}`}
       style={{ x: sx, y: sy }}
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onMouseMove={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         x.set((e.clientX - (r.left + r.width / 2)) * strength);
@@ -410,7 +454,10 @@ function NavBar({ active }: { active: string }) {
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 border-b border-line/70 bg-bg/70 backdrop-blur-xl lg:hidden">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+      <nav
+        className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"
+        aria-label="Primary"
+      >
         <a
           href="#home"
           className="group flex items-center gap-2 text-ink"
@@ -420,7 +467,7 @@ function NavBar({ active }: { active: string }) {
             className="h-2.5 w-2.5 rounded-full bg-accent transition-transform group-hover:scale-125"
             aria-hidden
           />
-          <span className="font-display font-semibold tracking-tight">
+          <span className="font-display font-semibold">
             Pavle Tošić
           </span>
         </a>
@@ -430,6 +477,7 @@ function NavBar({ active }: { active: string }) {
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
+                aria-current={active === item.id ? "true" : undefined}
                 className={`link-underline block px-3.5 py-2 text-sm transition-colors ${
                   active === item.id
                     ? "text-accent-ink"
@@ -469,6 +517,7 @@ function NavBar({ active }: { active: string }) {
                 <a
                   href={`#${item.id}`}
                   onClick={() => setOpen(false)}
+                  aria-current={active === item.id ? "true" : undefined}
                   className={`block px-6 py-3.5 ${
                     active === item.id ? "text-accent-ink" : "text-body"
                   }`}
@@ -511,6 +560,7 @@ function IconLink({
 }
 
 function VerticalNav({ active }: { active: string }) {
+  const reduce = usePrefersReducedMotion();
   return (
     <nav className="mt-10 hidden lg:block" aria-label="In-page navigation">
       <ul className="space-y-1">
@@ -518,19 +568,39 @@ function VerticalNav({ active }: { active: string }) {
           const on = active === item.id;
           return (
             <li key={item.id}>
-              <a href={`#${item.id}`} className="group flex items-center py-2">
+              <a
+                href={`#${item.id}`}
+                aria-current={on ? "true" : undefined}
+                className="group flex items-center py-2"
+              >
+                {/* fixed-width track; the active dash is one shared element
+                    that physically glides between items as the section changes */}
                 <span
                   aria-hidden
-                  className={`mr-4 h-px transition-all duration-300 ${
-                    on
-                      ? "w-14 bg-ink"
-                      : "w-7 bg-faint group-hover:w-14 group-hover:bg-ink"
-                  }`}
-                />
+                  className="relative mr-4 flex h-px w-14 items-center"
+                >
+                  {on ? (
+                    reduce ? (
+                      <span className="h-px w-14 bg-accent-ink" />
+                    ) : (
+                      <motion.span
+                        layoutId="nav-dash"
+                        className="h-px w-14 bg-accent-ink"
+                        transition={{
+                          type: "spring",
+                          stiffness: 380,
+                          damping: 30,
+                        }}
+                      />
+                    )
+                  ) : (
+                    <span className="h-px w-7 bg-faint transition-all duration-300 group-hover:w-14 group-hover:bg-ink" />
+                  )}
+                </span>
                 <span
                   className={`text-sm transition-colors ${
                     on
-                      ? "font-semibold text-ink"
+                      ? "font-semibold text-accent-ink"
                       : "text-muted group-hover:text-ink"
                   }`}
                 >
@@ -562,10 +632,19 @@ function LeftRail({ active }: { active: string }) {
       >
         <motion.div
           variants={ITEM_VARIANTS}
-          className="relative mb-6 h-24 w-24 overflow-hidden rounded-2xl border border-line-strong"
+          whileHover={
+            reduce
+              ? undefined
+              : {
+                  scale: 1.03,
+                  boxShadow: "0 0 22px -2px rgba(63, 185, 80, 0.45)",
+                }
+          }
+          transition={{ type: "spring", stiffness: 260, damping: 18 }}
+          className="relative mb-6 h-24 w-24 overflow-hidden rounded-2xl border border-line-strong transition-colors hover:border-accent/50"
         >
           <Image
-            src="/images/me.jpg"
+            src="/images/me-avatar.jpg"
             alt={NAME}
             fill
             sizes="96px"
@@ -578,7 +657,7 @@ function LeftRail({ active }: { active: string }) {
           trigger="mount"
           text={NAME}
           delay={0.2}
-          className="text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl"
+          className="text-4xl font-bold leading-[1.06] text-ink sm:text-5xl"
         />
         <motion.p
           variants={ITEM_VARIANTS}
@@ -600,7 +679,7 @@ function LeftRail({ active }: { active: string }) {
           <Magnetic strength={0.3}>
             <a
               href="#work"
-              className="block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
+              className="glow-hover block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg hover:bg-accent-hover"
             >
               View work
             </a>
@@ -608,11 +687,18 @@ function LeftRail({ active }: { active: string }) {
           <Magnetic strength={0.3}>
             <a
               href="#contact"
-              className="block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:border-accent hover:text-accent-ink"
+              className="glow-hover block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
             >
               Get in touch
             </a>
           </Magnetic>
+          <a
+            href={RESUME}
+            download
+            className="link-underline ml-1 inline-flex items-center gap-1 text-sm text-muted transition-colors hover:text-accent-ink"
+          >
+            Résumé <span aria-hidden>↓</span>
+          </a>
         </motion.div>
         <VerticalNav active={active} />
       </motion.div>
@@ -621,7 +707,7 @@ function LeftRail({ active }: { active: string }) {
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7, duration: 0.6 }}
-        className="mt-10 flex items-center gap-1 lg:mt-0"
+        className="mt-10 flex items-center gap-1 lg:mt-0 lg:border-t lg:border-line/60 lg:pt-8"
       >
         <IconLink href={SOCIAL.github} label="GitHub">
           <SiGithub />
@@ -646,18 +732,23 @@ function LeftRail({ active }: { active: string }) {
 
 function About() {
   return (
-    <section id="about" className="scroll-mt-24 py-12 lg:py-16">
+    <section
+      id="about"
+      aria-labelledby="about-heading"
+      className="py-14 lg:py-20"
+    >
       <RevealHeading
+        id="about-heading"
         text="About"
-        className="mb-8 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+        className="mb-10 text-3xl font-bold text-ink sm:text-4xl"
       />
       <Reveal>
         <div className="glass rounded-2xl p-7 sm:p-9">
-          <h3 className="font-display text-2xl font-bold leading-snug tracking-tight text-ink sm:text-3xl">
+          <h3 className="font-display text-2xl font-bold leading-snug text-ink sm:text-3xl">
             I turn ideas into{" "}
             <span className="text-gradient">shipped, working software</span>.
           </h3>
-          <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-body sm:text-base">
+          <div className="mt-6 max-w-[68ch] space-y-4 text-[15px] leading-relaxed text-body sm:text-base">
             <p>
               Software developer at{" "}
               <span className="font-medium text-ink">Infostream</span>, working
@@ -673,7 +764,17 @@ function About() {
             <p>
               I build web apps front to back, and with AI tools and MCPs I move
               fast and cover the design and UX side too, not just the
-              programming. Open to full-time or part-time, remote work.
+              programming. Recent work includes producing the official user
+              guides for Montenegro&apos;s national{" "}
+              <a
+                href="https://ngo.gov.me/Uputstva/PreuzmiteSoftwareIUputstva"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-underline font-medium text-accent-ink"
+              >
+                NGO Register Portal
+              </a>
+              . Open to full-time or part-time, remote work.
             </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-8">
@@ -684,6 +785,7 @@ function About() {
               </div>
             ))}
           </div>
+          <HeroTerminal />
         </div>
       </Reveal>
     </section>
@@ -694,7 +796,7 @@ function About() {
    STACK — language icons with names
 ───────────────────────────────────────────────────────────── */
 
-function TechTile({ t }: { t: Tech }) {
+function TechChip({ t }: { t: Tech }) {
   const reduce = usePrefersReducedMotion();
   const tintClass =
     t.tint === "amber"
@@ -708,30 +810,35 @@ function TechTile({ t }: { t: Tech }) {
   // strokes (tint via text colour only — filling would blob them).
   const isStroke = t.tint === "stroke";
   return (
-    <motion.div
+    <motion.span
       variants={reduce ? undefined : ITEM_VARIANTS}
-      whileHover={reduce ? undefined : { y: -5 }}
+      whileHover={reduce ? undefined : { y: -3 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="glass group flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:border-accent/60"
+      className="glow-hover group inline-flex items-center gap-2 rounded-lg border border-line bg-bg/40 px-3 py-2 hover:border-accent/60"
     >
       <span
-        className={`flex h-9 w-9 shrink-0 items-center justify-center text-[26px] opacity-90 transition-transform duration-300 group-hover:scale-110 ${
+        className={`flex h-5 w-5 shrink-0 items-center justify-center text-[18px] opacity-90 transition-transform duration-300 group-hover:scale-110 ${
           t.tint ? `${isStroke ? "" : "icon-fill-current "}${tintClass}` : ""
         }`}
       >
         <Icon icon={t.icon} aria-hidden />
       </span>
-      <span className="text-sm font-medium text-ink">{t.name}</span>
-    </motion.div>
+      <span className="font-mono text-sm font-medium text-ink">{t.name}</span>
+    </motion.span>
   );
 }
 
 function Stack() {
   return (
-    <section id="stack" className="scroll-mt-24 py-12 lg:py-16">
+    <section
+      id="stack"
+      aria-labelledby="stack-heading"
+      className="py-14 lg:py-20"
+    >
       <RevealHeading
+        id="stack-heading"
         text="The stack"
-        className="text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+        className="text-3xl font-bold text-ink sm:text-4xl"
       />
       <Reveal delay={0.1}>
         <p className="mt-3 max-w-xl text-body">
@@ -740,22 +847,41 @@ function Stack() {
         </p>
       </Reveal>
 
-      <div className="mt-12 space-y-10">
-        {STACK.map((group) => (
-          <div key={group.group}>
-            <Reveal>
-              <h3 className="mb-4 text-sm font-medium text-muted">
-                {group.group}
-              </h3>
-            </Reveal>
-            <StaggerGroup className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              {group.items.map((t) => (
-                <TechTile key={t.name} t={t} />
-              ))}
-            </StaggerGroup>
+      {/* One manifest panel (window-chromed like the project frames & hero
+          terminal) instead of four separate card grids — each category is a
+          row of inline logo chips, divided by faint rules. */}
+      <Reveal delay={0.15}>
+        <div className="mt-10 overflow-hidden rounded-xl border border-line bg-surface/60 shadow-sm backdrop-blur">
+          <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
+            <span className="h-2 w-2 rounded-full bg-faint/70" />
+            <span className="h-2 w-2 rounded-full bg-accent/70" />
+            <span className="h-2 w-2 rounded-full bg-accent-2/70" />
+            <span className="ml-2 font-mono text-[11px] text-muted">
+              stack.config
+            </span>
           </div>
-        ))}
-      </div>
+          <div className="divide-y divide-line/60">
+            {STACK.map((group) => (
+              <div
+                key={group.group}
+                className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:gap-6 sm:px-6"
+              >
+                <div className="flex shrink-0 items-center gap-2 font-mono text-sm sm:min-w-[9rem]">
+                  <span className="text-accent-2">{"//"}</span>
+                  <span className="whitespace-nowrap text-muted">
+                    {group.group.toLowerCase()}
+                  </span>
+                </div>
+                <StaggerGroup className="flex flex-1 flex-wrap gap-2.5">
+                  {group.items.map((t) => (
+                    <TechChip key={t.name} t={t} />
+                  ))}
+                </StaggerGroup>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Reveal>
     </section>
   );
 }
@@ -764,73 +890,166 @@ function Stack() {
    WORK
 ───────────────────────────────────────────────────────────── */
 
-function ProjectCard({ p }: { p: (typeof PROJECTS)[number] }) {
+function ProjectShowcase({
+  p,
+  index,
+}: {
+  p: (typeof PROJECTS)[number];
+  index: number;
+}) {
   const reduce = usePrefersReducedMotion();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const even = index % 2 === 0;
+  // On lg, alternate which side the screenshot sits on. Mobile always stacks
+  // screenshot-on-top (natural DOM order).
+  const imgOrder = even ? "lg:order-1" : "lg:order-2";
+  const txtOrder = even ? "lg:order-2" : "lg:order-1";
+
+  // Only play a demo while it is actually on screen — keeps 3 off-screen
+  // clips from decoding/looping. Under reduced motion we never autoplay and
+  // expose native controls instead so the demo stays reachable.
+  useEffect(() => {
+    if (reduce) return;
+    const v = videoRef.current;
+    if (!v) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) v.play().catch(() => {});
+        else v.pause();
+      },
+      { threshold: 0.25, rootMargin: "200px 0px" }
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, [reduce]);
+
   return (
-    <motion.div
-      variants={reduce ? undefined : ITEM_VARIANTS}
-      whileHover={reduce ? undefined : { y: -5 }}
-      transition={{ type: "spring", stiffness: 300, damping: 22 }}
-      className="glass group flex h-full flex-col rounded-2xl p-6 transition-colors hover:border-accent/50 sm:p-7"
-    >
-      <div className="flex flex-wrap items-center gap-3">
-        <h3 className="font-display text-2xl font-bold tracking-tight text-ink transition-colors group-hover:text-accent-ink">
-          {p.title}
-        </h3>
-        {p.tag && (
-          <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent-ink">
-            {p.tag}
-          </span>
-        )}
-      </div>
-      <p className="mt-3 text-[15px] leading-relaxed text-body">{p.blurb}</p>
-      <ul className="mt-4 flex flex-wrap gap-2">
-        {p.stack.map((s) => (
-          <li
-            key={s}
-            className="rounded-md border border-line px-2 py-0.5 font-mono text-xs text-muted"
-          >
-            {s}
-          </li>
-        ))}
-      </ul>
-      <div className="mt-6 flex items-center gap-5 pt-2 text-sm">
-        <a
-          href={p.live}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="link-underline font-medium text-accent-ink"
+    <Reveal>
+      <article className="group grid items-center gap-6 lg:grid-cols-2 lg:gap-9">
+        {/* Browser-framed demo preview (decorative — the live site opens from
+            the "Live demo" button, not by clicking the frame). */}
+        <motion.div
+          whileHover={
+            reduce
+              ? undefined
+              : {
+                  y: -6,
+                  boxShadow:
+                    "0 0 0 1px rgba(63,185,80,0.32), 0 16px 42px -14px rgba(63,185,80,0.45)",
+                }
+          }
+          transition={{ type: "spring", stiffness: 260, damping: 22 }}
+          className={`${imgOrder} overflow-hidden rounded-xl border border-line bg-surface shadow-sm transition-colors hover:border-accent/50`}
         >
-          Live demo{" "}
-          <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-            ↗
-          </span>
-        </a>
-        <a
-          href={p.code}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
-        >
-          <SiGithub aria-hidden /> Code
-        </a>
-      </div>
-    </motion.div>
+          <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-3 py-2">
+            <span className="h-2 w-2 rounded-full bg-faint/70" />
+            <span className="h-2 w-2 rounded-full bg-accent/70" />
+            <span className="h-2 w-2 rounded-full bg-accent-2/70" />
+            <span className="ml-2 truncate font-mono text-[11px] text-muted">
+              {p.domain}
+            </span>
+          </div>
+          <div className="relative aspect-[16/10] overflow-hidden bg-bg">
+            {p.video ? (
+              <video
+                ref={videoRef}
+                src={p.video}
+                poster={p.shot}
+                muted
+                loop
+                playsInline
+                preload="none"
+                controls={reduce}
+                aria-label={`${p.title} demo`}
+                className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+              />
+            ) : (
+              <Image
+                src={p.shot}
+                alt={`${p.title} live preview`}
+                fill
+                sizes="(max-width: 1024px) 100vw, 42vw"
+                className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+              />
+            )}
+          </div>
+        </motion.div>
+
+        {/* Project detail */}
+        <div className={txtOrder}>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="font-mono text-sm text-accent-2">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <h3 className="font-display text-2xl font-bold text-ink transition-colors group-hover:text-accent-ink">
+              {p.title}
+            </h3>
+          </div>
+          <p className="mt-3 text-[15px] leading-relaxed text-body">{p.blurb}</p>
+          <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
+            <div>
+              <dt className="font-mono text-xs text-muted">role</dt>
+              <dd className="text-sm text-body">{p.role}</dd>
+            </div>
+            <div>
+              <dt className="font-mono text-xs text-muted">built</dt>
+              <dd className="text-sm text-body">{p.context}</dd>
+            </div>
+          </dl>
+          <ul className="mt-4 flex flex-wrap gap-2">
+            {p.stack.map((s) => (
+              <li
+                key={s}
+                className="rounded-md border border-line px-2 py-0.5 font-mono text-xs text-muted"
+              >
+                {s}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6 flex items-center gap-5 text-sm">
+            <a
+              href={p.live}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link-underline font-medium text-accent-ink"
+            >
+              Live demo{" "}
+              <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
+                ↗
+              </span>
+            </a>
+            <a
+              href={p.code}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
+            >
+              <SiGithub aria-hidden /> Code
+            </a>
+          </div>
+        </div>
+      </article>
+    </Reveal>
   );
 }
 
 function Work() {
   return (
-    <section id="work" className="scroll-mt-24 py-12 lg:py-16">
+    <section
+      id="work"
+      aria-labelledby="work-heading"
+      className="py-16 lg:py-28"
+    >
       <RevealHeading
+        id="work-heading"
         text="Things I've built"
-        className="mb-10 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+        className="mb-10 text-3xl font-bold text-ink sm:text-4xl"
       />
-      <StaggerGroup className="grid gap-5 sm:grid-cols-2">
-        {PROJECTS.map((p) => (
-          <ProjectCard key={p.title} p={p} />
+      <div className="space-y-16 lg:space-y-24">
+        {PROJECTS.map((p, i) => (
+          <ProjectShowcase key={p.title} p={p} index={i} />
         ))}
-      </StaggerGroup>
+      </div>
     </section>
   );
 }
@@ -841,15 +1060,20 @@ function Work() {
 
 function GitHub() {
   return (
-    <section id="github" className="scroll-mt-24 py-12 lg:py-16">
+    <section
+      id="github"
+      aria-labelledby="github-heading"
+      className="py-16 lg:py-28"
+    >
       <RevealHeading
+        id="github-heading"
         text="On GitHub"
-        className="mb-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+        className="mb-3 text-3xl font-bold text-ink sm:text-4xl"
       />
       <Reveal>
         <p className="mb-8 max-w-xl text-body">
-          Where I build in the open — a year of commits across personal
-          projects, games and experiments.
+          Where I build in the open — commits across personal projects, games
+          and experiments.
         </p>
         <GitHubGraph />
       </Reveal>
@@ -875,10 +1099,15 @@ function Experience() {
   });
 
   return (
-    <section id="experience" className="scroll-mt-24 py-12 lg:py-16">
+    <section
+      id="experience"
+      aria-labelledby="experience-heading"
+      className="py-14 lg:py-20"
+    >
       <RevealHeading
+        id="experience-heading"
         text="Where I've been"
-        className="mb-10 text-3xl font-bold tracking-tight text-ink sm:text-4xl"
+        className="mb-10 text-3xl font-bold text-ink sm:text-4xl"
       />
       <ol ref={ref} className="relative ml-2 pl-0">
         <motion.span
@@ -940,13 +1169,20 @@ function Experience() {
 ───────────────────────────────────────────────────────────── */
 
 function Contact() {
-  const items = [
-    {
-      Icon: SiGmail,
-      label: "Email",
-      value: SOCIAL.email,
-      href: `mailto:${SOCIAL.email}`,
-    },
+  const reduce = usePrefersReducedMotion();
+  const [copied, setCopied] = useState(false);
+
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(SOCIAL.email);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard blocked — the mailto link still works */
+    }
+  };
+
+  const channels = [
     {
       Icon: SiGithub,
       label: "GitHub",
@@ -962,53 +1198,161 @@ function Contact() {
     {
       Icon: SiWhatsapp,
       label: "WhatsApp",
-      value: "Message me",
+      value: "+382 67 474 438",
       href: SOCIAL.whatsapp,
     },
   ];
 
+  const copyGlyph = (
+    <svg
+      viewBox="0 0 24 24"
+      width="13"
+      height="13"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+  const checkGlyph = (
+    <svg
+      viewBox="0 0 24 24"
+      width="13"
+      height="13"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+
   return (
-    <section id="contact" className="scroll-mt-24 py-16 lg:py-24">
-      <div className="relative mx-auto max-w-2xl text-center">
-        <RevealHeading
-          text="Let's build something."
-          className="text-3xl font-bold tracking-tight text-ink sm:text-4xl lg:text-5xl"
-        />
-        <Reveal delay={0.1}>
-          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-body">
-            Open to full-time or part-time, remote. The fastest way to reach me
-            is email — I usually reply within a day.
-          </p>
-          <div className="mt-8 flex justify-center">
-            <Magnetic strength={0.3}>
+    <section
+      id="contact"
+      aria-labelledby="contact-heading"
+      className="py-16 lg:py-24"
+    >
+      <RevealHeading
+        id="contact-heading"
+        text="Let's build something."
+        className="text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+      />
+      <Reveal delay={0.1}>
+        <p className="mt-5 max-w-xl text-base leading-relaxed text-body">
+          Open to full-time or part-time, remote. The fastest way to reach me is
+          email — I usually reply within a day.
+        </p>
+      </Reveal>
+
+      <div className="mt-10 grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+        {/* Primary: the email, copyable, with one clear send CTA. */}
+        <Reveal delay={0.15}>
+          <div className="glass rounded-2xl p-6 sm:p-8">
+            <div className="font-mono text-xs text-muted">
+              <span className="text-accent-2">{"//"}</span> drop me a line
+            </div>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
                 href={`mailto:${SOCIAL.email}`}
-                className="block rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-hover"
+                className="link-underline break-all font-mono text-lg font-medium text-accent-ink sm:text-xl"
               >
                 {SOCIAL.email}
               </a>
-            </Magnetic>
-          </div>
-          <div className="mt-12 grid gap-3 sm:grid-cols-2">
-            {items.map(({ Icon: I, label, value, href }) => (
-              <a
-                key={label}
-                href={href}
-                target={href.startsWith("http") ? "_blank" : undefined}
-                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                className="glass group flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors hover:border-accent/60"
+              <motion.button
+                type="button"
+                onClick={copyEmail}
+                aria-label="Copy email address"
+                whileTap={reduce ? undefined : { scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="glow-hover inline-flex w-[5.4rem] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-bg/40 px-3 py-1.5 font-mono text-xs font-medium text-muted hover:border-accent/60 hover:text-ink"
               >
-                <I
-                  className="text-lg text-muted transition-colors group-hover:text-accent-ink"
-                  aria-hidden
-                />
-                <span className="text-sm font-medium text-ink">{label}</span>
-                <span className="ml-auto truncate text-sm text-muted">
-                  {value}
-                </span>
+                {reduce ? (
+                  <span
+                    className={`inline-flex items-center gap-1.5 ${copied ? "text-accent-ink" : ""}`}
+                  >
+                    {copied ? checkGlyph : copyGlyph}
+                    {copied ? "copied" : "copy"}
+                  </span>
+                ) : (
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={copied ? "done" : "idle"}
+                      initial={{ opacity: 0, scale: 0.85 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.16, ease: EASE }}
+                      className={`inline-flex items-center gap-1.5 ${copied ? "text-accent-ink" : ""}`}
+                    >
+                      {copied ? checkGlyph : copyGlyph}
+                      {copied ? "copied" : "copy"}
+                    </motion.span>
+                  </AnimatePresence>
+                )}
+              </motion.button>
+            </div>
+            <span aria-live="polite" className="sr-only">
+              {copied ? "Email address copied to clipboard" : ""}
+            </span>
+            <div className="mt-7 flex flex-wrap items-center gap-4">
+              <Magnetic strength={0.3}>
+                <a
+                  href={`mailto:${SOCIAL.email}`}
+                  className="glow-hover inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-bg hover:bg-accent-hover"
+                >
+                  <SiGmail aria-hidden /> Email me
+                </a>
+              </Magnetic>
+              <a
+                href={RESUME}
+                download
+                className="link-underline inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-accent-ink"
+              >
+                Download CV <span aria-hidden>↓</span>
               </a>
-            ))}
+            </div>
           </div>
+        </Reveal>
+
+        {/* Channels as a divided list — not a card grid. */}
+        <Reveal delay={0.2}>
+          <ul className="glass divide-y divide-line/60 rounded-2xl p-2 sm:p-3">
+            {channels.map(({ Icon: I, label, value, href }) => (
+              <li key={label}>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex items-center gap-4 rounded-xl px-4 py-4 transition-colors hover:bg-accent-soft"
+                >
+                  <I
+                    className="shrink-0 text-xl text-muted transition-colors group-hover:text-accent-ink"
+                    aria-hidden
+                  />
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-ink">{label}</div>
+                    <div className="truncate font-mono text-xs text-muted">
+                      {value}
+                    </div>
+                  </div>
+                  <span
+                    className="ml-auto text-muted transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-accent-ink"
+                    aria-hidden
+                  >
+                    ↗
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </Reveal>
       </div>
     </section>
@@ -1036,6 +1380,9 @@ export default function Home() {
 
   return (
     <>
+      <a href="#content" className="skip-link">
+        Skip to content
+      </a>
       <Aurora />
       <InteractiveGrid />
       <SmoothScroll />
@@ -1044,12 +1391,17 @@ export default function Home() {
 
       <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:flex lg:gap-14 lg:px-10">
         <LeftRail active={active} />
-        <main id="content" className="pb-16 lg:flex-1 lg:py-28">
+        <main id="content" tabIndex={-1} className="pb-16 outline-none lg:flex-1 lg:py-28">
           <About />
+          <SectionDivider dur={7} />
           <Stack />
+          <SectionDivider dur={8.5} reverse />
           <Work />
+          <SectionDivider dur={6.5} />
           <GitHub />
+          <SectionDivider dur={9} reverse />
           <Experience />
+          <SectionDivider dur={7.5} />
           <Contact />
         </main>
       </div>

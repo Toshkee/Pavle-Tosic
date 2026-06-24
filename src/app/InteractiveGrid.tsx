@@ -12,9 +12,9 @@ import { useEffect, useRef } from "react";
 const GAP = 34; // px between dots (CSS px)
 const BASE_R = 1.1; // resting dot radius
 const MAX_R = 3.3; // radius at the spotlight centre
-const REACH = 175; // spotlight radius (px)
-const INK = "33, 28, 22"; // --color-ink rgb
-const AMBER = "224, 133, 58"; // --color-accent rgb
+const REACH = 130; // spotlight radius (px)
+const INK = "150, 175, 158"; // resting dot — faint grey-green on dark
+const AMBER = "63, 185, 80"; // --color-accent (green) rgb — spotlight
 
 export default function InteractiveGrid() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -103,12 +103,25 @@ export default function InteractiveGrid() {
       hasPointer = false;
     };
 
+    // Stop the loop while the tab is hidden; resume on return. (No-op under
+    // reduced motion, which only ever paints one static frame.)
+    const onVisibility = () => {
+      if (reduce) return;
+      if (document.hidden) {
+        cancelAnimationFrame(raf);
+      } else {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(loop);
+      }
+    };
+
     window.addEventListener("resize", resize);
     if (reduce) {
       draw(0); // single static frame
     } else {
       window.addEventListener("mousemove", onMove, { passive: true });
       window.addEventListener("mouseleave", onLeave);
+      document.addEventListener("visibilitychange", onVisibility);
       raf = requestAnimationFrame(loop);
     }
 
@@ -117,6 +130,7 @@ export default function InteractiveGrid() {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseleave", onLeave);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 

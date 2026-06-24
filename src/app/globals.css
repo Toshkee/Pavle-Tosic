@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 /* =================================================================
-   STUDIO LIGHT — warm cream base, burnt-amber accent grounded by
-   teal. Whole site is set in Mononoki (monospace).
-   Token-driven (Tailwind v4 @theme).
+   DARK TERMINAL — near-black base, phosphor-green accent partnered
+   with cyan. Whole site is set in Mononoki (monospace).
+   Token-driven (Tailwind v4 @theme). NOTE: the legacy `.blob-amber*`
+   / `.blob-teal*` class names below are historical — they now paint
+   green/cyan blobs; kept to avoid churning Aurora.tsx markup.
 ================================================================= */
 
 @theme {
@@ -15,22 +17,22 @@
   --font-mono: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
     monospace;
 
-  /* Surfaces & text */
-  --color-bg: #f3ecdf; /* page background */
-  --color-surface: #ffffff; /* glass cards / raised panels */
-  --color-ink: #211c16; /* headings — near-black warm */
-  --color-body: #463f35; /* body copy (AA on cream) */
-  --color-muted: #6f6859; /* secondary text (AA on cream) */
-  --color-faint: #a99f8e; /* decorative only */
-  --color-line: rgba(33, 28, 22, 0.12);
-  --color-line-strong: rgba(33, 28, 22, 0.2);
+  /* Surfaces & text — DARK hacker terminal */
+  --color-bg: #0a0e0c; /* page background — near-black, faint green tint */
+  --color-surface: #121a15; /* glass cards / raised panels / frames */
+  --color-ink: #e6efe8; /* headings — bright near-white */
+  --color-body: #c2cec4; /* body copy (AA on dark) */
+  --color-muted: #8b988c; /* secondary text */
+  --color-faint: #5c6a5f; /* decorative only */
+  --color-line: rgba(180, 210, 190, 0.12);
+  --color-line-strong: rgba(180, 210, 190, 0.22);
 
-  /* Accent — burnt amber, grounded by deep teal */
-  --color-accent: #e0853a; /* the one chromatic accent (fills/dots) */
-  --color-accent-hover: #cf741d; /* button-fill hover (keeps AA w/ ink text) */
-  --color-accent-ink: #a14d0c; /* accent TEXT / links (AA: 4.99:1 on cream) */
-  --color-accent-2: #0f766e; /* teal partner (AA on cream) */
-  --color-accent-soft: rgba(224, 133, 58, 0.14); /* tinted surface */
+  /* Accent — phosphor green, partnered with cyan */
+  --color-accent: #3fb950; /* the green accent (fills/dots) */
+  --color-accent-hover: #4ac95e; /* button-fill hover (brighter — w/ dark text) */
+  --color-accent-ink: #5ee787; /* accent TEXT / links (bright green on dark) */
+  --color-accent-2: #2dd4bf; /* cyan partner */
+  --color-accent-soft: rgba(63, 185, 80, 0.16); /* tinted surface */
 }
 
 /* ================= BASE ================= */
@@ -53,11 +55,44 @@ body {
 
 ::selection {
   background-color: var(--color-accent);
-  color: #211c16;
+  color: #0a0e0c;
 }
 
+/* The hero code-editor panel selects in cyan (its "type/code" partner
+   colour) while prose stays green — a small bespoke, on-theme touch. */
+.hero-terminal ::selection {
+  background-color: var(--color-accent-2);
+  color: #0a0e0c;
+}
+
+/* Skip-to-content link — off-screen until a keyboard user focuses it. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  transform: translateY(-160%);
+  border-radius: 8px;
+  border: 1px solid var(--color-accent);
+  background-color: var(--color-surface);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.875rem;
+  color: var(--color-accent-ink);
+  transition: transform 0.2s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* Anchor offset: clear the mobile top nav. On lg the nav lives in the left
+   rail (no top bar), so only a small breathing offset is needed. */
 section {
-  scroll-margin-top: 88px;
+  scroll-margin-top: 72px;
+}
+@media (min-width: 1024px) {
+  section {
+    scroll-margin-top: 28px;
+  }
 }
 
 :where(a, button, [tabindex]):focus-visible {
@@ -92,7 +127,7 @@ html.lenis body {
 
 /* ================= HELPERS ================= */
 
-/* Gradient accent text — amber → teal, used sparingly */
+/* Gradient accent text — green → cyan, used sparingly */
 .text-gradient {
   background: linear-gradient(
     100deg,
@@ -110,6 +145,20 @@ html.lenis body {
   fill: currentColor;
 }
 
+/* Green glow on hover — buttons & cards. Composes with each element's own
+   hover state (border/translate); just adds the accent halo + ring. */
+.glow-hover {
+  transition-property: box-shadow, transform, border-color, background-color,
+    color;
+  transition-duration: 300ms;
+  transition-timing-function: ease;
+}
+.glow-hover:hover {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 32%, transparent),
+    0 0 22px -2px color-mix(in srgb, var(--color-accent) 45%, transparent);
+}
+
 /* ================= ANIMATED BACKGROUND (Aurora) ================= */
 
 .aurora-blob {
@@ -124,22 +173,40 @@ html.lenis body {
   background: radial-gradient(circle, var(--color-accent), transparent 62%);
   top: -14%;
   left: -10%;
-  opacity: 0.55;
+  opacity: 0.34;
   animation: drift1 24s ease-in-out infinite;
 }
 .blob-teal {
   background: radial-gradient(circle, var(--color-accent-2), transparent 62%);
   bottom: -16%;
   right: -8%;
-  opacity: 0.42;
+  opacity: 0.28;
   animation: drift2 30s ease-in-out infinite;
 }
 .blob-amber2 {
-  background: radial-gradient(circle, #cf741d, transparent 60%);
+  background: radial-gradient(circle, #2ea043, transparent 60%);
   top: 34%;
   left: 42%;
-  opacity: 0.38;
+  opacity: 0.22;
   animation: drift3 34s ease-in-out infinite;
+}
+.blob-teal2 {
+  width: 34rem;
+  height: 34rem;
+  background: radial-gradient(circle, var(--color-accent-2), transparent 62%);
+  top: 6%;
+  right: 22%;
+  opacity: 0.2;
+  animation: drift4 38s ease-in-out infinite;
+}
+.blob-amber3 {
+  width: 38rem;
+  height: 38rem;
+  background: radial-gradient(circle, var(--color-accent), transparent 60%);
+  bottom: 4%;
+  left: 28%;
+  opacity: 0.22;
+  animation: drift5 42s ease-in-out infinite;
 }
 @keyframes drift1 {
   0%,
@@ -166,6 +233,88 @@ html.lenis body {
   }
   50% {
     transform: translate(-6vw, 5vh) scale(1.18);
+  }
+}
+@keyframes drift4 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(7vw, 6vh) scale(1.12);
+  }
+}
+@keyframes drift5 {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-8vw, -6vh) scale(1.16);
+  }
+}
+
+/* ====== SECTION DIVIDERS — pulse traveling a faint line ====== */
+/* Sits in the empty gap between sections (never over content). The dot rests
+   centred under reduced motion (base left-1/2); the travel keyframe overrides
+   `left` while animating. */
+.section-pulse {
+  transform: translate(-50%, -50%);
+  animation-name: section-pulse-travel;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes section-pulse-travel {
+  0% {
+    left: 6%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    left: 94%;
+    opacity: 0;
+  }
+}
+
+/* GitHub heatmap cells fade in on a short contained diagonal wave when the
+   data lands. fill-mode `both` + the global reduced-motion rule means cells
+   resolve to fully-visible instantly when motion is reduced. */
+.gh-cell {
+  animation: gh-pop 0.45s ease both;
+}
+@keyframes gh-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Blinking caret for the hero code terminal (HeroTerminal.tsx). */
+.hero-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  margin-left: 1px;
+  vertical-align: -0.15em;
+  background-color: var(--color-accent);
+  animation: caret-blink 1.05s step-end infinite;
+}
+@keyframes caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }
 
