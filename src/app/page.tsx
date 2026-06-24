@@ -17,7 +17,8 @@ import {
   useSpring,
 } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { SiGithub, SiLinkedin, SiWhatsapp, SiGmail } from "react-icons/si";
+import { SiGithub, SiWhatsapp, SiGmail } from "react-icons/si";
+import { FaLinkedin } from "react-icons/fa";
 import { useActiveSection } from "./useActiveSection";
 import SmoothScroll from "./SmoothScroll";
 import Aurora from "./Aurora";
@@ -713,7 +714,7 @@ function LeftRail({ active }: { active: string }) {
           <SiGithub />
         </IconLink>
         <IconLink href={SOCIAL.linkedin} label="LinkedIn">
-          <SiLinkedin />
+          <FaLinkedin />
         </IconLink>
         <IconLink href={`mailto:${SOCIAL.email}`} label="Email">
           <SiGmail />
@@ -1190,7 +1191,7 @@ function Contact() {
       href: SOCIAL.github,
     },
     {
-      Icon: SiLinkedin,
+      Icon: FaLinkedin,
       label: "LinkedIn",
       value: "in/tosiicp",
       href: SOCIAL.linkedin,
