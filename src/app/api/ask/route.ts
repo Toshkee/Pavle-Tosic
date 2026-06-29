@@ -19,6 +19,10 @@ type GeminiResponse = {
   promptFeedback?: { blockReason?: string };
 };
 
+const BLOCKED_REPLY =
+  "I can't help with that one — try asking about Pavle's work, stack, or projects.";
+const EMPTY_REPLY = "Sorry, I didn't catch that — could you rephrase?";
+
 const MAX_MESSAGES = 16; // cap history sent upstream (cost / abuse guard)
 const MAX_CHARS = 2000; // cap per-message length
 const MAX_BODY_BYTES = 64_000; // reject oversized payloads before parsing
@@ -109,7 +113,10 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  // flash-lite: fastest/cheapest Gemini, with the most generous free-tier
+  // request quota — ideal for a short grounded chat widget. Override with the
+  // GEMINI_MODEL env var (e.g. "gemini-2.5-flash" on a paid plan).
+  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
 
   const payload = {
     system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
@@ -126,10 +133,10 @@ export async function POST(req: Request): Promise<Response> {
     },
   };
 
-  let data: GeminiResponse;
+  let upstream: Response;
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    upstream = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
       {
         method: "POST",
         headers: {
@@ -139,32 +146,96 @@ export async function POST(req: Request): Promise<Response> {
         body: JSON.stringify(payload),
       }
     );
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.error("Gemini API error", res.status, detail.slice(0, 300));
-      return Response.json({ error: "upstream" }, { status: 502 });
-    }
-    data = (await res.json()) as GeminiResponse;
   } catch (err) {
     console.error("Ask route fetch failed", err);
     return Response.json({ error: "upstream" }, { status: 502 });
   }
 
-  const candidate = data.candidates?.[0];
-  const text = (candidate?.content?.parts ?? [])
-    .map((p) => p?.text ?? "")
-    .join("")
-    .trim();
-  const blocked =
-    !!data.promptFeedback?.blockReason || candidate?.finishReason === "SAFETY";
-
-  if (!text) {
-    return Response.json({
-      reply: blocked
-        ? "I can't help with that one — try asking about Pavle's work, stack, or projects."
-        : "Sorry, I didn't catch that — could you rephrase?",
-    });
+  if (!upstream.ok || !upstream.body) {
+    const detail = await upstream.text().catch(() => "");
+    console.error("Gemini API error", upstream.status, detail.slice(0, 300));
+    return Response.json({ error: "upstream" }, { status: 502 });
   }
 
-  return Response.json({ reply: text });
+  // Re-stream Gemini's SSE to the client as plain text: parse each `data:`
+  // event, extract the incremental text delta, and forward just the text so the
+  // browser can render the reply as it arrives.
+  const reader = upstream.body.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let buffer = "";
+      let emitted = false;
+      let blocked = false;
+      // Enqueue defensively: if the client has disconnected the controller is
+      // closed and enqueue throws — treat that as "stop", not an error.
+      const push = (s: string): boolean => {
+        try {
+          controller.enqueue(encoder.encode(s));
+          return true;
+        } catch {
+          return false;
+        }
+      };
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let nl: number;
+          while ((nl = buffer.indexOf("\n")) !== -1) {
+            const line = buffer.slice(0, nl).trim();
+            buffer = buffer.slice(nl + 1);
+            if (!line.startsWith("data:")) continue;
+            const json = line.slice(5).trim();
+            if (!json || json === "[DONE]") continue;
+            let obj: GeminiResponse;
+            try {
+              obj = JSON.parse(json) as GeminiResponse;
+            } catch {
+              continue; // ignore non-JSON keep-alive lines
+            }
+            const candidate = obj.candidates?.[0];
+            if (obj.promptFeedback?.blockReason || candidate?.finishReason === "SAFETY") {
+              blocked = true;
+            }
+            const text = (candidate?.content?.parts ?? []).map((p) => p?.text ?? "").join("");
+            if (text) {
+              emitted = true;
+              if (!push(text)) return; // client gone — stop reading upstream
+            }
+          }
+        }
+        if (!emitted) push(blocked ? BLOCKED_REPLY : EMPTY_REPLY);
+      } catch (err) {
+        console.error("Ask route stream failed", err);
+        if (!emitted) push(EMPTY_REPLY);
+      } finally {
+        try {
+          controller.close();
+        } catch {
+          /* already closed (client disconnected) */
+        }
+        try {
+          reader.releaseLock();
+        } catch {
+          /* reader already released/cancelled */
+        }
+      }
+    },
+    cancel() {
+      // Client disconnected — stop pulling from Gemini.
+      reader.cancel().catch(() => {});
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

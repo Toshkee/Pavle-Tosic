@@ -37,11 +37,24 @@ function Dots() {
   );
 }
 
+// Blinking block caret shown at the end of the reply while it streams in.
+function Caret({ reduce }: { reduce: boolean | null }) {
+  return (
+    <motion.span
+      aria-hidden
+      className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-px rounded-[1px] bg-accent align-text-bottom"
+      animate={reduce ? undefined : { opacity: [1, 1, 0, 0] }}
+      transition={{ duration: 1, repeat: Infinity, ease: "linear", times: [0, 0.5, 0.5, 1] }}
+    />
+  );
+}
+
 export default function AskPanel() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // waiting for the first byte
+  const [streaming, setStreaming] = useState(false); // reply is arriving
   const [error, setError] = useState<string | null>(null);
   // Soft-keyboard inset (mobile): how far the visual viewport is shrunk, and its
   // current height, so the panel can sit above the keyboard instead of behind it.
@@ -109,7 +122,7 @@ export default function AskPanel() {
 
   const send = async (text: string) => {
     const q = text.trim();
-    if (!q || loading) return;
+    if (!q || loading || streaming) return;
     setError(null);
     setInput("");
     const next: Msg[] = [...messages, { role: "user", content: q }];
@@ -125,20 +138,40 @@ export default function AskPanel() {
         setError("The assistant isn't switched on yet.");
         return;
       }
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         setError(`The assistant is offline right now — email Pavle at ${EMAIL}.`);
         return;
       }
-      const data = (await res.json()) as { reply?: string };
-      if (data.reply) {
-        setMessages((m) => [...m, { role: "assistant", content: data.reply as string }]);
-      } else {
-        setError("Hmm, no answer came back — try rephrasing.");
+      // Read the plain-text stream and grow the assistant message as it arrives.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      let started = false;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+        acc += chunk;
+        if (!started) {
+          started = true;
+          setLoading(false);
+          setStreaming(true);
+          setMessages((m) => [...m, { role: "assistant", content: acc }]);
+        } else {
+          setMessages((m) => {
+            const copy = m.slice();
+            copy[copy.length - 1] = { role: "assistant", content: acc };
+            return copy;
+          });
+        }
       }
+      if (!started) setError("Hmm, no answer came back — try rephrasing.");
     } catch {
       setError("Couldn't reach the assistant — check your connection.");
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   };
 
@@ -243,6 +276,7 @@ export default function AskPanel() {
                     <Sparkle className="mt-1 h-3.5 w-3.5 shrink-0 text-accent" />
                     <p className="max-w-[88%] whitespace-pre-wrap break-words text-body">
                       {m.content}
+                      {streaming && i === messages.length - 1 && <Caret reduce={reduce} />}
                     </p>
                   </div>
                 )
@@ -261,9 +295,14 @@ export default function AskPanel() {
                 </p>
               )}
 
-              {/* polite live region for screen readers */}
+              {/* polite live region for screen readers — announces the full
+                  reply once (not every streaming delta) */}
               <p className="sr-only" aria-live="polite">
-                {loading ? "Thinking" : messages[messages.length - 1]?.role === "assistant" ? messages[messages.length - 1].content : ""}
+                {loading
+                  ? "Thinking"
+                  : !streaming && messages[messages.length - 1]?.role === "assistant"
+                    ? messages[messages.length - 1].content
+                    : ""}
               </p>
             </div>
 
@@ -295,7 +334,7 @@ export default function AskPanel() {
                 />
                 <button
                   type="submit"
-                  disabled={loading || !input.trim()}
+                  disabled={loading || streaming || !input.trim()}
                   aria-label="Send"
                   className="glow-hover flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-bg transition-opacity hover:bg-accent-2 disabled:opacity-40"
                 >
