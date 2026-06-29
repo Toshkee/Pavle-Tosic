@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 /* Contained hero panel — a small code editor that types out real TypeScript,
    syntax-highlighted in the brand palette, then cycles to the next snippet.
@@ -78,12 +78,30 @@ function charDelay(code: string, i: number): number {
 export default function HeroTerminal() {
   const [snip, setSnip] = useState(0);
   const [shown, setShown] = useState(0); // chars revealed; Infinity = all (reduced motion)
+  const [onScreen, setOnScreen] = useState(true);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Pause the per-character typing loop while the panel is scrolled out of view
+  // — otherwise it re-renders on every character for the whole session even
+  // when nobody can see it. Re-entry restarts the current snippet (offscreen
+  // only, so it's never visible).
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setOnScreen(entry.isIntersecting),
+      { rootMargin: "200px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setShown(Number.POSITIVE_INFINITY);
       return;
     }
+    if (!onScreen) return;
     const code = SNIPPETS[snip];
     let i = 0;
     let timer: ReturnType<typeof setTimeout>;
@@ -99,7 +117,7 @@ export default function HeroTerminal() {
     };
     timer = setTimeout(step, 450);
     return () => clearTimeout(timer);
-  }, [snip]);
+  }, [snip, onScreen]);
 
   const tokens = TOKENS[snip];
   const spans: React.ReactNode[] = [];
@@ -127,7 +145,10 @@ export default function HeroTerminal() {
   const col = visibleLen - (seen.lastIndexOf("\n") + 1) + 1;
 
   return (
-    <div className="hero-terminal mt-8 overflow-hidden rounded-xl border border-line bg-[#0b110d] shadow-sm">
+    <div
+      ref={rootRef}
+      className="hero-terminal mt-8 overflow-hidden rounded-xl border border-line bg-[#0b110d] shadow-sm"
+    >
       {/* window chrome */}
       <div className="flex items-center gap-1.5 border-b border-line/70 px-3.5 py-2">
         <span className="h-2.5 w-2.5 rounded-full bg-faint/70" />

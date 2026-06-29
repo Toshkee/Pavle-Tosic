@@ -66,7 +66,7 @@ export default function GitHubGraph() {
     : 0;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface/60 shadow-sm backdrop-blur">
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface/60 shadow-sm backdrop-blur-sm">
       {/* window chrome — matches the Stack/Work panels */}
       <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
         <span className="h-2 w-2 rounded-full bg-faint/70" />

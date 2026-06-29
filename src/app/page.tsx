@@ -3,6 +3,7 @@
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import {
+  memo,
   useEffect,
   useRef,
   useState,
@@ -24,6 +25,8 @@ import SmoothScroll from "./SmoothScroll";
 import Aurora from "./Aurora";
 import SectionDivider from "./SectionDivider";
 import GitHubGraph from "./GitHubGraph";
+import BootIntro from "./BootIntro";
+import Terminal from "./Terminal";
 import { registerIcons } from "./iconData";
 
 // Defer the always-on canvas and the hero typing panel past hydration — both
@@ -233,17 +236,30 @@ const EXPERIENCE: Job[] = [
    MOTION PRIMITIVES
 ───────────────────────────────────────────────────────────── */
 
+// One shared, lazily-created MediaQueryList. Without this, every render of the
+// 30+ components that read reduced-motion allocated a fresh MediaQueryList (and
+// each subscribe added its own listener). getSnapshot now just reads `.matches`
+// — a cheap property read with no allocation.
+let reduceMql: MediaQueryList | null = null;
+function getReduceMql() {
+  if (!reduceMql && typeof window !== "undefined") {
+    reduceMql = window.matchMedia("(prefers-reduced-motion: reduce)");
+  }
+  return reduceMql;
+}
+function subscribeReduce(onChange: () => void) {
+  const mq = getReduceMql();
+  if (!mq) return () => {};
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+function getReduceSnapshot() {
+  return getReduceMql()?.matches ?? false;
+}
+
 // Hydration-safe prefers-reduced-motion (server snapshot = false).
 function usePrefersReducedMotion() {
-  return useSyncExternalStore(
-    (onChange) => {
-      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    },
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => false
-  );
+  return useSyncExternalStore(subscribeReduce, getReduceSnapshot, () => false);
 }
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -375,7 +391,7 @@ function RevealHeading({
           className="mr-[0.28em] inline-block overflow-hidden pb-[0.12em] align-bottom -mb-[0.12em] last:mr-0"
         >
           <motion.span
-            className="inline-block will-change-transform"
+            className="inline-block"
             variants={{ hidden: { y: "115%" }, visible: { y: 0 } }}
             transition={{ duration: 0.7, ease: EASE }}
           >
@@ -454,7 +470,7 @@ function NavBar({ active }: { active: string }) {
   const reduce = usePrefersReducedMotion();
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 border-b border-line/70 bg-bg/70 backdrop-blur-xl lg:hidden">
+    <div className="fixed inset-x-0 top-0 z-50 border-b border-line/70 bg-bg/70 backdrop-blur-md lg:hidden">
       <nav
         className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"
         aria-label="Primary"
@@ -511,7 +527,7 @@ function NavBar({ active }: { active: string }) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: reduce ? 0 : 0.25 }}
-            className="overflow-hidden border-t border-line bg-bg/95 backdrop-blur-xl md:hidden"
+            className="overflow-hidden border-t border-line bg-bg/95 backdrop-blur-md md:hidden"
           >
             {NAV.map((item) => (
               <li key={item.id}>
@@ -731,7 +747,7 @@ function LeftRail({ active }: { active: string }) {
    ABOUT
 ───────────────────────────────────────────────────────────── */
 
-function About() {
+const About = memo(function About() {
   return (
     <section
       id="about"
@@ -791,7 +807,7 @@ function About() {
       </Reveal>
     </section>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────
    STACK — language icons with names
@@ -829,7 +845,7 @@ function TechChip({ t }: { t: Tech }) {
   );
 }
 
-function Stack() {
+const Stack = memo(function Stack() {
   return (
     <section
       id="stack"
@@ -852,7 +868,7 @@ function Stack() {
           terminal) instead of four separate card grids — each category is a
           row of inline logo chips, divided by faint rules. */}
       <Reveal delay={0.15}>
-        <div className="mt-10 overflow-hidden rounded-xl border border-line bg-surface/60 shadow-sm backdrop-blur">
+        <div className="mt-10 overflow-hidden rounded-xl border border-line bg-surface/60 shadow-sm backdrop-blur-sm">
           <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
             <span className="h-2 w-2 rounded-full bg-faint/70" />
             <span className="h-2 w-2 rounded-full bg-accent/70" />
@@ -885,7 +901,7 @@ function Stack() {
       </Reveal>
     </section>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────
    WORK
@@ -913,15 +929,27 @@ function ProjectShowcase({
     if (reduce) return;
     const v = videoRef.current;
     if (!v) return;
+    let inView = false;
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) v.play().catch(() => {});
+        inView = entry.isIntersecting;
+        if (inView) v.play().catch(() => {});
         else v.pause();
       },
       { threshold: 0.25, rootMargin: "200px 0px" }
     );
     io.observe(v);
-    return () => io.disconnect();
+    // A looping muted video keeps decoding frames in a backgrounded tab; pause
+    // it while hidden and resume only if it's still on screen.
+    const onVisibility = () => {
+      if (document.hidden) v.pause();
+      else if (inView) v.play().catch(() => {});
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [reduce]);
 
   return (
@@ -1034,7 +1062,7 @@ function ProjectShowcase({
   );
 }
 
-function Work() {
+const Work = memo(function Work() {
   return (
     <section
       id="work"
@@ -1053,13 +1081,13 @@ function Work() {
       </div>
     </section>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────
    GITHUB
 ───────────────────────────────────────────────────────────── */
 
-function GitHub() {
+const GitHub = memo(function GitHub() {
   return (
     <section
       id="github"
@@ -1080,13 +1108,13 @@ function GitHub() {
       </Reveal>
     </section>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────
    EXPERIENCE
 ───────────────────────────────────────────────────────────── */
 
-function Experience() {
+const Experience = memo(function Experience() {
   const reduce = usePrefersReducedMotion();
   const ref = useRef<HTMLOListElement>(null);
   const { scrollYProgress } = useScroll({
@@ -1163,13 +1191,13 @@ function Experience() {
       </ol>
     </section>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────
    CONTACT
 ───────────────────────────────────────────────────────────── */
 
-function Contact() {
+const Contact = memo(function Contact() {
   const reduce = usePrefersReducedMotion();
   const [copied, setCopied] = useState(false);
 
@@ -1358,19 +1386,20 @@ function Contact() {
       </div>
     </section>
   );
-}
+});
 
-function Footer() {
+const Footer = memo(function Footer() {
   return (
     <footer className="border-t border-line px-5 sm:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 py-8 sm:flex-row">
+      {/* extra bottom padding clears the fixed Terminal command bar */}
+      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 pt-8 pb-24 sm:flex-row">
         <p className="text-sm text-muted">
           © 2026 {NAME} — {SUMMARY_SHORT}
         </p>
       </div>
     </footer>
   );
-}
+});
 
 /* ─────────────────────────────────────────────────────────────
    PAGE
@@ -1381,6 +1410,7 @@ export default function Home() {
 
   return (
     <>
+      <BootIntro />
       <a href="#content" className="skip-link">
         Skip to content
       </a>
@@ -1407,6 +1437,14 @@ export default function Home() {
         </main>
       </div>
       <Footer />
+      <Terminal
+        name={NAME}
+        role={ROLE}
+        location={LOCATION}
+        social={SOCIAL}
+        resume={RESUME}
+        projects={PROJECTS}
+      />
     </>
   );
 }

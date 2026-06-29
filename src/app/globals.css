@@ -117,11 +117,15 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Frosted panel used to lift dense content off the cream background. */
+/* Frosted panel used to lift dense content off the cream background.
+   The surface is kept fairly opaque (78%) so a small blur radius (10px) still
+   reads as frosted — a smaller backdrop-filter radius is markedly cheaper to
+   recompute, which matters because the animated Aurora behind it invalidates
+   every backdrop-filter region each frame. */
 .glass {
-  background: color-mix(in srgb, var(--color-surface) 68%, transparent);
-  backdrop-filter: blur(14px) saturate(1.05);
-  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  backdrop-filter: blur(10px) saturate(1.05);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
   border: 1px solid var(--color-line);
 }
 
@@ -166,7 +170,11 @@ html.lenis body {
   width: 44rem;
   height: 44rem;
   border-radius: 9999px;
-  filter: blur(90px);
+  /* Each blob is a permanently-composited layer; blur radius drives both the
+     layer's expanded bounds and its raster cost, so 72px (down from 90px) is a
+     near-imperceptible softening on these already-soft radial gradients while
+     shrinking the texture the compositor blends every frame. */
+  filter: blur(72px);
   will-change: transform;
 }
 .blob-amber {
@@ -190,15 +198,6 @@ html.lenis body {
   opacity: 0.22;
   animation: drift3 34s ease-in-out infinite;
 }
-.blob-teal2 {
-  width: 34rem;
-  height: 34rem;
-  background: radial-gradient(circle, var(--color-accent-2), transparent 62%);
-  top: 6%;
-  right: 22%;
-  opacity: 0.2;
-  animation: drift4 38s ease-in-out infinite;
-}
 .blob-amber3 {
   width: 38rem;
   height: 38rem;
@@ -208,49 +207,57 @@ html.lenis body {
   opacity: 0.22;
   animation: drift5 42s ease-in-out infinite;
 }
+/* Translate-only drift: moving an already-rasterized blurred layer is a pure
+   compositor transform (no per-frame re-blur). The previous scale() pulse
+   forced some browsers (notably Safari) to re-run the blur convolution every
+   frame; dropping it is visually near-imperceptible on a slow 24-42s drift. */
 @keyframes drift1 {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0);
   }
   50% {
-    transform: translate(10vw, 7vh) scale(1.14);
+    transform: translate(10vw, 7vh);
   }
 }
 @keyframes drift2 {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0);
   }
   50% {
-    transform: translate(-9vw, -6vh) scale(1.1);
+    transform: translate(-9vw, -6vh);
   }
 }
 @keyframes drift3 {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0);
   }
   50% {
-    transform: translate(-6vw, 5vh) scale(1.18);
-  }
-}
-@keyframes drift4 {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-  50% {
-    transform: translate(7vw, 6vh) scale(1.12);
+    transform: translate(-6vw, 5vh);
   }
 }
 @keyframes drift5 {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(0, 0);
   }
   50% {
-    transform: translate(-8vw, -6vh) scale(1.16);
+    transform: translate(-8vw, -6vh);
+  }
+}
+
+/* Mobile / small screens: integrated GPUs struggle most with stacked blurred
+   layers. Keep two blobs and a smaller blur — the field still reads identically
+   at phone width but the continuous compositor cost roughly halves. */
+@media (max-width: 768px) {
+  .aurora-blob {
+    filter: blur(52px);
+  }
+  .blob-amber2,
+  .blob-amber3 {
+    display: none;
   }
 }
 
@@ -258,15 +265,22 @@ html.lenis body {
 /* Sits in the empty gap between sections (never over content). The dot rests
    centred under reduced motion (base left-1/2); the travel keyframe overrides
    `left` while animating. */
+/* Travel via transform (compositor-only) instead of animating `left` (which
+   forced layout+paint every frame on all 5 dividers at once). The divider
+   wrapper sets `container-type: inline-size`, so `cqw` maps the original
+   6%→94% travel onto its width; the `- 50%` keeps the dot centred on its
+   travel point exactly as the old `translate(-50%)` did. At rest (reduced
+   motion) the base transform parks the dot centred. */
 .section-pulse {
-  transform: translate(-50%, -50%);
+  left: 0;
+  transform: translate(calc(50cqw - 50%), -50%);
   animation-name: section-pulse-travel;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }
 @keyframes section-pulse-travel {
   0% {
-    left: 6%;
+    transform: translate(calc(6cqw - 50%), -50%);
     opacity: 0;
   }
   12% {
@@ -276,7 +290,7 @@ html.lenis body {
     opacity: 1;
   }
   100% {
-    left: 94%;
+    transform: translate(calc(94cqw - 50%), -50%);
     opacity: 0;
   }
 }
@@ -295,6 +309,72 @@ html.lenis body {
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+/* ============ BOOT INTRO (BootIntro.tsx) ============ */
+/* The overlay is SSR-rendered, then JS plays/dismisses it. It fades + lifts
+   away on `data-leaving`; the global reduced-motion rule zeroes the transition
+   (and the component skips the sequence entirely under reduced motion). */
+.boot-overlay {
+  opacity: 1;
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.boot-overlay[data-leaving="true"] {
+  opacity: 0;
+  transform: translateY(-1.5%) scale(1.01);
+  pointer-events: none;
+}
+/* Set before first paint by the inline script in layout.tsx — hides the
+   overlay with no flash for returning-session / reduced-motion visitors. */
+html.pt-skip-boot .boot-overlay {
+  display: none !important;
+}
+/* End-of-boot countdown: drains over 5s, matching the auto-enter timer. */
+.boot-countdown {
+  transform-origin: left;
+  animation: boot-countdown 5s linear forwards;
+}
+@keyframes boot-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* ============ CRT MODE (toggled via the `crt` terminal command) ============ */
+/* Opt-in retro skin — scanlines + a soft phosphor vignette + gentle flicker,
+   layered above everything (but below the boot overlay) and click-through. */
+html.crt::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      rgba(0, 0, 0, 0.32) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0 2px,
+      rgba(0, 20, 8, 0.16) 2px 3px
+    );
+  animation: crt-flicker 4s steps(40) infinite;
+}
+@keyframes crt-flicker {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 1;
   }
 }
 

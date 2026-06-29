@@ -5,11 +5,12 @@ import ConsoleSignature from "./ConsoleSignature";
 
 // Mononoki — self-hosted monospace used across the whole site.
 const mononoki = localFont({
+  // 700-italic is intentionally omitted — no bold+italic text exists on the
+  // site, so shipping/preloading that face was pure dead weight.
   src: [
     { path: "./fonts/mononoki-400.woff2", weight: "400", style: "normal" },
     { path: "./fonts/mononoki-400-italic.woff2", weight: "400", style: "italic" },
     { path: "./fonts/mononoki-700.woff2", weight: "700", style: "normal" },
-    { path: "./fonts/mononoki-700-italic.woff2", weight: "700", style: "italic" },
   ],
   variable: "--font-mononoki",
   display: "swap",
@@ -60,9 +61,22 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // suppressHydrationWarning: the inline script below sets `pt-skip-boot` on
+  // <html> before hydration, so the class intentionally differs from the
+  // server HTML. This suppresses the warning for <html>'s attributes only.
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${mononoki.variable} antialiased`}>
+        {/* Render-blocking, runs before the boot overlay paints: returning-
+            session visitors (sessionStorage) and reduced-motion users skip the
+            intro with no flash. The class hides .boot-overlay via CSS; the
+            React component then unmounts it (already invisible). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('pt_booted')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('pt-skip-boot')}}catch(e){}",
+          }}
+        />
         {/* Progressive enhancement: scroll-reveal animations ship with
             opacity:0 / transforms inline. If JS never runs, force everything
             visible so the page is never blank. Only applies with JS disabled. */}
@@ -71,6 +85,8 @@ export default function RootLayout({
             [style*="opacity:0"], [style*="opacity: 0"] { opacity: 1 !important; }
             [style*="translateY"], [style*="translateX"] { transform: none !important; }
             [style*="blur"] { filter: none !important; }
+            /* JS can't dismiss the boot overlay, so never show it without JS. */
+            .boot-overlay { display: none !important; }
           `}</style>
         </noscript>
         <ConsoleSignature />
