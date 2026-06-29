@@ -460,8 +460,11 @@ function Terminal({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Don't open/focus the terminal (which sits behind it) while the boot
-      // overlay is still up.
+      // overlay is still up, or while the Ask panel is open (it sits above the
+      // terminal, so ⌘K/Esc shouldn't leak through and steal focus).
       if (document.querySelector(".boot-overlay")) return;
+      if (document.querySelector('[role="dialog"][aria-label="Ask Pavle\'s AI assistant"]'))
+        return;
       const k = e.key.toLowerCase();
       if ((e.metaKey || e.ctrlKey) && k === "k") {
         e.preventDefault();

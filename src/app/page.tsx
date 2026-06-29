@@ -27,6 +27,7 @@ import SectionDivider from "./SectionDivider";
 import GitHubGraph from "./GitHubGraph";
 import BootIntro from "./BootIntro";
 import Terminal from "./Terminal";
+import AskPanel from "./AskPanel";
 import { registerIcons } from "./iconData";
 
 // Defer the always-on canvas and the hero typing panel past hydration — both
@@ -1445,6 +1446,7 @@ export default function Home() {
         resume={RESUME}
         projects={PROJECTS}
       />
+      <AskPanel />
     </>
   );
 }

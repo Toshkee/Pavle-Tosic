@@ -1,0 +1,5 @@
+# Copy to .dev.vars (for `wrangler dev`) and/or .env.local (for `npm run dev`),
+# then fill in your key. Get one at https://aistudio.google.com/apikey
+# In production, set it as a Worker secret instead:
+#   npx wrangler secret put GEMINI_API_KEY
+GEMINI_API_KEY=your-gemini-api-key-here
