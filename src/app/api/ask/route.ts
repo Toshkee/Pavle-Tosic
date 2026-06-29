@@ -126,7 +126,7 @@ export async function POST(req: Request): Promise<Response> {
     })),
     generationConfig: {
       temperature: 0.4,
-      maxOutputTokens: 600,
+      maxOutputTokens: 1000, // headroom so replies never truncate mid-sentence
       // Disable Gemini 2.5 "thinking": faster, cheaper, and avoids empty
       // responses where thinking consumes the whole output budget.
       thinkingConfig: { thinkingBudget: 0 },
@@ -179,6 +179,29 @@ export async function POST(req: Request): Promise<Response> {
           return false;
         }
       };
+      // Parse one SSE line and forward its text delta. Returns false only if the
+      // client has gone (caller should stop).
+      const handleLine = (line: string): boolean => {
+        if (!line.startsWith("data:")) return true;
+        const json = line.slice(5).trim();
+        if (!json || json === "[DONE]") return true;
+        let obj: GeminiResponse;
+        try {
+          obj = JSON.parse(json) as GeminiResponse;
+        } catch {
+          return true; // ignore non-JSON keep-alive lines
+        }
+        const candidate = obj.candidates?.[0];
+        if (obj.promptFeedback?.blockReason || candidate?.finishReason === "SAFETY") {
+          blocked = true;
+        }
+        const text = (candidate?.content?.parts ?? []).map((p) => p?.text ?? "").join("");
+        if (text) {
+          emitted = true;
+          return push(text);
+        }
+        return true;
+      };
       try {
         for (;;) {
           const { done, value } = await reader.read();
@@ -188,26 +211,14 @@ export async function POST(req: Request): Promise<Response> {
           while ((nl = buffer.indexOf("\n")) !== -1) {
             const line = buffer.slice(0, nl).trim();
             buffer = buffer.slice(nl + 1);
-            if (!line.startsWith("data:")) continue;
-            const json = line.slice(5).trim();
-            if (!json || json === "[DONE]") continue;
-            let obj: GeminiResponse;
-            try {
-              obj = JSON.parse(json) as GeminiResponse;
-            } catch {
-              continue; // ignore non-JSON keep-alive lines
-            }
-            const candidate = obj.candidates?.[0];
-            if (obj.promptFeedback?.blockReason || candidate?.finishReason === "SAFETY") {
-              blocked = true;
-            }
-            const text = (candidate?.content?.parts ?? []).map((p) => p?.text ?? "").join("");
-            if (text) {
-              emitted = true;
-              if (!push(text)) return; // client gone — stop reading upstream
-            }
+            if (!handleLine(line)) return; // client gone — stop reading upstream
           }
         }
+        // Flush any trailing event the stream left without a final newline —
+        // otherwise the last delta (the end of the sentence) would be dropped.
+        buffer += decoder.decode();
+        const tail = buffer.trim();
+        if (tail) handleLine(tail);
         if (!emitted) push(blocked ? BLOCKED_REPLY : EMPTY_REPLY);
       } catch (err) {
         console.error("Ask route stream failed", err);

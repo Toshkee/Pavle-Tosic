@@ -12,6 +12,7 @@ import { SUGGESTIONS } from "./suggestions";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const EMAIL = "tosiicp@gmail.com";
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function Sparkle({ className = "" }: { className?: string }) {
   return (
@@ -142,31 +143,66 @@ export default function AskPanel() {
         setError(`The assistant is offline right now — email Pavle at ${EMAIL}.`);
         return;
       }
-      // Read the plain-text stream and grow the assistant message as it arrives.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let acc = "";
+      let target = ""; // full text received from the network so far
+      let netDone = false; // network stream finished
       let started = false;
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        if (!chunk) continue;
-        acc += chunk;
-        if (!started) {
-          started = true;
-          setLoading(false);
-          setStreaming(true);
-          setMessages((m) => [...m, { role: "assistant", content: acc }]);
-        } else {
-          setMessages((m) => {
-            const copy = m.slice();
-            copy[copy.length - 1] = { role: "assistant", content: acc };
-            return copy;
-          });
+      const setLast = (content: string) =>
+        setMessages((m) => {
+          const copy = m.slice();
+          copy[copy.length - 1] = { role: "assistant", content };
+          return copy;
+        });
+
+      // Drain the network into `target` in the background. The first byte swaps
+      // the "thinking" dots for the (initially empty) assistant bubble.
+      const drain = (async () => {
+        try {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            if (!chunk) continue;
+            target += chunk;
+            if (!started) {
+              started = true;
+              setLoading(false);
+              setStreaming(true);
+              setMessages((m) => [...m, { role: "assistant", content: reduce ? target : "" }]);
+            } else if (reduce) {
+              setLast(target); // reduced motion: show text as it lands, no typing
+            }
+          }
+        } finally {
+          netDone = true;
         }
+      })();
+
+      if (reduce) {
+        await drain;
+        if (started) setLast(target);
+        else setError("Hmm, no answer came back — try rephrasing.");
+      } else {
+        // Type the reply out at a steady, visible cadence regardless of how the
+        // network chunked it (flash-lite often sends it in 2–3 big bursts).
+        while (!started && !netDone) await sleep(16);
+        if (!started) {
+          setError("Hmm, no answer came back — try rephrasing.");
+        } else {
+          let shown = 0;
+          while (!netDone || shown < target.length) {
+            if (shown < target.length) {
+              // ~2 chars/tick normally; speed up if the network ran ahead so the
+              // caret never lags far behind what's already been received.
+              shown = Math.min(target.length, shown + Math.max(2, Math.ceil((target.length - shown) / 50)));
+              setLast(target.slice(0, shown));
+            }
+            await sleep(16);
+          }
+        }
+        await drain;
       }
-      if (!started) setError("Hmm, no answer came back — try rephrasing.");
     } catch {
       setError("Couldn't reach the assistant — check your connection.");
     } finally {
