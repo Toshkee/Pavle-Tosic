@@ -48,21 +48,27 @@ function tokenize(code: string): Token[] {
   return out;
 }
 
+// Real excerpts from this site's own source — the code running this page.
 const SNIPPETS = [
-  `// turn ideas into shipped software
-async function ship(idea: Idea) {
-  const app = await build(idea);
-  const url = await deploy(app);
-  return { ok: true, url };
-}`,
-  `const stack = ["TypeScript", "React", "C#"];
-
-// front to back — design to deploy
-stack.forEach((tech) => run(tech));`,
+  `// scroll-spy: which section is in view
+const io = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (e.isIntersecting) visible.add(e.target.id);
+    else visible.delete(e.target.id);
+  }
+  setActive(ids.find((id) => visible.has(id)));
+});`,
+  `// fly each code glyph into the name
+const posAt = (p: Particle, t: number) => {
+  const arc = Math.sin(t * Math.PI);
+  const x = lerp(p.sx, p.tx, t) + arc * 12 * p.side;
+  const y = lerp(p.sy, p.ty, t) + arc * 40 * p.side;
+  return { x, y, scale: 0.6 + 0.4 * t };
+};`,
 ].map((s) => s.trim());
 
 // Filename shown in the window chrome for each snippet.
-const FILES = ["ship.ts", "stack.ts"];
+const FILES = ["useActiveSection.ts", "IntroCinematic.tsx"];
 
 const TOKENS = SNIPPETS.map(tokenize);
 

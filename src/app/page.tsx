@@ -70,12 +70,12 @@ const SOCIAL = {
 const RESUME = "/pavle-tosic-cv.pdf";
 
 const NAV = [
-  { id: "about", label: "About" },
-  { id: "stack", label: "Stack" },
-  { id: "work", label: "Work" },
-  { id: "github", label: "GitHub" },
-  { id: "experience", label: "Experience" },
-  { id: "contact", label: "Contact" },
+  { id: "about", label: "About", file: "about.md" },
+  { id: "stack", label: "Stack", file: "stack.config" },
+  { id: "work", label: "Work", file: "work/" },
+  { id: "github", label: "GitHub", file: "github.log" },
+  { id: "experience", label: "Experience", file: "experience.log" },
+  { id: "contact", label: "Contact", file: "contact.sh" },
 ] as const;
 
 const SECTION_IDS = NAV.map((s) => s.id);
@@ -83,38 +83,32 @@ const SECTION_IDS = NAV.map((s) => s.id);
 // Programming languages & tools with real logos (Devicon, bundled offline).
 // `tint` icons are recoloured to stay legible / avoid purple brand colours.
 type Tech = { name: string; icon: string; tint?: "amber" | "cream" | "stroke" };
-const STACK: { group: string; items: Tech[] }[] = [
+// Tiered by how often I actually reach for each — so the day-to-day stack
+// (and the things this employer screens for) reads first, not as equal tokens.
+const STACK: { group: string; note: string; items: Tech[] }[] = [
   {
-    group: "Languages",
+    group: "core",
+    note: "day to day",
     items: [
-      { name: "JavaScript", icon: "devicon:javascript" },
       { name: "TypeScript", icon: "devicon:typescript" },
+      { name: "JavaScript", icon: "devicon:javascript" },
+      { name: "React", icon: "devicon:react" },
       { name: "C#", icon: "devicon-plain:csharp", tint: "amber" },
-      { name: "Python", icon: "devicon:python" },
+      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber" },
+      { name: "Oracle APEX", icon: "devicon:oracle" },
       { name: "SQL", icon: "tabler:sql", tint: "stroke" },
     ],
   },
   {
-    group: "Frontend",
+    group: "comfortable",
+    note: "also build with",
     items: [
-      { name: "React", icon: "devicon:react" },
-      { name: "HTML5", icon: "devicon:html5" },
-      { name: "CSS3", icon: "devicon:css3" },
-    ],
-  },
-  {
-    group: "Backend & runtime",
-    items: [
+      { name: "Python", icon: "devicon:python" },
       { name: "Node.js", icon: "devicon:nodejs" },
       { name: "Express", icon: "devicon:express", tint: "cream" },
-      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber" },
-    ],
-  },
-  {
-    group: "Platforms & tooling",
-    items: [
-      { name: "Oracle APEX", icon: "devicon:oracle" },
       { name: "PostgreSQL", icon: "devicon:postgresql" },
+      { name: "HTML5", icon: "devicon:html5" },
+      { name: "CSS3", icon: "devicon:css3" },
       { name: "Git", icon: "devicon:git" },
     ],
   },
@@ -608,49 +602,61 @@ function IconLink({
 function VerticalNav({ active }: { active: string }) {
   const reduce = usePrefersReducedMotion();
   return (
-    <nav className="mt-10 hidden lg:block" aria-label="In-page navigation">
-      <ul className="space-y-1">
+    <nav
+      className="mt-10 hidden font-mono lg:block"
+      aria-label="In-page navigation"
+    >
+      <p aria-hidden className="mb-2 select-none text-[11px] text-faint">
+        ~/pavle
+      </p>
+      <ul className="space-y-0.5">
         {NAV.map((item) => {
           const on = active === item.id;
           return (
             <li key={item.id}>
               <a
                 href={`#${item.id}`}
+                aria-label={item.label}
                 aria-current={on ? "true" : undefined}
-                className="group flex items-center py-2"
+                className="group flex items-center gap-1.5 py-1 text-sm"
               >
-                {/* fixed-width track; the active dash is one shared element
-                    that physically glides between items as the section changes */}
+                {/* a phosphor cursor marks the "open" file and glides between
+                    entries as the section changes — terminal-native, not the
+                    ubiquitous sliding nav-dash. */}
                 <span
                   aria-hidden
-                  className="relative mr-4 flex h-px w-14 items-center"
+                  className="relative flex h-4 w-3 items-center justify-center"
                 >
                   {on ? (
                     reduce ? (
-                      <span className="h-px w-14 bg-accent-ink" />
+                      <span className="text-accent-ink">▸</span>
                     ) : (
                       <motion.span
-                        layoutId="nav-dash"
-                        className="h-px w-14 bg-accent-ink"
+                        layoutId="nav-caret"
+                        className="text-accent-ink"
                         transition={{
                           type: "spring",
                           stiffness: 380,
                           damping: 30,
                         }}
-                      />
+                      >
+                        ▸
+                      </motion.span>
                     )
                   ) : (
-                    <span className="h-px w-7 bg-faint transition-all duration-300 group-hover:w-14 group-hover:bg-ink" />
+                    <span className="text-faint/60 transition-colors group-hover:text-accent-ink/70">
+                      ·
+                    </span>
                   )}
                 </span>
                 <span
-                  className={`text-sm transition-colors ${
+                  className={`transition-colors ${
                     on
                       ? "font-semibold text-accent-ink"
                       : "text-muted group-hover:text-ink"
                   }`}
                 >
-                  {item.label}
+                  {item.file}
                 </span>
               </a>
             </li>
@@ -818,10 +824,12 @@ const About = memo(function About() {
               framework or library a project needs instead of sticking to one.
             </p>
             <p>
-              I build web apps front to back, and with AI tools and MCPs I move
-              fast and cover the design and UX side too, not just the
-              programming. Recent work includes producing the official user
-              guides for Montenegro&apos;s national{" "}
+              I build web apps front to back — database and API through to the
+              UI — and I build <span className="italic">with</span>{" "}AI too:
+              the assistant on this page is one I wired up end-to-end (LLM +
+              MCP).
+              Recent work includes producing the official user guides for
+              Montenegro&apos;s national{" "}
               <a
                 href="https://ngo.gov.me/Uputstva/PreuzmiteSoftwareIUputstva"
                 target="_blank"
@@ -898,8 +906,8 @@ const Stack = memo(function Stack() {
       />
       <Reveal delay={0.1}>
         <p className="mt-3 max-w-xl text-body">
-          The languages and tools I reach for — across the front end, the back
-          end, and the database.
+          The stack I work in, by how often I reach for it — the top row is my
+          day-to-day; the rest I&apos;m comfortable building with.
         </p>
       </Reveal>
 
@@ -917,14 +925,24 @@ const Stack = memo(function Stack() {
             </span>
           </div>
           <div className="divide-y divide-line/60">
-            {STACK.map((group) => (
+            {STACK.map((group, i) => (
               <div
                 key={group.group}
-                className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:gap-6 sm:px-6"
+                className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-baseline sm:gap-6 sm:px-6"
               >
-                <div className="flex shrink-0 items-center gap-2 font-mono text-sm sm:min-w-[9rem]">
-                  <span className="whitespace-nowrap text-muted">
-                    {group.group.toLowerCase()}
+                <div className="flex shrink-0 flex-col gap-0.5 font-mono text-sm sm:min-w-[10rem]">
+                  <span
+                    className={`whitespace-nowrap ${
+                      i === 0
+                        ? "font-semibold text-accent-ink"
+                        : "text-muted"
+                    }`}
+                  >
+                    {group.group}
+                  </span>
+                  <span className="whitespace-nowrap text-[11px] text-faint">
+                    {"// "}
+                    {group.note}
                   </span>
                 </div>
                 <StaggerGroup className="flex flex-1 flex-wrap gap-2.5">
