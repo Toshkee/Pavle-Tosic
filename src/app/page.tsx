@@ -40,7 +40,7 @@ const InteractiveGrid = dynamic(() => import("./InteractiveGrid"), {
 const HeroTerminal = dynamic(() => import("./HeroTerminal"), {
   ssr: false,
   loading: () => (
-    <div className="mt-8 h-[202px] rounded-xl border border-line bg-[#0b110d]" />
+    <div className="mt-8 h-[202px] rounded-xl border border-line bg-[#0a0e0b]" />
   ),
 });
 
@@ -130,6 +130,13 @@ const PROJECTS = [
     title: "CryptoFlow",
     blurb:
       "Full-stack simulated crypto-futures trading platform — React + Vite front end, a Django REST API with JWT auth, a virtual wallet, and live market data with interactive charts.",
+    problem:
+      "A safe way to practise crypto-futures trading — real market behaviour, none of the real-money risk.",
+    highlights: [
+      "Django REST API with JWT auth and a per-user virtual wallet",
+      "Live market data feeding interactive price charts",
+      "Full trade flow — open and close positions, balances, and history",
+    ],
     role: "Solo build",
     context: "General Assembly · 2025",
     stack: ["React", "Django", "Python", "PostgreSQL"],
@@ -143,6 +150,13 @@ const PROJECTS = [
     title: "Meet2Explore",
     blurb:
       "Full-stack React travel app to discover destinations and find companions — built collaboratively with a team of four.",
+    problem:
+      "Help travellers pick a destination and find people to explore it with.",
+    highlights: [
+      "Built in a team of four — owned the React front end",
+      "Destination discovery with travel-companion matching",
+      "React SPA talking to a Node/Express API",
+    ],
     role: "Team of 4 · front end",
     context: "General Assembly · 2025",
     stack: ["React", "Node.js", "Express"],
@@ -156,6 +170,13 @@ const PROJECTS = [
     title: "One Piece Sword Duel",
     blurb:
       "Browser fighting game in vanilla JavaScript — hand-built game loop, state management, and DOM-driven combat. No frameworks.",
+    problem:
+      "Build a real-time browser fighting game with zero frameworks — just the platform.",
+    highlights: [
+      "Hand-rolled game loop and state machine",
+      "DOM-driven combat with health, hits, and win logic",
+      "Pure vanilla JS / HTML / CSS — no libraries",
+    ],
     role: "Solo build",
     context: "General Assembly · 2025",
     stack: ["JavaScript", "HTML", "CSS"],
@@ -169,6 +190,13 @@ const PROJECTS = [
     title: "Anime Watchlist",
     blurb:
       "Full-stack app to browse anime and manage a personal watchlist — search, filter, and track what you're watching.",
+    problem:
+      "Track what you're watching without the bloat of the big anime sites.",
+    highlights: [
+      "Browse and search a large anime catalogue",
+      "Personal watchlist with filtering and status tracking",
+      "Node/Express REST API, deployed on Heroku",
+    ],
     role: "Solo build",
     context: "General Assembly · 2025",
     stack: ["Node.js", "Express", "REST API"],
@@ -655,7 +683,7 @@ function LeftRail({ active }: { active: string }) {
               ? undefined
               : {
                   scale: 1.03,
-                  boxShadow: "0 0 22px -2px rgba(63, 185, 80, 0.45)",
+                  boxShadow: "0 0 22px -2px rgba(34, 197, 94, 0.45)",
                 }
           }
           transition={{ type: "spring", stiffness: 260, damping: 18 }}
@@ -690,6 +718,16 @@ function LeftRail({ active }: { active: string }) {
         >
           {TAGLINE}
         </motion.p>
+        <motion.div
+          variants={ITEM_VARIANTS}
+          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 font-mono text-xs text-accent-ink"
+        >
+          <span className="relative flex h-2 w-2" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75 motion-reduce:animate-none" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+          </span>
+          open to full-time / part-time · remote
+        </motion.div>
         <motion.div
           variants={ITEM_VARIANTS}
           className="mt-7 flex flex-wrap items-center gap-3"
@@ -775,9 +813,9 @@ const About = memo(function About() {
               <span className="font-medium text-ink">.NET</span>, and{" "}
               <span className="font-medium text-ink">C#</span>.{" "}
               <span className="font-medium text-ink">JavaScript</span> and{" "}
-              <span className="font-medium text-ink">TypeScript</span> are my
-              strongest area, and I&apos;m happy to pick up whatever framework
-              or library a project needs instead of sticking to one.
+              <span className="font-medium text-ink">TypeScript</span>{" "}
+              are my strongest area, and I&apos;m happy to pick up whatever
+              framework or library a project needs instead of sticking to one.
             </p>
             <p>
               I build web apps front to back, and with AI tools and MCPs I move
@@ -885,7 +923,6 @@ const Stack = memo(function Stack() {
                 className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:gap-6 sm:px-6"
               >
                 <div className="flex shrink-0 items-center gap-2 font-mono text-sm sm:min-w-[9rem]">
-                  <span className="text-accent-2">{"//"}</span>
                   <span className="whitespace-nowrap text-muted">
                     {group.group.toLowerCase()}
                   </span>
@@ -965,7 +1002,7 @@ function ProjectShowcase({
               : {
                   y: -6,
                   boxShadow:
-                    "0 0 0 1px rgba(63,185,80,0.32), 0 16px 42px -14px rgba(63,185,80,0.45)",
+                    "0 0 0 1px rgba(34,197,94,0.32), 0 16px 42px -14px rgba(34,197,94,0.45)",
                 }
           }
           transition={{ type: "spring", stiffness: 260, damping: 22 }}
@@ -1008,15 +1045,30 @@ function ProjectShowcase({
         {/* Project detail */}
         <div className={txtOrder}>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="font-mono text-sm text-accent-2">
-              {String(index + 1).padStart(2, "0")}
-            </span>
             <h3 className="font-display text-2xl font-bold text-ink transition-colors group-hover:text-accent-ink">
               {p.title}
             </h3>
           </div>
           <p className="mt-3 text-[15px] leading-relaxed text-body">{p.blurb}</p>
-          <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
+          {p.problem && (
+            <p className="mt-4 text-sm leading-relaxed text-muted">
+              <span className="font-medium text-accent-ink">Challenge — </span>
+              {p.problem}
+            </p>
+          )}
+          {p.highlights && (
+            <ul className="mt-3 space-y-1.5">
+              {p.highlights.map((h) => (
+                <li
+                  key={h}
+                  className="relative pl-5 text-sm leading-relaxed text-body before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
+                >
+                  {h}
+                </li>
+              ))}
+            </ul>
+          )}
+          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2">
             <div>
               <dt className="font-mono text-xs text-muted">role</dt>
               <dd className="text-sm text-body">{p.role}</dd>
@@ -1287,9 +1339,7 @@ const Contact = memo(function Contact() {
         {/* Primary: the email, copyable, with one clear send CTA. */}
         <Reveal delay={0.15}>
           <div className="glass rounded-2xl p-6 sm:p-8">
-            <div className="font-mono text-xs text-muted">
-              <span className="text-accent-2">{"//"}</span> drop me a line
-            </div>
+            <div className="font-mono text-xs text-muted">drop me a line</div>
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
                 href={`mailto:${SOCIAL.email}`}

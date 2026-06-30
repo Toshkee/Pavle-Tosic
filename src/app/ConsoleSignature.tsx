@@ -9,11 +9,11 @@ export default function ConsoleSignature() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const banner =
-      "color:#5ee787;font-family:ui-monospace,monospace;font-size:13px;font-weight:700";
+      "color:#5cf08a;font-family:ui-monospace,monospace;font-size:13px;font-weight:700";
     const dim =
-      "color:#8b988c;font-family:ui-monospace,monospace;font-size:12px";
+      "color:#8aa08c;font-family:ui-monospace,monospace;font-size:12px";
     const link =
-      "color:#2dd4bf;font-family:ui-monospace,monospace;font-size:12px";
+      "color:#34e070;font-family:ui-monospace,monospace;font-size:12px";
     // eslint-disable-next-line no-console
     console.log(
       "%c// you opened the console. respect.\n%cPavle Tošić — Software Developer · Montenegro\n%cgithub.com/Toshkee   ·   tosiicp@gmail.com   ·   open to roles",

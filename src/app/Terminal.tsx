@@ -42,7 +42,7 @@ const slug = (s: string) =>
 
 const G = "text-accent"; // green
 const GI = "text-accent-ink"; // bright green (links / emphasis)
-const C = "text-accent-2"; // cyan
+const C = "text-accent-2"; // dim green
 const M = "text-muted";
 
 function Prompt() {
@@ -532,7 +532,7 @@ function Terminal({
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 print:hidden">
       <div className="pointer-events-auto mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="overflow-hidden rounded-t-xl border border-b-0 border-line bg-[#0b110d] shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.6)]">
+        <div className="overflow-hidden rounded-t-xl border border-b-0 border-line bg-[#0a0e0b] shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.6)]">
           {/* window chrome — only when open */}
           {open && (
             <div className="flex items-center gap-1.5 border-b border-line/70 px-4 py-2">

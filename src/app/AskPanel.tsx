@@ -227,7 +227,7 @@ export default function AskPanel() {
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
             aria-label="Ask Pavle's AI assistant"
-            className="glow-hover fixed bottom-20 right-4 z-[60] flex items-center gap-2 rounded-full border border-accent/40 bg-[#0b110d]/90 px-4 py-2.5 font-mono text-sm text-accent-ink shadow-2xl backdrop-blur-sm transition-colors hover:border-accent/70 sm:right-6"
+            className="glow-hover fixed bottom-20 right-4 z-[60] flex items-center gap-2 rounded-full border border-accent/40 bg-[#0a0e0b]/90 px-4 py-2.5 font-mono text-sm text-accent-ink shadow-2xl backdrop-blur-sm transition-colors hover:border-accent/70 sm:right-6"
           >
             <Sparkle className="h-4 w-4 text-accent" />
             Ask&nbsp;AI
@@ -253,7 +253,7 @@ export default function AskPanel() {
                 ? { bottom: kb.inset + 12, maxHeight: kb.height - 24 }
                 : undefined
             }
-            className="fixed bottom-20 right-4 z-[60] flex h-[min(70vh,560px)] w-[min(94vw,400px)] flex-col overflow-hidden rounded-xl border border-accent/30 bg-[#0b110d] shadow-2xl sm:right-6"
+            className="fixed bottom-20 right-4 z-[60] flex h-[min(70vh,560px)] w-[min(94vw,400px)] flex-col overflow-hidden rounded-xl border border-accent/30 bg-[#0a0e0b] shadow-2xl sm:right-6"
           >
             {/* header (window chrome) */}
             <div className="flex shrink-0 items-center gap-1.5 border-b border-line/70 bg-bg/50 px-3 py-2.5">

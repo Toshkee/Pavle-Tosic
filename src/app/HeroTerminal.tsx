@@ -24,13 +24,13 @@ const TOKEN_RE =
 type Token = { text: string; cls: keyof typeof STYLE };
 
 const STYLE = {
-  com: { color: "#5f6f62", fontStyle: "italic" },
-  str: { color: "#9be58a" },
-  num: { color: "#9be58a" },
-  kw: { color: "#5ee787", fontWeight: 600 },
-  type: { color: "#2dd4bf", fontWeight: 600 },
-  punct: { color: "#8b988c" },
-  plain: { color: "#c2cec4" },
+  com: { color: "#4b5d4f", fontStyle: "italic" },
+  str: { color: "#7ee8a0" },
+  num: { color: "#7ee8a0" },
+  kw: { color: "#5cf08a", fontWeight: 600 },
+  type: { color: "#a7f3c4", fontWeight: 600 },
+  punct: { color: "#8aa08c" },
+  plain: { color: "#bfd0bf" },
 } satisfies Record<string, CSSProperties>;
 
 function tokenize(code: string): Token[] {
@@ -147,7 +147,7 @@ export default function HeroTerminal() {
   return (
     <div
       ref={rootRef}
-      className="hero-terminal mt-8 overflow-hidden rounded-xl border border-line bg-[#0b110d] shadow-sm"
+      className="hero-terminal mt-8 overflow-hidden rounded-xl border border-line bg-[#0a0e0b] shadow-sm"
     >
       {/* window chrome */}
       <div className="flex items-center gap-1.5 border-b border-line/70 px-3.5 py-2">

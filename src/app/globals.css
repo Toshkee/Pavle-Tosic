@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 /* =================================================================
-   DARK TERMINAL — near-black base, phosphor-green accent partnered
-   with cyan. Whole site is set in Mononoki (monospace).
-   Token-driven (Tailwind v4 @theme). NOTE: the legacy `.blob-amber*`
-   / `.blob-teal*` class names below are historical — they now paint
-   green/cyan blobs; kept to avoid churning Aurora.tsx markup.
+   PHOSPHOR GREEN — green-black base, single-color phosphor accent
+   (monochrome, no cyan). Whole site is set in Mononoki (monospace).
+   Token-driven (Tailwind v4 @theme). NOTE: the legacy `.blob-teal*`
+   class names below are historical — they now paint green blobs;
+   kept to avoid churning Aurora.tsx markup.
 ================================================================= */
 
 @theme {
@@ -17,22 +17,22 @@
   --font-mono: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
     monospace;
 
-  /* Surfaces & text — DARK hacker terminal */
-  --color-bg: #0a0e0c; /* page background — near-black, faint green tint */
-  --color-surface: #121a15; /* glass cards / raised panels / frames */
-  --color-ink: #e6efe8; /* headings — bright near-white */
-  --color-body: #c2cec4; /* body copy (AA on dark) */
-  --color-muted: #8b988c; /* secondary text */
-  --color-faint: #5c6a5f; /* decorative only */
-  --color-line: rgba(180, 210, 190, 0.12);
-  --color-line-strong: rgba(180, 210, 190, 0.22);
+  /* Surfaces & text — phosphor-green dark */
+  --color-bg: #0a0f0a; /* page background — green-black */
+  --color-surface: #101710; /* glass cards / raised panels / frames */
+  --color-ink: #e6f1e6; /* headings — greenish off-white */
+  --color-body: #bfd0bf; /* body copy (AA on dark) */
+  --color-muted: #8aa08c; /* secondary text */
+  --color-faint: #5b6b5d; /* decorative only */
+  --color-line: rgba(160, 220, 170, 0.12);
+  --color-line-strong: rgba(160, 220, 170, 0.22);
 
-  /* Accent — phosphor green, partnered with cyan */
-  --color-accent: #3fb950; /* the green accent (fills/dots) */
-  --color-accent-hover: #4ac95e; /* button-fill hover (brighter — w/ dark text) */
-  --color-accent-ink: #5ee787; /* accent TEXT / links (bright green on dark) */
-  --color-accent-2: #2dd4bf; /* cyan partner */
-  --color-accent-soft: rgba(63, 185, 80, 0.16); /* tinted surface */
+  /* Accent — phosphor green, monochrome (dim → bright, no cyan) */
+  --color-accent: #22c55e; /* the phosphor accent (fills/dots) */
+  --color-accent-hover: #34e070; /* button-fill hover (brighter — w/ dark text) */
+  --color-accent-ink: #5cf08a; /* accent TEXT / links (bright green on dark) */
+  --color-accent-2: #16a34a; /* deeper green partner (monochrome) */
+  --color-accent-soft: rgba(34, 197, 94, 0.15); /* tinted surface */
 }
 
 /* ================= BASE ================= */
@@ -55,14 +55,14 @@ body {
 
 ::selection {
   background-color: var(--color-accent);
-  color: #0a0e0c;
+  color: #0a0f0a;
 }
 
-/* The hero code-editor panel selects in cyan (its "type/code" partner
-   colour) while prose stays green — a small bespoke, on-theme touch. */
+/* The hero code-editor panel selects in the deeper green partner colour
+   while prose stays phosphor green — a small bespoke, on-theme touch. */
 .hero-terminal ::selection {
   background-color: var(--color-accent-2);
-  color: #0a0e0c;
+  color: #0a0f0a;
 }
 
 /* Skip-to-content link — off-screen until a keyboard user focuses it. */
@@ -131,7 +131,7 @@ html.lenis body {
 
 /* ================= HELPERS ================= */
 
-/* Gradient accent text — green → cyan, used sparingly */
+/* Gradient accent text — phosphor green (monochrome), used sparingly */
 .text-gradient {
   background: linear-gradient(
     100deg,
@@ -192,7 +192,7 @@ html.lenis body {
   animation: drift2 30s ease-in-out infinite;
 }
 .blob-amber2 {
-  background: radial-gradient(circle, #2ea043, transparent 60%);
+  background: radial-gradient(circle, #15803d, transparent 60%);
   top: 34%;
   left: 42%;
   opacity: 0.22;

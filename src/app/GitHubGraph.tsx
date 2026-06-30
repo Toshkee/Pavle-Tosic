@@ -14,11 +14,11 @@ const PROFILE = "https://github.com/Toshkee";
 
 // level 0..4 → empty(faint) → bright phosphor green (on the dark base).
 const LEVEL_COLORS = [
-  "rgba(180, 210, 190, 0.08)",
-  "#133a20",
-  "#1d7a38",
-  "#2ea043",
-  "#56d364",
+  "rgba(160, 220, 170, 0.08)",
+  "#0f3d22",
+  "#1a7a3e",
+  "#22c55e",
+  "#5cf08a",
 ];
 
 type Day = { date: string; count: number; level: number };

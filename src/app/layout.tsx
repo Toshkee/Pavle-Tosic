@@ -52,7 +52,7 @@ export const viewport: Viewport = {
   // phones fall back to a ~980px layout and render the desktop layout shrunk.
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0a0e0c",
+  themeColor: "#0a0f0a",
   colorScheme: "dark",
 };
 
