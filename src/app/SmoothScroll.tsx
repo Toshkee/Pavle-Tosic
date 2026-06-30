@@ -23,7 +23,12 @@ function SmoothScroll() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const lenis = new Lenis({ lerp: 0.1, smoothWheel: true });
+    // smoothWheel:false — let the OS drive the mouse wheel 1:1. Easing the wheel
+    // (the old default) felt fine on a Mac trackpad's continuous pixel deltas but
+    // turned a Windows mouse's big discrete notches into a floaty, stuttery glide.
+    // Lenis still runs its rAF loop so scrollTo() keeps gliding for anchor links
+    // and the Terminal's in-page nav; only the wheel-easing is dropped.
+    const lenis = new Lenis({ lerp: 0.1, smoothWheel: false });
     window.__lenis = lenis;
 
     let raf = 0;

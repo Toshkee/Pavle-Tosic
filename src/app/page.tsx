@@ -426,24 +426,23 @@ function RevealHeading({
   );
 }
 
-// Thin progress bar that fills as the page scrolls.
-function ScrollProgress() {
+// Thin progress bar that fills as the page scrolls. Bound straight to
+// scrollYProgress (no useSpring): the spring re-eased a value the scroller had
+// already smoothed, so the bar visibly lagged the page; 1:1 reads crisper and
+// stays a compositor-only transform. memo: it takes no props, so it no longer
+// re-renders every time the active-section state changes in Home.
+const ScrollProgress = memo(function ScrollProgress() {
   const reduce = usePrefersReducedMotion();
   const { scrollYProgress } = useScroll();
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 30,
-    mass: 0.3,
-  });
   if (reduce) return null;
   return (
     <motion.div
       aria-hidden
       className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-accent"
-      style={{ scaleX }}
+      style={{ scaleX: scrollYProgress }}
     />
   );
-}
+});
 
 // Element that eases toward the cursor on hover.
 function Magnetic({
@@ -915,7 +914,7 @@ const Stack = memo(function Stack() {
           terminal) instead of four separate card grids — each category is a
           row of inline logo chips, divided by faint rules. */}
       <Reveal delay={0.15}>
-        <div className="mt-10 overflow-hidden rounded-xl border border-line bg-surface/60 shadow-sm backdrop-blur-sm">
+        <div className="mt-10 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
           <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
             <span className="h-2 w-2 rounded-full bg-faint/70" />
             <span className="h-2 w-2 rounded-full bg-accent/70" />
@@ -1192,11 +1191,6 @@ const Experience = memo(function Experience() {
     target: ref,
     offset: ["start 0.85", "end 0.55"],
   });
-  const lineScaleY = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 30,
-    mass: 0.3,
-  });
 
   return (
     <section
@@ -1213,7 +1207,7 @@ const Experience = memo(function Experience() {
         <motion.span
           aria-hidden
           className="absolute left-0 top-0 h-full w-px origin-top bg-line-strong"
-          style={{ scaleY: reduce ? 1 : lineScaleY }}
+          style={{ scaleY: reduce ? 1 : scrollYProgress }}
         />
         {EXPERIENCE.map((e, i) => (
           <li key={e.role} className="relative pb-12 pl-8 last:pb-0">

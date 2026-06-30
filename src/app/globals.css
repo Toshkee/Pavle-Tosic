@@ -117,15 +117,15 @@ html.lenis body {
   overflow: hidden;
 }
 
-/* Frosted panel used to lift dense content off the cream background.
-   The surface is kept fairly opaque (78%) so a small blur radius (10px) still
-   reads as frosted — a smaller backdrop-filter radius is markedly cheaper to
-   recompute, which matters because the animated Aurora behind it invalidates
-   every backdrop-filter region each frame. */
+/* Panel used to lift dense content off the background. This was a frosted
+   backdrop-filter panel, but backdrop-filter re-samples + re-blurs its backdrop
+   every frame the content behind it changes — and since these panels slide over
+   the fixed animated background while scrolling, that re-blur fired on every
+   scroll frame and stuttered on weak (Windows/integrated) GPUs. Going near-opaque
+   (96%) drops the filter entirely; on the dark theme the lost frosting is barely
+   perceptible and it matches the solid Terminal/Hero/AskPanel surfaces. */
 .glass {
-  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  backdrop-filter: blur(10px) saturate(1.05);
-  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   border: 1px solid var(--color-line);
 }
 
@@ -206,6 +206,15 @@ html.lenis body {
   left: 28%;
   opacity: 0.22;
   animation: drift5 42s ease-in-out infinite;
+}
+/* The two primary blobs (amber + teal) carry the green wash; the two lower-
+   opacity secondaries are now dropped on ALL viewports (previously only mobile).
+   Each blob is a full-viewport blurred layer the compositor re-blends every
+   frame, so halving the count is the real weak-GPU headroom win here (the slow
+   drift itself is compositor-cheap). Near-imperceptible on the dark field. */
+.blob-amber2,
+.blob-amber3 {
+  display: none;
 }
 /* Translate-only drift: moving an already-rasterized blurred layer is a pure
    compositor transform (no per-frame re-blur). The previous scale() pulse

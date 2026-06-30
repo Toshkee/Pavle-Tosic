@@ -4,9 +4,11 @@ import { memo, useEffect, useRef } from "react";
 
 /* Interactive blueprint dot-grid that fills the background. Dots "breathe"
    and brighten + grow toward the pointer, painting a soft green spotlight
-   that tracks the cursor. When idle the spotlight drifts on its own, so there
-   is always visible motion. Pure canvas (no per-dot DOM node), DPR-aware,
-   pointer-events:none so it never blocks clicks.
+   that tracks the cursor. When the cursor stops the spotlight settles and the
+   render loop FREEZES (a still pointer must cost zero — this fixed full-viewport
+   canvas would otherwise re-paint + re-upload forever, competing with scroll on
+   weak GPUs); the next mouse move wakes it. Pure canvas (no per-dot DOM node),
+   DPR-aware, pointer-events:none so it never blocks clicks.
 
    Cost control: the loop is capped at ~40fps (a slow ambient glow needs no
    more), base dots are drawn as a SINGLE batched path+fill, only the handful of
@@ -70,12 +72,9 @@ function InteractiveGrid() {
     const draw = (t: number) => {
       ctx.clearRect(0, 0, w, h);
 
-      // Follow the pointer; wander on a slow path when idle or on touch.
-      const idle = !hasPointer || t - lastMove > 2600;
-      if (idle) {
-        px = w * (0.5 + 0.34 * Math.sin(t * 0.00017));
-        py = h * (0.5 + 0.32 * Math.sin(t * 0.00023 + 1.3));
-      }
+      // Follow the pointer. Idle no longer wanders: once the spotlight settles on
+      // a still cursor, loop() stops the rAF entirely, so there is nothing to
+      // drive an autonomous drift (and nothing to cost a frame while you read).
       sx += (px - sx) * LERP;
       sy += (py - sy) * LERP;
 
@@ -132,6 +131,7 @@ function InteractiveGrid() {
       }
     };
 
+    const IDLE_MS = 1800; // freeze after the pointer has been still this long
     let raf = 0;
     let last = 0;
     const loop = (t: number) => {
@@ -139,6 +139,17 @@ function InteractiveGrid() {
       if (t - last < FPS_INTERVAL) return; // throttle to ~40fps
       last = t - ((t - last) % FPS_INTERVAL);
       draw(t);
+
+      // Freeze once the spotlight has caught up to a still pointer (or the
+      // resting centre on load): stop the loop, leaving the last frame painted.
+      // The fixed full-viewport canvas then adds nothing to a scroll frame.
+      // onMove() and tab-show restart it. (raf === 0 is the "frozen" sentinel.)
+      const settled = Math.abs(px - sx) < 0.4 && Math.abs(py - sy) < 0.4;
+      const pointerStill = !hasPointer || t - lastMove > IDLE_MS;
+      if (settled && pointerStill) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
     };
 
     const onMove = (e: MouseEvent) => {
@@ -146,17 +157,23 @@ function InteractiveGrid() {
       px = e.clientX;
       py = e.clientY;
       lastMove = performance.now();
+      // Wake the loop if it has frozen at idle.
+      if (!raf) {
+        last = 0;
+        raf = requestAnimationFrame(loop);
+      }
     };
     const onLeave = () => {
       hasPointer = false;
     };
 
-    // Stop the loop while the tab is hidden; resume on return.
+    // Stop the loop while the tab is hidden; resume on return (unless it was
+    // already frozen at idle, in which case the painted frame stands).
     const onVisibility = () => {
       if (document.hidden) {
         cancelAnimationFrame(raf);
-      } else {
-        cancelAnimationFrame(raf);
+        raf = 0;
+      } else if (!raf) {
         last = 0;
         raf = requestAnimationFrame(loop);
       }
@@ -167,7 +184,9 @@ function InteractiveGrid() {
     // is defined, so the repaint lives only in this listener.)
     const onResize = () => {
       resize();
-      if (!animate) draw(0);
+      // resize() clears the bitmap; if no loop is running (reduced-motion/coarse,
+      // or frozen at idle) repaint the static frame so the grid doesn't vanish.
+      if (!animate || !raf) draw(performance.now());
     };
     window.addEventListener("resize", onResize);
 

@@ -665,6 +665,12 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       if (t >= DONE_T) {
         clearTimeout(safety);
         finish();
+        // Stop here: frame() already re-scheduled this rAF at the top, but the
+        // canvas is fully faded out now, so the ~30 fullscreen draws that would
+        // otherwise run during the 520ms leave/unmount are pure waste landing
+        // exactly at the reveal. cleanup() stays as the unmount backstop.
+        cancelAnimationFrame(raf);
+        return;
       }
     };
     raf = requestAnimationFrame(frame);

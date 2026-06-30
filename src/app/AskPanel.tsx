@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { SUGGESTIONS } from "./suggestions";
 
@@ -50,7 +50,7 @@ function Caret({ reduce }: { reduce: boolean | null }) {
   );
 }
 
-export default function AskPanel() {
+function AskPanel() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -227,7 +227,7 @@ export default function AskPanel() {
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
             aria-label="Ask Pavle's AI assistant"
-            className="glow-hover fixed bottom-20 right-4 z-[60] flex items-center gap-2 rounded-full border border-accent/40 bg-[#0a0e0b]/90 px-4 py-2.5 font-mono text-sm text-accent-ink shadow-2xl backdrop-blur-sm transition-colors hover:border-accent/70 sm:right-6"
+            className="glow-hover fixed bottom-20 right-4 z-[60] flex items-center gap-2 rounded-full border border-accent/40 bg-[#0a0e0b] px-4 py-2.5 font-mono text-sm text-accent-ink shadow-2xl transition-colors hover:border-accent/70 sm:right-6"
           >
             <Sparkle className="h-4 w-4 text-accent" />
             Ask&nbsp;AI
@@ -390,3 +390,8 @@ export default function AskPanel() {
     </>
   );
 }
+
+/* memo: AskPanel takes no props and is mounted in Home, which re-renders on
+   every active-section change — without this the whole panel subtree reconciled
+   on each scroll-driven section crossing. */
+export default memo(AskPanel);
