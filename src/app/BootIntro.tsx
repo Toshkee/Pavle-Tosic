@@ -12,7 +12,7 @@ import dynamic from "next/dynamic";
 
    Flow: boot log → (press Enter / click / 5s) → a one-shot WebGL CINEMATIC
    plays full-screen → the overlay fades out, revealing the site. The cinematic
-   (three.js) is lazy-loaded only when we actually enter it, and is prefetched
+   (canvas-2D) is lazy-loaded only when we actually enter it, and is prefetched
    during the "press Enter" hold so it's ready by the time the visitor acts. */
 
 const IntroCinematic = dynamic(() => import("./IntroCinematic"), {

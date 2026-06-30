@@ -1,21 +1,57 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import * as THREE from "three";
 
-/* One-shot cinematic that plays right after the boot screen (once the visitor
-   presses Enter / clicks "continue"). A cloud of phosphor-green particles
-   swirls in from all directions and assembles into "Pavle Tošić", holds a
-   beat, then scatters as the site reveals.
+/* One-shot "hacker boot" cinematic, played right after the boot screen once the
+   visitor presses Enter / clicks continue:
 
-   The letterforms are sampled at runtime: the name is drawn to an offscreen
-   2D canvas, and every lit pixel becomes a particle's target position — so it's
-   bespoke, not a prebaked asset.
+     1. a curtain of green "code rain" falls top → bottom (Matrix-style), then
+     2. the rain dissolves as "Pavle Tošić" DECRYPTS into place — every glyph
+        scrambles through random characters and locks left → right — while a
+        small "PT" monogram pops in above and the role decodes below.
 
-   Mounted ONLY during the boot overlay's "cinematic" phase (lazy three.js), so
-   a normal page load never pays for it and it never persists over content.
-   Any failure (no WebGL / no 2D ctx / reduced motion) or a stall calls onDone()
-   so the visitor is never trapped behind the overlay. */
+   Pure canvas-2D (no WebGL / three.js), so it matches the terminal aesthetic,
+   weighs almost nothing, and can't fail to initialise a GPU context. The name
+   is set in the site's real Mononoki face (read from the computed style), so
+   the reveal lines up with the page underneath.
+
+   Mounted ONLY during the boot overlay's "cinematic" phase, so a normal page
+   load never pays for it. Reduced motion, a missing 2D context, or a stall all
+   call onDone() so the visitor is never trapped behind the overlay. */
+
+const NAME = "Pavle Tošić";
+const ROLE = "software developer";
+const SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789!<>/{}[]=+*#%&";
+const RAIN = "01<>/{}[]()=+*;:#%&|ABCDEF0123456789abcdef";
+
+const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
+const easeOutBack = (x: number) => {
+  const c = 1.70158;
+  return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2);
+};
+
+function roundRectPath(
+  c: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  c.beginPath();
+  if (typeof c.roundRect === "function") {
+    c.roundRect(x, y, w, h, r);
+    return;
+  }
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
 export default function IntroCinematic({ onDone }: { onDone: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const doneRef = useRef(false);
@@ -33,175 +69,207 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       return finish();
     }
 
-    const safety = setTimeout(finish, 4500);
-    const bail = () => {
-      clearTimeout(safety);
-      finish();
-    };
-
-    let renderer: THREE.WebGLRenderer;
-    try {
-      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    } catch {
-      bail();
-      return;
-    }
-    renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    const canvas = renderer.domElement;
+    const canvas = document.createElement("canvas");
     canvas.style.cssText = "width:100%;height:100%;display:block";
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return finish();
     mount.appendChild(canvas);
 
-    const removeCanvas = () => {
-      renderer.dispose();
-      renderer.forceContextLoss();
-      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
-    };
+    const safety = setTimeout(finish, 5000);
 
-    const CAM_Z = 16;
-    const FOV = 45;
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 100);
-    camera.position.set(0, 0, CAM_Z);
-    const group = new THREE.Group();
-    scene.add(group);
+    // The site is set in Mononoki via a next/font CSS variable; read the real
+    // resolved family so the name matches the page rather than a generic mono.
+    const fam =
+      getComputedStyle(document.body).fontFamily ||
+      'ui-monospace, "SFMono-Regular", Menlo, monospace';
 
-    // ---- sample the name into target points ----
-    const off = document.createElement("canvas");
-    const ctx = off.getContext("2d");
-    if (!ctx) {
-      removeCanvas();
-      bail();
-      return;
-    }
-    const FS = 180;
-    const FONT = `700 ${FS}px ui-monospace, "SFMono-Regular", Menlo, monospace`;
-    ctx.font = FONT;
-    const tw = Math.ceil(ctx.measureText("Pavle Tošić").width);
-    off.width = tw + 48;
-    off.height = Math.ceil(FS * 1.5);
-    ctx.font = FONT; // resizing the canvas resets the context
-    ctx.fillStyle = "#fff";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Pavle Tošić", 24, off.height / 2);
-    const data = ctx.getImageData(0, 0, off.width, off.height).data;
+    const chars = Array.from(NAME);
+    const CELL = 16; // code-rain cell size (css px)
 
-    const WORLD_W = 14;
-    const sc = WORLD_W / off.width;
-    const STEP = 3;
-    const sampled: number[] = [];
-    for (let y = 0; y < off.height; y += STEP) {
-      for (let x = 0; x < off.width; x += STEP) {
-        if (data[(y * off.width + x) * 4 + 3] > 128) {
-          sampled.push((x - off.width / 2) * sc, -(y - off.height / 2) * sc);
-        }
-      }
-    }
-    const N = sampled.length / 2;
-    if (N === 0) {
-      removeCanvas();
-      bail();
-      return;
-    }
+    // ---- timeline (seconds) ----
+    const DECODE_START = 0.7;
+    const STAGGER = 0.055;
+    const SETTLE = 0.5;
+    const RAIN_FADE_END = 1.65;
+    const MONO_START = 1.6;
+    const ROLE_START = 1.8;
+    const HOLD_UNTIL = 2.5;
+    const FADE = 0.5;
+    const lastLock = DECODE_START + (chars.length - 1) * STAGGER + SETTLE;
 
-    const target = new Float32Array(N * 3);
-    const startPos = new Float32Array(N * 3);
-    const delay = new Float32Array(N);
-    let minX = Infinity;
-    let maxX = -Infinity;
-    for (let i = 0; i < N; i++) {
-      const tx = sampled[i * 2];
-      if (tx < minX) minX = tx;
-      if (tx > maxX) maxX = tx;
-    }
-    const spanX = Math.max(0.001, maxX - minX);
-    for (let i = 0; i < N; i++) {
-      const tx = sampled[i * 2];
-      const ty = sampled[i * 2 + 1];
-      target[i * 3] = tx;
-      target[i * 3 + 1] = ty;
-      target[i * 3 + 2] = (Math.random() - 0.5) * 0.8;
-      // scatter origin: a random point on a large sphere around the name
-      const a = Math.random() * Math.PI * 2;
-      const b = Math.acos(2 * Math.random() - 1);
-      const r = 11 + Math.random() * 13;
-      startPos[i * 3] = Math.sin(b) * Math.cos(a) * r;
-      startPos[i * 3 + 1] = Math.sin(b) * Math.sin(a) * r;
-      startPos[i * 3 + 2] = Math.cos(b) * r;
-      delay[i] = ((tx - minX) / spanX) * 0.45; // assemble left → right
-    }
-
-    const positions = new Float32Array(startPos);
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    const mat = new THREE.PointsMaterial({
-      color: new THREE.Color("#5cf08a"),
-      size: 0.055,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-    const points = new THREE.Points(geo, mat);
-    group.add(points);
+    // ---- layout (recomputed on resize) ----
+    let W = 0;
+    let H = 0;
+    let cols = 0;
+    let drops: number[] = [];
+    let nameFs = 64;
+    let startX = 0;
+    let total = 0;
+    let widths: number[] = [];
+    let baseY = 0;
 
     const resize = () => {
-      const w = mount.clientWidth || window.innerWidth;
-      const h = mount.clientHeight || window.innerHeight;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      const visH = 2 * CAM_Z * Math.tan(((FOV / 2) * Math.PI) / 180);
-      const visW = visH * (w / h);
-      group.scale.setScalar(Math.min(1, (visW * 0.86) / WORLD_W));
+      W = mount.clientWidth || window.innerWidth;
+      H = mount.clientHeight || window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const nextCols = Math.ceil(W / CELL) + 1;
+      if (nextCols !== cols) {
+        cols = nextCols;
+        // Spread heads across the full height so the rain fills the screen from
+        // the very first frame instead of streaming in from the top.
+        drops = new Array(cols)
+          .fill(0)
+          .map(() => Math.floor(Math.random() * (H / CELL)));
+      }
+
+      // Fit the name to ~82% of the viewport width (one measure-and-scale pass).
+      nameFs = 80;
+      ctx.font = `700 ${nameFs}px ${fam}`;
+      const t0 = ctx.measureText(NAME).width || 1;
+      nameFs = Math.max(26, Math.min(92, (nameFs * (W * 0.82)) / t0));
+      ctx.font = `700 ${nameFs}px ${fam}`;
+      widths = chars.map((c) => ctx.measureText(c).width);
+      total = widths.reduce((a, b) => a + b, 0);
+      startX = (W - total) / 2;
+      baseY = H * 0.5;
     };
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(mount);
 
-    const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
-    const easeIn = (x: number) => x * x;
-    const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x);
+    const drawRain = (alpha: number) => {
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.font = `700 ${CELL}px ${fam}`;
+      ctx.shadowBlur = 0;
+      for (let i = 0; i < cols; i++) {
+        const head = drops[i];
+        for (let k = 0; k < 6; k++) {
+          const row = head - k;
+          const yy = row * CELL;
+          if (yy < -CELL || yy > H) continue;
+          const g = RAIN[Math.abs((i * 31 + row * 17 + k) % RAIN.length)];
+          if (k === 0) {
+            ctx.fillStyle = `rgba(206,255,216,${alpha})`;
+          } else {
+            ctx.fillStyle = `rgba(34,197,94,${alpha * (1 - k / 6) * 0.6})`;
+          }
+          ctx.fillText(g, i * CELL, yy);
+        }
+        drops[i] += 1;
+        if (drops[i] * CELL > H && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+      }
+    };
 
-    const ASSEMBLE = 1.35;
-    const DISPERSE_START = 2.2;
-    const DISPERSE = 0.6;
+    const drawName = (t: number, a: number) => {
+      if (t < DECODE_START) return;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.font = `700 ${nameFs}px ${fam}`;
+      let x = startX;
+      for (let i = 0; i < chars.length; i++) {
+        const real = chars[i];
+        if (real === " ") {
+          x += widths[i];
+          continue;
+        }
+        const lockAt = DECODE_START + i * STAGGER + SETTLE;
+        const locked = t >= lockAt;
+        const glyph = locked
+          ? real
+          : SCRAMBLE[(Math.floor(t * 20) + i * 7) % SCRAMBLE.length];
+        ctx.shadowColor = "rgba(92,240,138,0.85)";
+        ctx.shadowBlur = locked ? nameFs * 0.24 : nameFs * 0.1;
+        ctx.fillStyle = locked
+          ? `rgba(216,255,226,${a})`
+          : `rgba(92,240,138,${a * 0.6})`;
+        ctx.fillText(glyph, x, baseY);
+        x += widths[i];
+      }
+      ctx.shadowBlur = 0;
+
+      // a thin scan-line that draws across the name once it has locked
+      const up = clamp01((t - lastLock) / 0.45);
+      if (up > 0) {
+        const w = total * 1.02 * easeOut(up);
+        const ly = baseY + nameFs * 0.2;
+        ctx.fillStyle = `rgba(92,240,138,${a * 0.5})`;
+        ctx.fillRect(W / 2 - w / 2, ly, w, Math.max(1, nameFs * 0.018));
+      }
+    };
+
+    const drawMono = (t: number, a: number) => {
+      const p = clamp01((t - MONO_START) / 0.45);
+      if (p <= 0) return;
+      const s = easeOutBack(p);
+      const boxFs = Math.max(18, Math.min(32, W / 16));
+      const size = boxFs * 1.7;
+      ctx.save();
+      // sit clear above the name's cap height with a small gap
+      ctx.translate(W / 2, baseY - nameFs * 0.72 - size * 0.5 - 18);
+      ctx.scale(s, s);
+      ctx.globalAlpha = a * clamp01(p * 1.6);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(92,240,138,0.85)";
+      roundRectPath(ctx, -size / 2, -size / 2, size, size, 7);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(216,255,226,1)";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = `700 ${boxFs}px ${fam}`;
+      ctx.shadowColor = "rgba(92,240,138,0.8)";
+      ctx.shadowBlur = boxFs * 0.35;
+      ctx.fillText("PT", 0, boxFs * 0.06);
+      ctx.restore();
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+    };
+
+    const drawRole = (t: number, a: number) => {
+      const p = clamp01((t - ROLE_START) / 0.55);
+      if (p <= 0) return;
+      const fs = Math.max(11, Math.min(16, W / 42));
+      const text = ROLE.toUpperCase().split("").join(" ");
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.font = `400 ${fs}px ${fam}`;
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = `rgba(138,160,140,${a * p})`;
+      ctx.fillText(text, W / 2, baseY + nameFs * 0.62 + fs);
+    };
 
     let startT = -1;
     let raf = 0;
-    const arr = geo.attributes.position.array as Float32Array;
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       if (startT < 0) startT = now;
       const t = (now - startT) / 1000;
-      const dispersing = t >= DISPERSE_START;
-      const dp = dispersing ? easeIn(clamp01((t - DISPERSE_START) / DISPERSE)) : 0;
-      for (let i = 0; i < N; i++) {
-        const ix = i * 3;
-        if (!dispersing) {
-          const ap = easeOut(clamp01((t - delay[i]) / ASSEMBLE));
-          arr[ix] = startPos[ix] + (target[ix] - startPos[ix]) * ap;
-          arr[ix + 1] = startPos[ix + 1] + (target[ix + 1] - startPos[ix + 1]) * ap;
-          arr[ix + 2] = startPos[ix + 2] + (target[ix + 2] - startPos[ix + 2]) * ap;
-        } else {
-          arr[ix] = target[ix] + (startPos[ix] - target[ix]) * dp;
-          arr[ix + 1] = target[ix + 1] + (startPos[ix + 1] - target[ix + 1]) * dp;
-          arr[ix + 2] = target[ix + 2] + (startPos[ix + 2] - target[ix + 2]) * dp;
-        }
-      }
-      geo.attributes.position.needsUpdate = true;
-      mat.opacity = dispersing
-        ? 1 - clamp01((t - DISPERSE_START) / DISPERSE)
-        : clamp01(t / 0.35);
-      // a gentle settle push-in
-      camera.position.z = CAM_Z + (1 - easeOut(clamp01(t / 1.6))) * 3;
-      camera.lookAt(0, 0, 0);
-      renderer.render(scene, camera);
 
-      if (t >= DISPERSE_START + 0.12) {
+      ctx.clearRect(0, 0, W, H);
+
+      let rainA = t < 0.2 ? t / 0.2 : 1;
+      if (t > DECODE_START) {
+        rainA *= clamp01(1 - (t - DECODE_START) / (RAIN_FADE_END - DECODE_START));
+      }
+      if (rainA > 0.01) drawRain(rainA);
+
+      const contentA =
+        t < HOLD_UNTIL ? 1 : clamp01(1 - (t - HOLD_UNTIL) / FADE);
+      drawName(t, contentA);
+      drawMono(t, contentA);
+      drawRole(t, contentA);
+
+      // Hand off mid-fade so the site reveals underneath the overlay's own
+      // fade-out (the canvas keeps fading to 0 until BootIntro unmounts it).
+      if (t >= HOLD_UNTIL + FADE * 0.6) {
         clearTimeout(safety);
-        finish(); // hand off to the site as the particles scatter
+        finish();
       }
     };
     raf = requestAnimationFrame(frame);
@@ -225,9 +293,7 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       window.removeEventListener("keydown", onKey);
       mount.removeEventListener("click", onSkip);
       ro.disconnect();
-      geo.dispose();
-      mat.dispose();
-      removeCanvas();
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
   }, [onDone]);
 
