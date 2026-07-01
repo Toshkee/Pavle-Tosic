@@ -123,17 +123,17 @@ const PROJECTS = [
   {
     title: "CryptoFlow",
     blurb:
-      "Full-stack simulated crypto-futures trading platform — React + Vite front end, a Django REST API with JWT auth, a virtual wallet, and live market data with interactive charts.",
+      "A real-time crypto futures & spot trading terminal — it streams live Binance market data over WebSockets into candlestick charts, a depth order book and a live trades tape, then settles every position server-side with paper money. React 19 and TypeScript on a Django REST engine.",
     problem:
-      "A safe way to practise crypto-futures trading — real market behaviour, none of the real-money risk.",
+      "Practise leveraged futures trading with the feel of a real exchange — live prices and real settlement math — and none of the real-money risk.",
     highlights: [
-      "Django REST API with JWT auth and a per-user virtual wallet",
-      "Live market data feeding interactive price charts",
-      "Full trade flow — open and close positions, balances, and history",
+      "Direct Binance WebSocket feeds — mark price, depth, live candles and the trades tape over one multiplexed socket, with auto-reconnect and a staleness watchdog",
+      "Server-authoritative engine — 1–125× leverage with long/short PnL and liquidation math computed server-side; client-supplied prices are ignored by design",
+      "Concurrency-safe wallet — every balance change runs under a row lock and an atomic transaction with DB constraints, so money can't be double-spent",
     ],
     role: "Solo build",
-    context: "General Assembly · 2025",
-    stack: ["React", "Django", "Python", "PostgreSQL"],
+    context: "General Assembly · rebuilt 2026",
+    stack: ["React 19", "TypeScript", "Django REST", "WebSockets", "PostgreSQL"],
     live: "https://cryptofloww.netlify.app/",
     code: "https://github.com/Toshkee/CryptoFlow",
     shot: "/images/projects/cryptoflow.jpg",
@@ -161,19 +161,19 @@ const PROJECTS = [
     domain: "meet2explore.netlify.app",
   },
   {
-    title: "One Piece Sword Duel",
+    title: "Sword Duel",
     blurb:
-      "Browser fighting game in vanilla JavaScript — hand-built game loop, state management, and DOM-driven combat. No frameworks.",
+      "A juice-driven 2D fighting game that runs in the browser — two animated swordfighters, frame-accurate combat and an AI opponent, built on Phaser 4 and TypeScript. A full rebuild of a vanilla-JS bootcamp prototype into a tested, CI-deployed game.",
     problem:
-      "Build a real-time browser fighting game with zero frameworks — just the platform.",
+      "Make browser combat actually feel good — weighty hits, a real AI opponent and game-feel polish — on top of a tested, production-grade codebase.",
     highlights: [
-      "Hand-rolled game loop and state machine",
-      "DOM-driven combat with health, hits, and win logic",
-      "Pure vanilla JS / HTML / CSS — no libraries",
+      "Frame-accurate combat — attacks expose a hitbox only on their active frames against the opponent's hurtbox, with a pure, unit-tested damage core",
+      "Play single-player against a finite-state-machine AI (Easy / Normal / Hard) or 2-player local, over best-of-three rounds",
+      "A game-feel layer on every hit — hitstop, screen shake, knockback, particles and a slow-mo KO; all sound synthesised at runtime with the Web Audio API",
     ],
     role: "Solo build",
-    context: "General Assembly · 2025",
-    stack: ["JavaScript", "HTML", "CSS"],
+    context: "General Assembly · rebuilt 2026",
+    stack: ["Phaser 4", "TypeScript", "Vite", "Vitest", "Playwright"],
     live: "https://toshkee.github.io/One-Piece-Sword-Duel/",
     code: "https://github.com/Toshkee/One-Piece-Sword-Duel",
     shot: "/images/projects/sword-duel.jpg",
@@ -181,24 +181,24 @@ const PROJECTS = [
     domain: "toshkee.github.io",
   },
   {
-    title: "Anime Watchlist",
+    title: "Arc — Anime Tracker",
     blurb:
-      "Full-stack app to browse anime and manage a personal watchlist — search, filter, and track what you're watching.",
+      "A modern anime tracker — search 500,000+ titles from the live AniList GraphQL API, build a watchlist, track episode progress and ratings, then turn your taste into stats. A full rebuild of a bootcamp Express and MongoDB app on Next.js 16 and TypeScript.",
     problem:
-      "Track what you're watching without the bloat of the big anime sites.",
+      "Track what you're watching against a live, half-million-title catalogue — and rebuild a fragile bootcamp CRUD app into a typed, tested, server-rendered product.",
     highlights: [
-      "Browse and search a large anime catalogue",
-      "Personal watchlist with filtering and status tracking",
-      "Node/Express REST API, deployed on Heroku",
+      "Live AniList GraphQL catalogue of 500k+ titles, proxied and cached server-side, with URL-driven filters and Suspense-streamed browse rows",
+      "Auth.js sign-in and an owner-scoped watchlist with a full status workflow and optimistic UI, backed by Prisma and PostgreSQL",
+      "Personal stats dashboard — episodes and hours watched, completion rate, score distribution and genre mix, charted with Recharts",
     ],
     role: "Solo build",
-    context: "General Assembly · 2025",
-    stack: ["Node.js", "Express", "REST API"],
-    live: "https://animee-watchlist-app-724b6a827c81.herokuapp.com/",
+    context: "General Assembly · rebuilt 2026",
+    stack: ["Next.js 16", "TypeScript", "AniList API", "Prisma", "PostgreSQL"],
+    live: "https://arc-anime.vercel.app",
     code: "https://github.com/Toshkee/anime-watchlist",
     shot: "/images/projects/anime-watchlist.jpg",
     video: "/video/projects/anime-watchlist.mp4",
-    domain: "herokuapp.com",
+    domain: "arc-anime.vercel.app",
   },
 ];
 
@@ -824,20 +824,9 @@ const About = memo(function About() {
             </p>
             <p>
               I build web apps front to back — database and API through to the
-              UI — and I build <span className="italic">with</span>{" "}AI too:
-              the assistant on this page is one I wired up end-to-end (LLM +
-              MCP).
-              Recent work includes producing the official user guides for
-              Montenegro&apos;s national{" "}
-              <a
-                href="https://ngo.gov.me/Uputstva/PreuzmiteSoftwareIUputstva"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="link-underline font-medium text-accent-ink"
-              >
-                NGO Register Portal
-              </a>
-              . Open to full-time or part-time, remote work.
+              UI. Right now I&apos;m building a few side projects of my own —
+              I&apos;ll be adding them here as they ship. Open to full-time or
+              part-time, remote work.
             </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-8">
