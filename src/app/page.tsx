@@ -85,33 +85,45 @@ const SECTION_IDS = NAV.map((s) => s.id);
 
 // Programming languages & tools with real logos (Devicon, bundled offline).
 // `tint` icons are recoloured to stay legible / avoid purple brand colours.
-type Tech = { name: string; icon: string; tint?: "amber" | "cream" | "stroke" };
-// Tiered by how often I actually reach for each — so the day-to-day stack
-// (and the things this employer screens for) reads first, not as equal tokens.
+type Tech = {
+  name: string;
+  icon: string;
+  tint?: "amber" | "cream" | "stroke";
+  learning?: boolean;
+};
+// Grouped by what it IS, not how often I reach for it — the tools I actually
+// build with. `learning` flags the ones I'm still growing into.
 const STACK: { group: string; note: string; items: Tech[] }[] = [
   {
-    group: "core",
-    note: "day to day",
+    group: "languages",
+    note: "typed, front to back",
     items: [
       { name: "TypeScript", icon: "devicon:typescript" },
       { name: "JavaScript", icon: "devicon:javascript" },
-      { name: "React", icon: "devicon:react" },
-      { name: "C#", icon: "devicon-plain:csharp", tint: "amber" },
-      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber" },
-      { name: "Oracle APEX", icon: "devicon:oracle" },
       { name: "SQL", icon: "tabler:sql", tint: "stroke" },
+      { name: "C#", icon: "devicon-plain:csharp", tint: "amber", learning: true },
     ],
   },
   {
-    group: "comfortable",
-    note: "also build with",
+    group: "frontend",
+    note: "what I build & animate in",
     items: [
-      { name: "Python", icon: "devicon:python" },
+      { name: "React", icon: "devicon:react" },
+      { name: "Next.js", icon: "simple-icons:nextdotjs", tint: "cream" },
+      { name: "Tailwind CSS", icon: "simple-icons:tailwindcss", tint: "cream" },
+      { name: "GSAP", icon: "simple-icons:greensock", tint: "cream" },
+      { name: "Three.js", icon: "simple-icons:threedotjs", tint: "cream" },
+      { name: "Framer Motion", icon: "simple-icons:framer", tint: "cream" },
+    ],
+  },
+  {
+    group: "backend & tools",
+    note: "ship it, store it, ship it again",
+    items: [
       { name: "Node.js", icon: "devicon:nodejs" },
-      { name: "Express", icon: "devicon:express", tint: "cream" },
+      { name: "Oracle APEX", icon: "devicon:oracle" },
       { name: "PostgreSQL", icon: "devicon:postgresql" },
-      { name: "HTML5", icon: "devicon:html5" },
-      { name: "CSS3", icon: "devicon:css3" },
+      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber", learning: true },
       { name: "Git", icon: "devicon:git" },
     ],
   },
@@ -901,6 +913,11 @@ function TechChip({ t }: { t: Tech }) {
         <Icon icon={t.icon} aria-hidden />
       </span>
       <span className="font-mono text-sm font-medium text-ink">{t.name}</span>
+      {t.learning && (
+        <span className="rounded border border-line px-1 py-px font-mono text-[9px] uppercase tracking-wide text-faint">
+          learning
+        </span>
+      )}
     </motion.span>
   );
 }
@@ -919,8 +936,8 @@ const Stack = memo(function Stack() {
       />
       <Reveal delay={0.1}>
         <p className="mt-3 max-w-xl text-body">
-          The stack I work in, by how often I reach for it — the top row is my
-          day-to-day; the rest I&apos;m comfortable building with.
+          What I actually build with — a JavaScript/TypeScript core, the frontend
+          I design and animate in, and the backend that ships and stores it.
         </p>
       </Reveal>
 
@@ -938,19 +955,13 @@ const Stack = memo(function Stack() {
             </span>
           </div>
           <div className="divide-y divide-line/60">
-            {STACK.map((group, i) => (
+            {STACK.map((group) => (
               <div
                 key={group.group}
                 className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-baseline sm:gap-6 sm:px-6"
               >
                 <div className="flex shrink-0 flex-col gap-0.5 font-mono text-sm sm:min-w-[10rem]">
-                  <span
-                    className={`whitespace-nowrap ${
-                      i === 0
-                        ? "font-semibold text-accent-ink"
-                        : "text-muted"
-                    }`}
-                  >
+                  <span className="whitespace-nowrap font-semibold text-accent-ink">
                     {group.group}
                   </span>
                   <span className="whitespace-nowrap text-[11px] text-faint">

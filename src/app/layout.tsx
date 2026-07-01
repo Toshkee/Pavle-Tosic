@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import ConsoleSignature from "./ConsoleSignature";
+import AnimatedFavicon from "./AnimatedFavicon";
 
 // Mononoki — self-hosted monospace used across the whole site.
 const mononoki = localFont({
@@ -90,6 +91,7 @@ export default function RootLayout({
           `}</style>
         </noscript>
         <ConsoleSignature />
+        <AnimatedFavicon />
         {children}
       </body>
     </html>
