@@ -27,6 +27,11 @@ const MAX_MESSAGES = 16; // cap history sent upstream (cost / abuse guard)
 const MAX_CHARS = 2000; // cap per-message length
 const MAX_BODY_BYTES = 64_000; // reject oversized payloads before parsing
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+// Transient upstream failures worth retrying (overload / gateway / server).
+// 503 is Gemini's "high demand"; 429 its quota throttle.
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+
 // Best-effort per-IP rate limit. It's an in-memory sliding window, so it only
 // holds within a single warm Worker isolate — a determined attacker spraying
 // cold isolates can slip past. It's a cheap first line of defense; the
@@ -116,51 +121,96 @@ export async function POST(req: Request): Promise<Response> {
   // flash-lite: fastest/cheapest Gemini, with the most generous free-tier
   // request quota — ideal for a short grounded chat widget. Override with the
   // GEMINI_MODEL env var (e.g. "gemini-2.5-flash" on a paid plan).
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+  const primaryModel = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+  // Sibling models to fall back to when the primary is overloaded. Gemini's 503
+  // "high demand" is per-model — each has its own capacity pool — so switching
+  // recovers where retrying the same model wouldn't. Override with
+  // GEMINI_FALLBACK_MODELS (CSV); set it to "" to disable fallback.
+  const fallbackModels = (
+    process.env.GEMINI_FALLBACK_MODELS ?? "gemini-2.5-flash,gemini-2.0-flash-lite"
+  )
+    .split(",")
+    .map((m) => m.trim())
+    .filter((m) => m && m !== primaryModel);
 
-  const payload = {
-    system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-    contents: messages.map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    })),
-    generationConfig: {
+  const buildPayload = (model: string) => {
+    const generationConfig: Record<string, unknown> = {
       temperature: 0.4,
       maxOutputTokens: 1000, // headroom so replies never truncate mid-sentence
-      // Disable Gemini 2.5 "thinking": faster, cheaper, and avoids empty
-      // responses where thinking consumes the whole output budget.
-      thinkingConfig: { thinkingBudget: 0 },
-    },
+    };
+    // Disable Gemini 2.5 "thinking": faster, cheaper, and avoids empty replies
+    // where thinking eats the whole output budget. Only 2.5 models accept this
+    // field — sending it to a 2.0 model is rejected as an invalid argument.
+    if (model.includes("2.5")) {
+      generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+    return {
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: messages.map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      })),
+      generationConfig,
+    };
   };
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(
+  const callGemini = (model: string) =>
+    fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": key,
-        },
-        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify(buildPayload(model)),
       }
     );
-  } catch (err) {
-    console.error("Ask route fetch failed", err);
-    return Response.json({ error: "upstream" }, { status: 502 });
+
+  // Retry plan: try the primary twice (rides out brief transient blips), then
+  // walk the fallback models. Every retry happens BEFORE any bytes reach the
+  // client, so a recovered attempt still streams one clean, complete reply.
+  const plan = [primaryModel, primaryModel, ...fallbackModels];
+  let upstreamBody: ReadableStream<Uint8Array> | null = null;
+  let lastStatus = 0;
+  for (let i = 0; i < plan.length; i++) {
+    if (i > 0) await sleep(250 * i); // backoff: 250ms, 500ms, 750ms…
+    const model = plan[i];
+    try {
+      const res = await callGemini(model);
+      if (res.ok && res.body) {
+        upstreamBody = res.body;
+        break;
+      }
+      lastStatus = res.status;
+      const detail = await res.text().catch(() => "");
+      console.error(
+        `Gemini API error (${model}, attempt ${i + 1}/${plan.length})`,
+        res.status,
+        detail.slice(0, 200)
+      );
+      // 400/401/403 won't fix themselves on retry — fail fast.
+      if (!RETRYABLE_STATUS.has(res.status)) break;
+    } catch (err) {
+      lastStatus = 0;
+      console.error(
+        `Ask route fetch failed (${model}, attempt ${i + 1}/${plan.length})`,
+        err
+      );
+    }
   }
 
-  if (!upstream.ok || !upstream.body) {
-    const detail = await upstream.text().catch(() => "");
-    console.error("Gemini API error", upstream.status, detail.slice(0, 300));
-    return Response.json({ error: "upstream" }, { status: 502 });
+  if (!upstreamBody) {
+    // Distinguish a temporary overload (503/429) so the client invites a retry
+    // instead of showing a dead-end "offline" error.
+    const overloaded = lastStatus === 503 || lastStatus === 429;
+    return Response.json(
+      { error: overloaded ? "overloaded" : "upstream" },
+      overloaded ? { status: 503, headers: { "Retry-After": "4" } } : { status: 502 }
+    );
   }
 
   // Re-stream Gemini's SSE to the client as plain text: parse each `data:`
   // event, extract the incremental text delta, and forward just the text so the
   // browser can render the reply as it arrives.
-  const reader = upstream.body.getReader();
+  const reader = upstreamBody.getReader();
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
 

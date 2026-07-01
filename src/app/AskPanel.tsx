@@ -135,12 +135,25 @@ function AskPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: next }),
       });
-      if (res.status === 503) {
-        setError("The assistant isn't switched on yet.");
-        return;
-      }
       if (!res.ok || !res.body) {
-        setError(`The assistant is offline right now — email Pavle at ${EMAIL}.`);
+        // Read the route's error code to pick an accurate message. `overloaded`
+        // and `rate_limited` are temporary — invite a retry rather than a
+        // dead-end "offline".
+        let code = "";
+        try {
+          code = ((await res.json()) as { error?: string })?.error ?? "";
+        } catch {
+          /* no/!JSON body — fall through to the generic message */
+        }
+        if (code === "overloaded") {
+          setError("The assistant is busy right now — give it a few seconds and ask again.");
+        } else if (code === "rate_limited") {
+          setError("Whoa, one at a time — wait a moment and try again.");
+        } else if (code === "not_configured") {
+          setError("The assistant isn't switched on yet.");
+        } else {
+          setError(`The assistant is offline right now — email Pavle at ${EMAIL}.`);
+        }
         return;
       }
       const reader = res.body.getReader();

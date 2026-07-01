@@ -161,9 +161,9 @@ const PROJECTS = [
     domain: "meet2explore.netlify.app",
   },
   {
-    title: "Sword Duel",
+    title: "Ronin Duel",
     blurb:
-      "A juice-driven 2D fighting game that runs in the browser — two animated swordfighters, frame-accurate combat and an AI opponent, built on Phaser 4 and TypeScript. A full rebuild of a vanilla-JS bootcamp prototype into a tested, CI-deployed game.",
+      "A juice-driven 2D fighting game that runs in the browser — two dueling ronin, frame-accurate combat and an AI opponent, built on Phaser 4 and TypeScript. A full rebuild of a vanilla-JS bootcamp prototype into a tested, CI-deployed game.",
     problem:
       "Make browser combat actually feel good — weighty hits, a real AI opponent and game-feel polish — on top of a tested, production-grade codebase.",
     highlights: [
@@ -174,10 +174,10 @@ const PROJECTS = [
     role: "Solo build",
     context: "General Assembly · rebuilt 2026",
     stack: ["Phaser 4", "TypeScript", "Vite", "Vitest", "Playwright"],
-    live: "https://toshkee.github.io/One-Piece-Sword-Duel/",
-    code: "https://github.com/Toshkee/One-Piece-Sword-Duel",
-    shot: "/images/projects/sword-duel.jpg",
-    video: "/video/projects/sword-duel.mp4",
+    live: "https://toshkee.github.io/Ronin-Duel/",
+    code: "https://github.com/Toshkee/Ronin-Duel",
+    shot: "/images/projects/ronin-duel.jpg",
+    video: "/video/projects/ronin-duel.mp4",
     domain: "toshkee.github.io",
   },
   {
@@ -824,9 +824,13 @@ const About = memo(function About() {
             </p>
             <p>
               I build web apps front to back — database and API through to the
-              UI. Right now I&apos;m building a few side projects of my own —
-              I&apos;ll be adding them here as they ship. Open to full-time or
-              part-time, remote work.
+              UI — and with{" "}
+              <span className="font-medium text-ink">AI tools</span> and{" "}
+              <span className="font-medium text-ink">MCPs</span>{" "}
+              in my workflow I move fast and cover the design and UX side too,
+              not just the code. Right now I&apos;m building a few side projects
+              of my own — I&apos;ll be adding them here as they ship. Open to
+              full-time or part-time, remote work.
             </p>
           </div>
           <div className="mt-8 flex flex-wrap gap-8">
