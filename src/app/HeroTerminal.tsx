@@ -153,7 +153,7 @@ export default function HeroTerminal() {
   return (
     <div
       ref={rootRef}
-      className="hero-terminal mt-8 overflow-hidden rounded-xl border border-line bg-[#0a0e0b] shadow-sm"
+      className="hero-terminal overflow-hidden rounded-xl border border-line bg-[#0a0e0b] shadow-sm"
     >
       {/* window chrome */}
       <div className="flex items-center gap-1.5 border-b border-line/70 px-3.5 py-2">

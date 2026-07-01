@@ -3,9 +3,7 @@
 /* =================================================================
    PHOSPHOR GREEN — green-black base, single-color phosphor accent
    (monochrome, no cyan). Whole site is set in Mononoki (monospace).
-   Token-driven (Tailwind v4 @theme). NOTE: the legacy `.blob-teal*`
-   class names below are historical — they now paint green blobs;
-   kept to avoid churning Aurora.tsx markup.
+   Token-driven (Tailwind v4 @theme).
 ================================================================= */
 
 @theme {
@@ -23,7 +21,7 @@
   --color-ink: #e6f1e6; /* headings — greenish off-white */
   --color-body: #bfd0bf; /* body copy (AA on dark) */
   --color-muted: #8aa08c; /* secondary text */
-  --color-faint: #5b6b5d; /* decorative only */
+  --color-faint: #788b7a; /* dim labels — meets WCAG AA (~5.3:1 on --color-bg) */
   --color-line: rgba(160, 220, 170, 0.12);
   --color-line-strong: rgba(160, 220, 170, 0.22);
 
@@ -131,6 +129,23 @@ html.lenis body {
 
 /* ================= HELPERS ================= */
 
+/* Soft borderless pool of darkness behind each deck section — keeps text
+   readable over the blurred rain without re-boxing content into cards. The
+   ellipse feathers to transparent well inside its inset, so no edge ever
+   reads as a panel boundary. */
+.stage-pool {
+  position: absolute;
+  inset: -3rem -2.5rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 45% 40%,
+    color-mix(in srgb, var(--color-bg) 88%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg) 55%, transparent) 58%,
+    transparent 82%
+  );
+}
+
 /* Gradient accent text — phosphor green (monochrome), used sparingly */
 .text-gradient {
   background: linear-gradient(
@@ -161,113 +176,6 @@ html.lenis body {
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-accent) 32%, transparent),
     0 0 22px -2px color-mix(in srgb, var(--color-accent) 45%, transparent);
-}
-
-/* ================= ANIMATED BACKGROUND (Aurora) ================= */
-
-.aurora-blob {
-  position: absolute;
-  width: 44rem;
-  height: 44rem;
-  border-radius: 9999px;
-  /* Each blob is a permanently-composited layer; blur radius drives both the
-     layer's expanded bounds and its raster cost, so 72px (down from 90px) is a
-     near-imperceptible softening on these already-soft radial gradients while
-     shrinking the texture the compositor blends every frame. */
-  filter: blur(72px);
-  will-change: transform;
-}
-.blob-amber {
-  background: radial-gradient(circle, var(--color-accent), transparent 62%);
-  top: -14%;
-  left: -10%;
-  opacity: 0.34;
-  animation: drift1 24s ease-in-out infinite;
-}
-.blob-teal {
-  background: radial-gradient(circle, var(--color-accent-2), transparent 62%);
-  bottom: -16%;
-  right: -8%;
-  opacity: 0.28;
-  animation: drift2 30s ease-in-out infinite;
-}
-.blob-amber2 {
-  background: radial-gradient(circle, #15803d, transparent 60%);
-  top: 34%;
-  left: 42%;
-  opacity: 0.22;
-  animation: drift3 34s ease-in-out infinite;
-}
-.blob-amber3 {
-  width: 38rem;
-  height: 38rem;
-  background: radial-gradient(circle, var(--color-accent), transparent 60%);
-  bottom: 4%;
-  left: 28%;
-  opacity: 0.22;
-  animation: drift5 42s ease-in-out infinite;
-}
-/* The two primary blobs (amber + teal) carry the green wash; the two lower-
-   opacity secondaries are now dropped on ALL viewports (previously only mobile).
-   Each blob is a full-viewport blurred layer the compositor re-blends every
-   frame, so halving the count is the real weak-GPU headroom win here (the slow
-   drift itself is compositor-cheap). Near-imperceptible on the dark field. */
-.blob-amber2,
-.blob-amber3 {
-  display: none;
-}
-/* Translate-only drift: moving an already-rasterized blurred layer is a pure
-   compositor transform (no per-frame re-blur). The previous scale() pulse
-   forced some browsers (notably Safari) to re-run the blur convolution every
-   frame; dropping it is visually near-imperceptible on a slow 24-42s drift. */
-@keyframes drift1 {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(10vw, 7vh);
-  }
-}
-@keyframes drift2 {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-9vw, -6vh);
-  }
-}
-@keyframes drift3 {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-6vw, 5vh);
-  }
-}
-@keyframes drift5 {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-8vw, -6vh);
-  }
-}
-
-/* Mobile / small screens: integrated GPUs struggle most with stacked blurred
-   layers. Keep two blobs and a smaller blur — the field still reads identically
-   at phone width but the continuous compositor cost roughly halves. */
-@media (max-width: 768px) {
-  .aurora-blob {
-    filter: blur(52px);
-  }
-  .blob-amber2,
-  .blob-amber3 {
-    display: none;
-  }
 }
 
 /* ====== SECTION DIVIDERS — pulse traveling a faint line ====== */

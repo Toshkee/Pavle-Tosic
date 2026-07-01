@@ -4,6 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import {
   memo,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -16,18 +17,14 @@ import { createPortal } from "react-dom";
 import {
   motion,
   AnimatePresence,
-  useScroll,
   useMotionValue,
   useSpring,
 } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { SiGithub, SiWhatsapp, SiGmail } from "react-icons/si";
+import { SiGithub, SiGmail } from "react-icons/si";
 import { FaLinkedin } from "react-icons/fa";
-import { useActiveSection } from "./useActiveSection";
-import SmoothScroll from "./SmoothScroll";
-import Aurora from "./Aurora";
-import SectionDivider from "./SectionDivider";
 import GitHubGraph from "./GitHubGraph";
+import GitHubFeed from "./GitHubFeed";
 import BootIntro from "./BootIntro";
 import Terminal from "./Terminal";
 import AskPanel from "./AskPanel";
@@ -37,13 +34,18 @@ import { registerIcons } from "./iconData";
 // are client-only and below the critical first paint, so this trims the
 // initial JS without affecting layout (canvas is fixed; the panel reserves
 // its height via the loading placeholder).
-const InteractiveGrid = dynamic(() => import("./InteractiveGrid"), {
+const DotGrid = dynamic(() => import("./DotGrid"), {
+  ssr: false,
+});
+// Digital-rain background — reacts to the active section. Client-only (canvas)
+// and purely decorative, so it loads after hydration like the other canvases.
+const MatrixRain = dynamic(() => import("./MatrixRain"), {
   ssr: false,
 });
 const HeroTerminal = dynamic(() => import("./HeroTerminal"), {
   ssr: false,
   loading: () => (
-    <div className="mt-8 h-[202px] rounded-xl border border-line bg-[#0a0e0b]" />
+    <div className="h-[202px] rounded-xl border border-line bg-[#0a0e0b]" />
   ),
 });
 
@@ -59,14 +61,11 @@ const ROLE = "Software Developer";
 const LOCATION = "Montenegro";
 const TAGLINE =
   "I build web apps front to back — from Oracle APEX, .NET and C# to React and TypeScript.";
-const SUMMARY_SHORT =
-  "Software developer at Infostream, building web & enterprise applications.";
 
 const SOCIAL = {
   email: "tosiicp@gmail.com",
   github: "https://github.com/Toshkee",
   linkedin: "https://www.linkedin.com/in/tosiicp/",
-  whatsapp: "https://wa.me/38267474438",
 };
 
 // Downloadable CV (lives in public/).
@@ -81,8 +80,6 @@ const NAV = [
   { id: "contact", label: "Contact", file: "contact.sh" },
 ] as const;
 
-const SECTION_IDS = NAV.map((s) => s.id);
-
 // Programming languages & tools with real logos (Devicon, bundled offline).
 // `tint` icons are recoloured to stay legible / avoid purple brand colours.
 type Tech = {
@@ -93,10 +90,9 @@ type Tech = {
 };
 // Grouped by what it IS, not how often I reach for it — the tools I actually
 // build with. `learning` flags the ones I'm still growing into.
-const STACK: { group: string; note: string; items: Tech[] }[] = [
+const STACK: { group: string; items: Tech[] }[] = [
   {
     group: "languages",
-    note: "typed, front to back",
     items: [
       { name: "TypeScript", icon: "devicon:typescript" },
       { name: "JavaScript", icon: "devicon:javascript" },
@@ -106,7 +102,6 @@ const STACK: { group: string; note: string; items: Tech[] }[] = [
   },
   {
     group: "frontend",
-    note: "what I build & animate in",
     items: [
       { name: "React", icon: "devicon:react" },
       { name: "Next.js", icon: "simple-icons:nextdotjs", tint: "cream" },
@@ -118,7 +113,6 @@ const STACK: { group: string; note: string; items: Tech[] }[] = [
   },
   {
     group: "backend & tools",
-    note: "ship it, store it, ship it again",
     items: [
       { name: "Node.js", icon: "devicon:nodejs" },
       { name: "Oracle APEX", icon: "devicon:oracle" },
@@ -142,9 +136,9 @@ const PROJECTS = [
     problem:
       "Practise leveraged futures trading with the feel of a real exchange — live prices and real settlement math — and none of the real-money risk.",
     highlights: [
-      "Direct Binance WebSocket feeds — mark price, depth, live candles and the trades tape over one multiplexed socket, with auto-reconnect and a staleness watchdog",
-      "Server-authoritative engine — 1–125× leverage with long/short PnL and liquidation math computed server-side; client-supplied prices are ignored by design",
-      "Concurrency-safe wallet — every balance change runs under a row lock and an atomic transaction with DB constraints, so money can't be double-spent",
+      "Live Binance WebSocket feeds — candles, depth and trades over one multiplexed socket",
+      "Server-authoritative engine — 1–125× leverage; client-supplied prices are ignored",
+      "Concurrency-safe wallet — row locks + atomic transactions, money can't be double-spent",
     ],
     role: "Solo build",
     context: "General Assembly · rebuilt 2026",
@@ -169,7 +163,7 @@ const PROJECTS = [
     highlights: [
       "Built in a team of four — owned the React front end",
       "Destination discovery with travel-companion matching",
-      "React SPA talking to a Node/Express API",
+      "React SPA on a Node/Express API",
     ],
     role: "Team of 4 · front end",
     context: "General Assembly · 2025",
@@ -182,6 +176,7 @@ const PROJECTS = [
     gallery: [
       { src: "/images/projects/meet2explore-hero.jpg", label: "Discover destinations" },
       { src: "/images/projects/meet2explore-trips.jpg", label: "Plan group trips" },
+      { src: "/images/projects/meet2explore-meet.jpg", label: "Meet new people" },
     ] as { src: string; label: string }[],
   },
   {
@@ -191,9 +186,9 @@ const PROJECTS = [
     problem:
       "Make browser combat actually feel good — weighty hits, a real AI opponent and game-feel polish — on top of a tested, production-grade codebase.",
     highlights: [
-      "Frame-accurate combat — attacks expose a hitbox only on their active frames against the opponent's hurtbox, with a pure, unit-tested damage core",
-      "Play single-player against a finite-state-machine AI (Easy / Normal / Hard) or 2-player local, over best-of-three rounds",
-      "A game-feel layer on every hit — hitstop, screen shake, knockback, particles and a slow-mo KO; all sound synthesised at runtime with the Web Audio API",
+      "Frame-accurate combat — hitboxes live only on active frames, with a unit-tested damage core",
+      "Single-player vs a state-machine AI (Easy / Normal / Hard) or 2-player local",
+      "Hitstop, screen shake, knockback and slow-mo KO; sound synthesised with Web Audio",
     ],
     role: "Solo build",
     context: "General Assembly · rebuilt 2026",
@@ -206,6 +201,7 @@ const PROJECTS = [
     gallery: [
       { src: "/images/projects/ronin-duel-menu.jpg", label: "Title & mode select" },
       { src: "/images/projects/ronin-duel-fight.jpg", label: "In-match combat" },
+      { src: "/images/projects/ronin-duel-combo.jpg", label: "Combos & hit effects" },
     ] as { src: string; label: string }[],
   },
   {
@@ -215,9 +211,9 @@ const PROJECTS = [
     problem:
       "Track what you're watching against a live, half-million-title catalogue — and rebuild a fragile bootcamp CRUD app into a typed, tested, server-rendered product.",
     highlights: [
-      "Live AniList GraphQL catalogue of 500k+ titles, proxied and cached server-side, with URL-driven filters and Suspense-streamed browse rows",
-      "Auth.js sign-in and an owner-scoped watchlist with a full status workflow and optimistic UI, backed by Prisma and PostgreSQL",
-      "Personal stats dashboard — episodes and hours watched, completion rate, score distribution and genre mix, charted with Recharts",
+      "Live AniList GraphQL catalogue of 500k+ titles, proxied and cached server-side",
+      "Auth.js sign-in and an owner-scoped watchlist with optimistic UI — Prisma + PostgreSQL",
+      "Stats dashboard — episodes, hours, completion rate, score and genre mix",
     ],
     role: "Solo build",
     context: "General Assembly · rebuilt 2026",
@@ -233,6 +229,77 @@ const PROJECTS = [
       { src: "/images/projects/anime-watchlist-detail.jpg", label: "Title detail" },
     ] as { src: string; label: string }[],
   },
+];
+
+// Featured engineering "case file" for CryptoFlow, shown as extra tabs on its
+// kiosk frame. Every line is grounded in the actual repo
+// (github.com/Toshkee/CryptoFlow — its docs/DECISIONS.md, the futures/markets
+// apps and the CI test suite). Don't add claims that aren't in the code.
+const CRYPTOFLOW_CASE = {
+  // Lines are kept ≤ ~42 chars so nothing clips at the kiosk frame width.
+  arch: `browser ── react 19 + vite SPA
+ │  wss → binance
+ │   ticker · depth20 · kline · aggTrade
+ │   one multiplexed socket
+ │   auto-reconnect · 8s watchdog
+ └─ REST + JWT
+     django rest framework
+      ├ accounts/ auth · throttles
+      ├ markets/  spot · price authority
+      │    ~3s price cache · fail-fast 503
+      └ futures/  1–125× perps
+           margin + liquidation math
+           postgres · row locks
+           CHECK (balance >= 0)`,
+  notes: `## what broke, what I did about it
+
+- client prices meant infinite money.
+  every fill now uses the server's own
+  Binance price; the client's number
+  is ignored by design.
+
+- double-spend race on the wallet.
+  every balance change runs in
+  transaction.atomic() +
+  select_for_update(), with a DB
+  CHECK (balance >= 0) behind it.
+
+- transfers lock both wallets in a
+  fixed order — no deadlocks.
+
+- proven, not assumed: threaded
+  double-close / double-spend tests
+  race a real Postgres in CI.`,
+  code: `# futures/views.py — close a position
+pnl = calculate_pnl(
+    pos.entry_price, current_price,
+    pos.side, pos.amount,
+)
+
+# credit is floored at 0: a blown-up
+# position loses at most its margin,
+# so the wallet never goes negative.
+credited = max(
+    Decimal("0"),
+    pos.initial_margin + pnl,
+)
+
+pos.status = "CLOSED"
+pos.closed_at = timezone.now()
+pos.pnl = pnl
+pos.save()
+
+wallet.balance += credited
+wallet.save()`,
+};
+
+type CaseFile = typeof CRYPTOFLOW_CASE;
+type CaseTab = "demo" | "arch" | "notes" | "code";
+const CASE_TABS: { key: CaseTab; file: string }[] = [
+  { key: "demo", file: "demo.mp4" },
+  { key: "arch", file: "arch.txt" },
+  { key: "notes", file: "notes.md" },
+  { key: "code", file: "close.py" },
 ];
 
 type Job = {
@@ -318,6 +385,32 @@ function usePrefersReducedMotion() {
   return useSyncExternalStore(subscribeReduce, getReduceSnapshot, () => false);
 }
 
+// Desktop (lg+) runs the fixed section deck; below that the page falls back to
+// a normal scrolling document (the profile rail stacks on TOP of the deck on
+// mobile, so a fixed stage would pin it over the content forever). Same shared
+// MediaQueryList pattern as reduced-motion. Server snapshot = desktop; a
+// mobile client corrects itself right after hydration, behind the boot overlay.
+let deskMql: MediaQueryList | null = null;
+function getDeskMql() {
+  if (!deskMql && typeof window !== "undefined") {
+    deskMql = window.matchMedia("(min-width: 1024px)");
+  }
+  return deskMql;
+}
+function subscribeDesk(onChange: () => void) {
+  const mq = getDeskMql();
+  if (!mq) return () => {};
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+function useIsDesktop() {
+  return useSyncExternalStore(
+    subscribeDesk,
+    () => getDeskMql()?.matches ?? true,
+    () => true
+  );
+}
+
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 // Single element that focuses in (blur + slide) when scrolled into view.
@@ -326,19 +419,33 @@ function Reveal({
   className = "",
   delay = 0,
   y = 28,
+  from = "up",
+  scale = false,
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
   y?: number;
+  // Direction the block travels in from. `y` doubles as the offset magnitude
+  // for horizontal slides so callers keep a single knob.
+  from?: "up" | "down" | "left" | "right";
+  scale?: boolean;
 }) {
   const reduce = usePrefersReducedMotion();
   if (reduce) return <div className={className}>{children}</div>;
+  const offset =
+    from === "left"
+      ? { x: -y, y: 0 }
+      : from === "right"
+        ? { x: y, y: 0 }
+        : from === "down"
+          ? { x: 0, y: -y }
+          : { x: 0, y };
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, ...offset, scale: scale ? 0.94 : 1 }}
+      whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.8, delay, ease: EASE }}
     >
@@ -458,24 +565,6 @@ function RevealHeading({
     </Tag>
   );
 }
-
-// Thin progress bar that fills as the page scrolls. Bound straight to
-// scrollYProgress (no useSpring): the spring re-eased a value the scroller had
-// already smoothed, so the bar visibly lagged the page; 1:1 reads crisper and
-// stays a compositor-only transform. memo: it takes no props, so it no longer
-// re-renders every time the active-section state changes in Home.
-const ScrollProgress = memo(function ScrollProgress() {
-  const reduce = usePrefersReducedMotion();
-  const { scrollYProgress } = useScroll();
-  if (reduce) return null;
-  return (
-    <motion.div
-      aria-hidden
-      className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left bg-accent"
-      style={{ scaleX: scrollYProgress }}
-    />
-  );
-});
 
 // Element that eases toward the cursor on hover.
 function Magnetic({
@@ -704,7 +793,7 @@ function LeftRail({ active }: { active: string }) {
   return (
     <header
       id="home"
-      className="pt-24 pb-10 lg:sticky lg:top-0 lg:flex lg:max-h-screen lg:w-[40%] lg:shrink-0 lg:flex-col lg:justify-between lg:overflow-y-auto lg:py-20"
+      className="pt-24 pb-10 lg:sticky lg:top-0 lg:flex lg:max-h-screen lg:w-[40%] lg:shrink-0 lg:flex-col lg:overflow-y-auto lg:py-16"
     >
       <motion.div
         initial={reduce ? false : "hidden"}
@@ -801,7 +890,7 @@ function LeftRail({ active }: { active: string }) {
         initial={reduce ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7, duration: 0.6 }}
-        className="mt-10 flex items-center gap-1 lg:mt-0 lg:border-t lg:border-line/60 lg:pt-8"
+        className="mt-10 flex items-center gap-1 lg:mt-auto lg:border-t lg:border-line/60 lg:pt-8"
       >
         <IconLink href={SOCIAL.github} label="GitHub">
           <SiGithub />
@@ -812,10 +901,11 @@ function LeftRail({ active }: { active: string }) {
         <IconLink href={`mailto:${SOCIAL.email}`} label="Email">
           <SiGmail />
         </IconLink>
-        <IconLink href={SOCIAL.whatsapp} label="WhatsApp">
-          <SiWhatsapp />
-        </IconLink>
       </motion.div>
+
+      <p className="mt-6 hidden font-mono text-[11px] text-faint lg:block">
+        © 2026 {NAME}
+      </p>
     </header>
   );
 }
@@ -824,58 +914,70 @@ function LeftRail({ active }: { active: string }) {
    ABOUT
 ───────────────────────────────────────────────────────────── */
 
+// Terminal-style section kicker — ties every deck slide back to the file-tree
+// nav (`$ cat about.md`, `$ git log`, …). Lowercase mono, not an eyebrow label.
+function Kicker({ cmd }: { cmd: string }) {
+  return (
+    <div className="font-mono text-xs text-faint">
+      <span className="text-accent">$</span> {cmd}
+    </div>
+  );
+}
+
 const About = memo(function About() {
   return (
     <section
       id="about"
       aria-labelledby="about-heading"
-      className="py-14 lg:py-20"
+      className="relative py-14 lg:py-20"
     >
-      <RevealHeading
-        id="about-heading"
-        text="About"
-        className="mb-10 text-3xl font-bold text-ink sm:text-4xl"
-      />
+      <div className="stage-pool" aria-hidden />
       <Reveal>
-        <div className="glass rounded-2xl p-7 sm:p-9">
-          <h3 className="font-display text-2xl font-bold leading-snug text-ink sm:text-3xl">
-            I turn ideas into{" "}
-            <span className="text-gradient">shipped, working software</span>.
-          </h3>
-          <div className="mt-6 max-w-[68ch] space-y-4 text-[15px] leading-relaxed text-body sm:text-base">
-            <p>
-              Software developer at{" "}
-              <span className="font-medium text-ink">Infostream</span>, working
-              mostly with{" "}
-              <span className="font-medium text-ink">Oracle APEX</span>,{" "}
-              <span className="font-medium text-ink">.NET</span>, and{" "}
-              <span className="font-medium text-ink">C#</span>.{" "}
-              <span className="font-medium text-ink">JavaScript</span> and{" "}
-              <span className="font-medium text-ink">TypeScript</span>{" "}
-              are my strongest area, and I&apos;m happy to pick up whatever
-              framework or library a project needs instead of sticking to one.
-            </p>
-            <p>
-              I build web apps front to back — database and API through to the
-              UI — and with{" "}
-              <span className="font-medium text-ink">AI tools</span> and{" "}
-              <span className="font-medium text-ink">MCPs</span>{" "}
-              in my workflow I move fast and cover the design and UX side too,
-              not just the code. Right now I&apos;m building a few side projects
-              of my own — I&apos;ll be adding them here as they ship. Open to
-              full-time or part-time, remote work.
-            </p>
-          </div>
-          <div className="mt-8 flex flex-wrap gap-8">
-            {LANGUAGES.map((l) => (
-              <div key={l.label}>
-                <div className="text-sm font-medium text-ink">{l.label}</div>
-                <div className="text-xs text-muted">{l.level}</div>
-              </div>
-            ))}
-          </div>
-          <HeroTerminal />
+        <Kicker cmd="cat about.md" />
+      </Reveal>
+      <Reveal delay={0.06}>
+        <h2
+          id="about-heading"
+          className="mt-5 max-w-[22ch] font-display text-3xl font-bold leading-[1.15] text-ink sm:text-4xl lg:text-5xl"
+        >
+          I turn ideas into{" "}
+          <span className="text-gradient">shipped, working software</span>.
+        </h2>
+      </Reveal>
+      <Reveal delay={0.12}>
+        <div className="mt-8 max-w-[62ch] space-y-4 text-[15px] leading-[1.75] text-body sm:text-base">
+          <p>
+            Software developer at{" "}
+            <span className="font-medium text-ink">Infostream</span>, working
+            mostly with{" "}
+            <span className="font-medium text-ink">Oracle APEX</span>,{" "}
+            <span className="font-medium text-ink">.NET</span>, and{" "}
+            <span className="font-medium text-ink">C#</span>.{" "}
+            <span className="font-medium text-ink">JavaScript</span> and{" "}
+            <span className="font-medium text-ink">TypeScript</span>{" "}
+            are my strongest area — and I pick up whatever a project needs.
+          </p>
+          <p>
+            I build web apps front to back — database and API through to the
+            UI — with{" "}
+            <span className="font-medium text-ink">AI tools</span> and{" "}
+            <span className="font-medium text-ink">MCPs</span>{" "}
+            in my workflow. A few side projects of my own are in the works;
+            they&apos;ll land here as they ship. Open to full-time or
+            part-time, remote.
+          </p>
         </div>
+        <div className="mt-8 flex flex-wrap gap-8">
+          {LANGUAGES.map((l) => (
+            <div key={l.label}>
+              <div className="text-sm font-medium text-ink">{l.label}</div>
+              <div className="text-xs text-muted">{l.level}</div>
+            </div>
+          ))}
+        </div>
+      </Reveal>
+      <Reveal delay={0.18} className="mt-10">
+        <HeroTerminal />
       </Reveal>
     </section>
   );
@@ -927,58 +1029,47 @@ const Stack = memo(function Stack() {
     <section
       id="stack"
       aria-labelledby="stack-heading"
-      className="py-14 lg:py-20"
+      className="relative py-14 lg:py-20"
     >
+      <div className="stage-pool" aria-hidden />
+      <Reveal>
+        <Kicker cmd="cat stack.config" />
+      </Reveal>
       <RevealHeading
         id="stack-heading"
         text="The stack"
-        className="text-3xl font-bold text-ink sm:text-4xl"
+        className="mt-5 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
       />
       <Reveal delay={0.1}>
-        <p className="mt-3 max-w-xl text-body">
+        <p className="mt-4 max-w-[60ch] leading-[1.7] text-body">
           What I actually build with — a JavaScript/TypeScript core, the frontend
           I design and animate in, and the backend that ships and stores it.
         </p>
       </Reveal>
 
-      {/* One manifest panel (window-chromed like the project frames & hero
-          terminal) instead of four separate card grids — each category is a
-          row of inline logo chips, divided by faint rules. */}
-      <Reveal delay={0.15}>
-        <div className="mt-10 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
-          <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
-            <span className="h-2 w-2 rounded-full bg-faint/70" />
-            <span className="h-2 w-2 rounded-full bg-accent/70" />
-            <span className="h-2 w-2 rounded-full bg-accent-2/70" />
-            <span className="ml-2 font-mono text-[11px] text-muted">
-              stack.config
-            </span>
+      {/* Rows straight on the stage — group label left, logo chips right. */}
+      <div className="mt-12 space-y-10">
+        {STACK.map((group, gi) => (
+          <div
+            key={group.group}
+            className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:gap-8"
+          >
+            <Reveal
+              delay={0.1 + gi * 0.06}
+              className="shrink-0 font-mono text-sm sm:min-w-[10.5rem]"
+            >
+              <span className="whitespace-nowrap font-semibold text-accent-ink">
+                {group.group}
+              </span>
+            </Reveal>
+            <StaggerGroup className="flex flex-1 flex-wrap gap-2.5">
+              {group.items.map((t) => (
+                <TechChip key={t.name} t={t} />
+              ))}
+            </StaggerGroup>
           </div>
-          <div className="divide-y divide-line/60">
-            {STACK.map((group) => (
-              <div
-                key={group.group}
-                className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-baseline sm:gap-6 sm:px-6"
-              >
-                <div className="flex shrink-0 flex-col gap-0.5 font-mono text-sm sm:min-w-[10rem]">
-                  <span className="whitespace-nowrap font-semibold text-accent-ink">
-                    {group.group}
-                  </span>
-                  <span className="whitespace-nowrap text-[11px] text-faint">
-                    {"// "}
-                    {group.note}
-                  </span>
-                </div>
-                <StaggerGroup className="flex flex-1 flex-wrap gap-2.5">
-                  {group.items.map((t) => (
-                    <TechChip key={t.name} t={t} />
-                  ))}
-                </StaggerGroup>
-              </div>
-            ))}
-          </div>
-        </div>
-      </Reveal>
+        ))}
+      </div>
     </section>
   );
 });
@@ -1142,23 +1233,20 @@ function Lightbox({
 
 function ProjectShowcase({
   p,
-  index,
+  caseFile,
 }: {
   p: (typeof PROJECTS)[number];
-  index: number;
+  caseFile?: CaseFile;
 }) {
   const reduce = usePrefersReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [lb, setLb] = useState<number | null>(null);
-  const even = index % 2 === 0;
-  // On lg, alternate which side the screenshot sits on. Mobile always stacks
-  // screenshot-on-top (natural DOM order).
-  const imgOrder = even ? "lg:order-1" : "lg:order-2";
-  const txtOrder = even ? "lg:order-2" : "lg:order-1";
+  const [tab, setTab] = useState<CaseTab>("demo");
 
-  // Only play a demo while it is actually on screen — keeps 3 off-screen
-  // clips from decoding/looping. Under reduced motion we never autoplay and
-  // expose native controls instead so the demo stays reachable.
+  // Only play the demo while it is actually on screen. Under reduced motion we
+  // never autoplay and expose native controls instead so it stays reachable.
+  // `tab` is a dep: switching back to the demo tab mounts a NEW video element
+  // that needs a fresh observer.
   useEffect(() => {
     if (reduce) return;
     const v = videoRef.current;
@@ -1184,23 +1272,26 @@ function ProjectShowcase({
       io.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [reduce]);
+  }, [reduce, tab]);
+
+  const caseText =
+    tab === "arch" ? caseFile?.arch : tab === "notes" ? caseFile?.notes : null;
 
   return (
-    <Reveal>
-      <article className="group grid items-center gap-6 lg:grid-cols-2 lg:gap-9">
-        {/* Screenshot column — framed demo on top, then a thumbnail gallery
-            that opens a lightbox. On lg the gallery fills the space next to the
-            taller text column so the row never reads as empty. */}
-        <div className={`${imgOrder} flex flex-col gap-4`}>
+    <article>
+        {/* Media row — the framed demo (with case-file tabs for the featured
+            project) beside a thumbnail strip; the strip drops under the frame
+            on small screens. Clicking a thumb opens the lightbox. */}
+        <div className="grid items-start gap-3 lg:grid-cols-[1.55fr_0.6fr]">
           {/* Browser-framed demo preview (decorative — the live site opens from
               the "Live demo" button, not by clicking the frame). */}
+          {/* Hover feedback is colour-only (border + glow): no scale/lift, so
+              nothing zooms or bobs while content scrolls under the cursor. */}
           <motion.div
             whileHover={
               reduce
                 ? undefined
                 : {
-                    y: -6,
                     boxShadow:
                       "0 0 0 1px rgba(34,197,94,0.32), 0 16px 42px -14px rgba(34,197,94,0.45)",
                   }
@@ -1209,15 +1300,63 @@ function ProjectShowcase({
             className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm transition-colors hover:border-accent/50"
           >
             <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-3 py-2">
-              <span className="h-2 w-2 rounded-full bg-faint/70" />
-              <span className="h-2 w-2 rounded-full bg-accent/70" />
-              <span className="h-2 w-2 rounded-full bg-accent-2/70" />
-              <span className="ml-2 truncate font-mono text-[11px] text-muted">
-                {p.domain}
-              </span>
+              {caseFile ? (
+                // Case-file tabs, styled as open files in the window chrome.
+                // The window dots are dropped here — four filenames need the
+                // full bar width at this frame size.
+                <span className="flex min-w-0 items-center gap-1 overflow-x-auto">
+                  {CASE_TABS.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setTab(t.key)}
+                      aria-pressed={tab === t.key}
+                      className={`whitespace-nowrap rounded px-1 py-0.5 font-mono text-[10px] transition-colors sm:px-1.5 ${
+                        tab === t.key
+                          ? "bg-accent-soft text-accent-ink"
+                          : "text-muted hover:text-ink"
+                      }`}
+                    >
+                      {t.file}
+                    </button>
+                  ))}
+                </span>
+              ) : (
+                <>
+                  <span className="h-2 w-2 rounded-full bg-faint/70" />
+                  <span className="h-2 w-2 rounded-full bg-accent/70" />
+                  <span className="h-2 w-2 rounded-full bg-accent-2/70" />
+                  <span className="ml-2 truncate font-mono text-[11px] text-muted">
+                    {p.domain}
+                  </span>
+                </>
+              )}
             </div>
-            <div className="relative aspect-[16/10] overflow-hidden bg-bg">
-              {p.video ? (
+            <div
+              className={`relative overflow-hidden bg-bg ${
+                tab === "demo" || !caseFile ? "aspect-[16/10]" : ""
+              }`}
+            >
+              {tab !== "demo" && caseFile ? (
+                // Natural height (no aspect lock) so the whole file is
+                // readable without an inner scrollbar.
+                <pre className="overflow-x-auto p-4 font-mono text-[11px] leading-[1.6] text-body">
+                  {tab === "code"
+                    ? caseFile.code.split("\n").map((ln, i) => (
+                        <div
+                          key={i}
+                          className={
+                            ln.trimStart().startsWith("#")
+                              ? "italic text-faint"
+                              : undefined
+                          }
+                        >
+                          {ln || " "}
+                        </div>
+                      ))
+                    : caseText}
+                </pre>
+              ) : p.video ? (
                 <video
                   ref={videoRef}
                   src={p.video}
@@ -1228,7 +1367,7 @@ function ProjectShowcase({
                   preload="none"
                   controls={reduce}
                   aria-label={`${p.title} demo`}
-                  className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  className="h-full w-full object-cover object-top"
                 />
               ) : (
                 <Image
@@ -1236,16 +1375,17 @@ function ProjectShowcase({
                   alt={`${p.title} live preview`}
                   fill
                   sizes="(max-width: 1024px) 100vw, 42vw"
-                  className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  className="object-cover object-top"
                 />
               )}
             </div>
           </motion.div>
 
-          {/* Thumbnail gallery — click any shot to open the lightbox */}
+          {/* Thumbnail strip — a vertical rail next to the frame on lg
+              (heights roughly match the demo), a row underneath on mobile. */}
           {p.gallery.length > 0 && (
             <ul
-              className={`grid gap-3 ${
+              className={`grid gap-3 lg:grid-cols-1 ${
                 p.gallery.length === 2 ? "grid-cols-2" : "grid-cols-3"
               }`}
             >
@@ -1255,14 +1395,14 @@ function ProjectShowcase({
                     type="button"
                     onClick={() => setLb(i)}
                     aria-label={`View screenshot: ${g.label}`}
-                    className="group/thumb relative block aspect-[16/10] w-full overflow-hidden rounded-lg border border-line bg-bg transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                    className="group/thumb relative block aspect-video w-full overflow-hidden rounded-lg border border-line bg-bg transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
                     <Image
                       src={g.src}
                       alt={`${p.title} — ${g.label}`}
                       fill
                       sizes="(max-width: 1024px) 32vw, 15vw"
-                      className="object-cover object-top transition-transform duration-500 ease-out group-hover/thumb:scale-[1.06]"
+                      className="object-cover object-top"
                     />
                     <span className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/5 to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover/thumb:opacity-100">
                       <span className="truncate font-mono text-[10px] text-white/90">
@@ -1276,43 +1416,52 @@ function ProjectShowcase({
           )}
         </div>
 
-        {/* Project detail */}
-        <div className={txtOrder}>
-          <div className="flex flex-wrap items-center gap-3">
-            <h3 className="font-display text-2xl font-bold text-ink transition-colors group-hover:text-accent-ink">
+        {/* Detail — full width below the media, so nothing reads as a
+            squeezed side column. Role/context and the links live on the
+            title line. */}
+        <div className="mt-6">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+            <h3 className="font-display text-2xl font-bold text-ink">
               {p.title}
             </h3>
+            <span className="font-mono text-xs text-muted">
+              {p.role} · {p.context}
+            </span>
+            <span className="flex items-center gap-5 text-sm sm:ml-auto">
+              <a
+                href={p.live}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-underline font-medium text-accent-ink"
+              >
+                Live demo <span aria-hidden>↗</span>
+              </a>
+              <a
+                href={p.code}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
+              >
+                <SiGithub aria-hidden /> Code
+              </a>
+            </span>
           </div>
-          <p className="mt-3 text-[15px] leading-relaxed text-body">{p.blurb}</p>
-          {p.problem && (
-            <p className="mt-4 text-sm leading-relaxed text-muted">
-              <span className="font-medium text-accent-ink">Challenge — </span>
-              {p.problem}
-            </p>
-          )}
+          <p className="mt-3 max-w-[70ch] text-[15px] leading-[1.7] text-body">
+            {p.blurb}
+          </p>
           {p.highlights && (
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-4 space-y-1.5">
               {p.highlights.map((h) => (
                 <li
                   key={h}
-                  className="relative pl-5 text-sm leading-relaxed text-body before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
+                  className="relative max-w-[80ch] pl-5 text-sm leading-relaxed text-body before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
                 >
                   {h}
                 </li>
               ))}
             </ul>
           )}
-          <dl className="mt-5 flex flex-wrap gap-x-8 gap-y-2">
-            <div>
-              <dt className="font-mono text-xs text-muted">role</dt>
-              <dd className="text-sm text-body">{p.role}</dd>
-            </div>
-            <div>
-              <dt className="font-mono text-xs text-muted">built</dt>
-              <dd className="text-sm text-body">{p.context}</dd>
-            </div>
-          </dl>
-          <ul className="mt-4 flex flex-wrap gap-2">
+          <ul className="mt-5 flex flex-wrap gap-2">
             {p.stack.map((s) => (
               <li
                 key={s}
@@ -1322,27 +1471,6 @@ function ProjectShowcase({
               </li>
             ))}
           </ul>
-          <div className="mt-6 flex items-center gap-5 text-sm">
-            <a
-              href={p.live}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-underline font-medium text-accent-ink"
-            >
-              Live demo{" "}
-              <span className="inline-block transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
-                ↗
-              </span>
-            </a>
-            <a
-              href={p.code}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-muted transition-colors hover:text-ink"
-            >
-              <SiGithub aria-hidden /> Code
-            </a>
-          </div>
         </div>
 
         <Lightbox
@@ -1351,27 +1479,109 @@ function ProjectShowcase({
           index={lb}
           setIndex={setLb}
         />
-      </article>
-    </Reveal>
+    </article>
   );
 }
 
+// Work is a kiosk: ONE project fills the stage at a time and slides
+// horizontally between projects (the deck moves vertically between sections —
+// two axes, two meanings). ←/→ only bind while Work is mounted, i.e. while
+// it's the active deck section.
 const Work = memo(function Work() {
+  const reduce = usePrefersReducedMotion();
+  const [pi, setPi] = useState(0);
+  const [pdir, setPdir] = useState(1);
+
+  const goProject = useCallback((d: number) => {
+    setPi((prev) => {
+      const next = prev + d;
+      if (next < 0 || next >= PROJECTS.length) return prev;
+      setPdir(d);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goProject(1);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goProject(-1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goProject]);
+
+  const p = PROJECTS[pi];
+
   return (
     <section
       id="work"
       aria-labelledby="work-heading"
-      className="py-16 lg:py-28"
+      className="relative py-14 lg:py-16"
     >
-      <RevealHeading
-        id="work-heading"
-        text="Things I've built"
-        className="mb-10 text-3xl font-bold text-ink sm:text-4xl"
-      />
-      <div className="space-y-16 lg:space-y-24">
-        {PROJECTS.map((p, i) => (
-          <ProjectShowcase key={p.title} p={p} index={i} />
-        ))}
+      <div className="stage-pool" aria-hidden />
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+        <div>
+          <Reveal>
+            <Kicker cmd="ls work/" />
+          </Reveal>
+          <RevealHeading
+            id="work-heading"
+            text="Things I've built"
+            className="mt-4 text-3xl font-bold text-ink sm:text-4xl"
+          />
+        </div>
+        <Reveal delay={0.1} className="flex items-center gap-3 font-mono text-sm">
+          <button
+            type="button"
+            onClick={() => goProject(-1)}
+            disabled={pi === 0}
+            aria-label="Previous project"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-lg text-muted transition-colors hover:border-accent/60 hover:text-accent-ink disabled:opacity-25 disabled:hover:border-line disabled:hover:text-muted"
+          >
+            ‹
+          </button>
+          <span className="select-none tabular-nums text-muted">
+            {pi + 1} / {PROJECTS.length}
+          </span>
+          <button
+            type="button"
+            onClick={() => goProject(1)}
+            disabled={pi === PROJECTS.length - 1}
+            aria-label="Next project"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-lg text-muted transition-colors hover:border-accent/60 hover:text-accent-ink disabled:opacity-25 disabled:hover:border-line disabled:hover:text-muted"
+          >
+            ›
+          </button>
+        </Reveal>
+      </div>
+
+      {/* Keyed remount per project — same pattern as the deck itself. */}
+      <motion.div
+        key={pi}
+        initial={
+          reduce
+            ? false
+            : { opacity: 0, x: pdir * 90, filter: "blur(6px)" }
+        }
+        animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+        transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
+        className="mt-9"
+      >
+        <ProjectShowcase
+          p={p}
+          caseFile={p.title === "CryptoFlow" ? CRYPTOFLOW_CASE : undefined}
+        />
+      </motion.div>
+
+      <div className="mt-7 hidden font-mono text-[11px] text-faint lg:block">
+        ← / → switch project
       </div>
     </section>
   );
@@ -1386,20 +1596,25 @@ const GitHub = memo(function GitHub() {
     <section
       id="github"
       aria-labelledby="github-heading"
-      className="py-16 lg:py-28"
+      className="relative py-14 lg:py-20"
     >
+      <div className="stage-pool" aria-hidden />
+      <Reveal>
+        <Kicker cmd="tail -f github.log" />
+      </Reveal>
       <RevealHeading
         id="github-heading"
         text="On GitHub"
-        className="mb-3 text-3xl font-bold text-ink sm:text-4xl"
+        className="mt-5 mb-4 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
       />
       <Reveal>
-        <p className="mb-8 max-w-xl text-body">
+        <p className="mb-8 max-w-[60ch] leading-[1.7] text-body">
           Where I build in the open — commits across personal projects, games
           and experiments.
         </p>
         <GitHubGraph />
       </Reveal>
+      <GitHubFeed />
     </section>
   );
 });
@@ -1408,30 +1623,43 @@ const GitHub = memo(function GitHub() {
    EXPERIENCE
 ───────────────────────────────────────────────────────────── */
 
+// Deterministic 7-hex "commit id" per entry — stable across SSR/renders (no
+// Math.random), so the fake git history never flickers or mismatches.
+function commitHash(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0").slice(0, 7);
+}
+
 const Experience = memo(function Experience() {
   const reduce = usePrefersReducedMotion();
-  const ref = useRef<HTMLOListElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start 0.85", "end 0.55"],
-  });
 
   return (
     <section
       id="experience"
       aria-labelledby="experience-heading"
-      className="py-14 lg:py-20"
+      className="relative py-14 lg:py-20"
     >
+      <div className="stage-pool" aria-hidden />
+      <Reveal>
+        <Kicker cmd="git log --graph experience" />
+      </Reveal>
       <RevealHeading
         id="experience-heading"
         text="Where I've been"
-        className="mb-10 text-3xl font-bold text-ink sm:text-4xl"
+        className="mt-5 mb-10 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
       />
-      <ol ref={ref} className="relative ml-2 pl-0">
+      <ol className="relative ml-2 pl-0">
         <motion.span
           aria-hidden
           className="absolute left-0 top-0 h-full w-px origin-top bg-line-strong"
-          style={{ scaleY: reduce ? 1 : scrollYProgress }}
+          initial={reduce ? false : { scaleY: 0 }}
+          whileInView={{ scaleY: 1 }}
+          viewport={{ once: true, amount: 0.1 }}
+          transition={{ duration: 0.9, ease: EASE }}
         />
         {EXPERIENCE.map((e, i) => (
           <li key={e.role} className="relative pb-12 pl-8 last:pb-0">
@@ -1441,18 +1669,18 @@ const Experience = memo(function Experience() {
               }`}
               aria-hidden
             />
-            <Reveal delay={i * 0.05}>
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h3 className="text-lg font-semibold text-ink">{e.role}</h3>
+            <Reveal delay={i * 0.05} from="left" y={36}>
+              {/* commit line: hash · decoration · date */}
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-[13px]">
+                <span className="text-accent">{commitHash(e.role + e.org)}</span>
                 {e.current && (
-                  <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-ink">
-                    Current
-                  </span>
+                  <span className="text-accent-ink">(HEAD → main)</span>
                 )}
+                {e.period && <span className="text-faint">{e.period}</span>}
               </div>
-              <div className="mt-0.5 text-sm text-muted">
-                {e.org}
-                {e.period && <> · {e.period}</>}
+              <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h3 className="text-lg font-semibold text-ink">{e.role}</h3>
+                <span className="text-sm text-muted">{e.org}</span>
               </div>
               <ul className="mt-3 space-y-2">
                 {e.points.map((pt) => (
@@ -1513,12 +1741,6 @@ const Contact = memo(function Contact() {
       value: "in/tosiicp",
       href: SOCIAL.linkedin,
     },
-    {
-      Icon: SiWhatsapp,
-      label: "WhatsApp",
-      value: "+382 67 474 438",
-      href: SOCIAL.whatsapp,
-    },
   ];
 
   const copyGlyph = (
@@ -1557,29 +1779,33 @@ const Contact = memo(function Contact() {
     <section
       id="contact"
       aria-labelledby="contact-heading"
-      className="py-16 lg:py-24"
+      className="relative py-16 lg:py-24"
     >
+      <div className="stage-pool" aria-hidden />
+      <Reveal>
+        <Kicker cmd="./contact.sh" />
+      </Reveal>
       <RevealHeading
         id="contact-heading"
         text="Let's build something."
-        className="text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+        className="mt-5 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
       />
       <Reveal delay={0.1}>
-        <p className="mt-5 max-w-xl text-base leading-relaxed text-body">
+        <p className="mt-5 max-w-[60ch] text-base leading-[1.7] text-body">
           Open to full-time or part-time, remote. The fastest way to reach me is
           email — I usually reply within a day.
         </p>
       </Reveal>
 
-      <div className="mt-10 grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mt-12 grid items-start gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
         {/* Primary: the email, copyable, with one clear send CTA. */}
         <Reveal delay={0.15}>
-          <div className="glass rounded-2xl p-6 sm:p-8">
+          <div>
             <div className="font-mono text-xs text-muted">drop me a line</div>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
               <a
                 href={`mailto:${SOCIAL.email}`}
-                className="link-underline break-all font-mono text-lg font-medium text-accent-ink sm:text-xl"
+                className="link-underline font-mono text-xl font-medium text-accent-ink sm:text-2xl"
               >
                 {SOCIAL.email}
               </a>
@@ -1638,16 +1864,16 @@ const Contact = memo(function Contact() {
           </div>
         </Reveal>
 
-        {/* Channels as a divided list — not a card grid. */}
+        {/* Channels as a divided list — straight on the stage, no card. */}
         <Reveal delay={0.2}>
-          <ul className="glass divide-y divide-line/60 rounded-2xl p-2 sm:p-3">
+          <ul className="divide-y divide-line/60">
             {channels.map(({ Icon: I, label, value, href }) => (
               <li key={label}>
                 <a
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group flex items-center gap-4 rounded-xl px-4 py-4 transition-colors hover:bg-accent-soft"
+                  className="group flex items-center gap-4 rounded-xl px-2 py-4 transition-colors hover:bg-accent-soft sm:px-4"
                 >
                   <I
                     className="shrink-0 text-xl text-muted transition-colors group-hover:text-accent-ink"
@@ -1675,25 +1901,236 @@ const Contact = memo(function Contact() {
   );
 });
 
-const Footer = memo(function Footer() {
-  return (
-    <footer className="border-t border-line px-5 sm:px-8">
-      {/* extra bottom padding clears the fixed Terminal command bar */}
-      <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 pt-8 pb-24 sm:flex-row">
-        <p className="text-sm text-muted">
-          © 2026 {NAME} — {SUMMARY_SHORT}
-        </p>
-      </div>
-    </footer>
+/* ─────────────────────────────────────────────────────────────
+   SECTION DECK — one section on a fixed stage. A tall section scrolls
+   internally; at its edge the next scroll / swipe / arrow / nav-click
+   flips to the next section (fullPage-style). No page scroll.
+───────────────────────────────────────────────────────────── */
+
+const DECK_SECTIONS = [About, Stack, Work, GitHub, Experience, Contact];
+
+declare global {
+  interface Window {
+    // Set by the deck so the Terminal's in-page nav switches sections
+    // instead of scrolling. Returns false if the id isn't a section.
+    __deckGo?: (id: string) => boolean;
+  }
+}
+
+function SectionDeck({
+  index,
+  setIndex,
+}: {
+  index: number;
+  setIndex: Dispatch<SetStateAction<number>>;
+}) {
+  const reduce = usePrefersReducedMotion();
+  const desktop = useIsDesktop();
+  const [dir, setDir] = useState(1);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const indexRef = useRef(index);
+  const lockRef = useRef(false); // true during a transition (prevents skips)
+  const accRef = useRef(0); // accumulated wheel intent at a boundary
+
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+
+  const change = useCallback(
+    (target: number) => {
+      const cur = indexRef.current;
+      if (
+        target === cur ||
+        target < 0 ||
+        target >= DECK_SECTIONS.length ||
+        lockRef.current
+      )
+        return;
+      setDir(target > cur ? 1 : -1);
+      lockRef.current = true;
+      accRef.current = 0;
+      // Matches the enter-transition duration so one gesture advances one section.
+      window.setTimeout(() => {
+        lockRef.current = false;
+      }, 650);
+      setIndex(target);
+    },
+    [setIndex]
   );
-});
+
+  const go = useCallback(
+    (delta: number) => change(indexRef.current + delta),
+    [change]
+  );
+
+  // Expose section nav to the Terminal ("cd work", nav commands, etc.).
+  // Mobile has no deck — leaving __deckGo unset makes the Terminal fall back
+  // to its native scrollIntoView path.
+  useEffect(() => {
+    if (!desktop) return;
+    window.__deckGo = (id: string) => {
+      const t = id === "home" ? 0 : NAV.findIndex((n) => n.id === id);
+      if (t < 0) return false;
+      change(t);
+      return true;
+    };
+    return () => {
+      delete window.__deckGo;
+    };
+  }, [change, desktop]);
+
+  // Intercept in-page anchor clicks (rail nav, mobile nav, CTAs) → jump section.
+  // (Desktop only — on mobile the anchors scroll the document natively.)
+  useEffect(() => {
+    if (!desktop) return;
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.(
+        'a[href^="#"]'
+      ) as HTMLAnchorElement | null;
+      const href = a?.getAttribute("href");
+      if (!href || href === "#") return;
+      const id = href.slice(1);
+      const t = id === "home" ? 0 : NAV.findIndex((n) => n.id === id);
+      if (t < 0) return;
+      e.preventDefault();
+      change(t);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [change, desktop]);
+
+  // Wheel over the stage: scroll within a tall section; at its edge, accumulate
+  // intent then flip. Scoped to the stage so scrolling the Terminal/Ask panels
+  // (fixed, outside the stage) is never hijacked.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const onWheel = (e: WheelEvent) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const down = e.deltaY > 0;
+      const atTop = el.scrollTop <= 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      if ((down && !atBottom) || (!down && !atTop)) {
+        accRef.current = 0;
+        return; // room to scroll inside the section — let it
+      }
+      e.preventDefault();
+      if (lockRef.current) return;
+      accRef.current += e.deltaY;
+      if (Math.abs(accRef.current) > 60) go(down ? 1 : -1);
+    };
+    stage.addEventListener("wheel", onWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", onWheel);
+  }, [go, desktop]);
+
+  // Touch swipe past a section edge to flip (native inner scroll otherwise).
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    let startY = 0;
+    const onStart = (e: TouchEvent) => {
+      startY = e.touches[0]?.clientY ?? 0;
+    };
+    const onEnd = (e: TouchEvent) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const dy = (e.changedTouches[0]?.clientY ?? startY) - startY;
+      if (Math.abs(dy) < 64) return;
+      const atTop = el.scrollTop <= 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      if (dy < 0 && atBottom) go(1);
+      else if (dy > 0 && atTop) go(-1);
+    };
+    stage.addEventListener("touchstart", onStart, { passive: true });
+    stage.addEventListener("touchend", onEnd, { passive: true });
+    return () => {
+      stage.removeEventListener("touchstart", onStart);
+      stage.removeEventListener("touchend", onEnd);
+    };
+  }, [go, desktop]);
+
+  // Keyboard: Page/Arrow keys move between sections (never while typing).
+  useEffect(() => {
+    if (!desktop) return;
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      // ←/→ belong to the Work kiosk (project switching) — sections advance
+      // via wheel, PageUp/Down, nav and the terminal.
+      if (e.key === "PageDown") {
+        e.preventDefault();
+        go(1);
+      } else if (e.key === "PageUp") {
+        e.preventDefault();
+        go(-1);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [go, desktop]);
+
+  const Active = DECK_SECTIONS[index];
+
+  // Mobile: no fixed stage — every section stacks into one normally-scrolling
+  // document, so the profile header scrolls away like any other page.
+  if (!desktop) {
+    return (
+      <div className="pb-24">
+        {DECK_SECTIONS.map((S, i) => (
+          <S key={NAV[i].id} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={stageRef} className="relative h-full min-h-0 flex-1">
+      {/* Keyed remount per section: the old section is removed instantly
+          (revealing the rain behind), and the new one flies in with a focus-pull
+          (slide + de-blur). Simpler and more robust than AnimatePresence
+          exit orchestration, which stalls when the index change fires from a
+          native listener (wheel / keys / nav-click) rather than a React onClick. */}
+      <motion.div
+        key={index}
+        ref={scrollerRef}
+        initial={
+          reduce
+            ? false
+            : { opacity: 0, y: dir > 0 ? 70 : -70, filter: "blur(7px)" }
+        }
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        transition={{ duration: reduce ? 0 : 0.6, ease: EASE }}
+        className="absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-none pb-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        <Active />
+      </motion.div>
+
+      {/* Cinematic cue: a soft phosphor band sweeps the stage in the travel
+          direction each time the section changes (keyed to index). */}
+      {!reduce && (
+        <motion.div
+          key={`scan-${index}`}
+          aria-hidden
+          initial={{ y: dir > 0 ? "-35vh" : "85vh", opacity: 0 }}
+          animate={{ y: dir > 0 ? "115vh" : "-45vh", opacity: [0, 0.9, 0] }}
+          transition={{ duration: 0.65, ease: EASE }}
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-40 bg-gradient-to-b from-transparent via-accent/20 to-transparent blur-md"
+        />
+      )}
+
+    </div>
+  );
+}
 
 /* ─────────────────────────────────────────────────────────────
    PAGE
 ───────────────────────────────────────────────────────────── */
 
 export default function Home() {
-  const active = useActiveSection(SECTION_IDS);
+  const [index, setIndex] = useState(0);
+  const activeId = NAV[index].id;
 
   return (
     <>
@@ -1701,29 +2138,23 @@ export default function Home() {
       <a href="#content" className="skip-link">
         Skip to content
       </a>
-      <Aurora />
-      <InteractiveGrid />
-      <SmoothScroll />
-      <ScrollProgress />
-      <NavBar active={active} />
+      <DotGrid />
+      <MatrixRain sectionIndex={index} />
+      <NavBar active={activeId} />
 
-      <div className="mx-auto max-w-6xl px-5 sm:px-8 lg:flex lg:gap-14 lg:px-10">
-        <LeftRail active={active} />
-        <main id="content" tabIndex={-1} className="pb-16 outline-none lg:flex-1 lg:py-28">
-          <About />
-          <SectionDivider dur={7} />
-          <Stack />
-          <SectionDivider dur={8.5} reverse />
-          <Work />
-          <SectionDivider dur={6.5} />
-          <GitHub />
-          <SectionDivider dur={9} reverse />
-          <Experience />
-          <SectionDivider dur={7.5} />
-          <Contact />
+      {/* Mobile scrolls as a normal document; the fixed 100dvh deck stage is
+          a desktop (lg+) layout — see SectionDeck's mobile branch. */}
+      <div className="mx-auto flex max-w-6xl flex-col px-5 sm:px-8 lg:h-[100dvh] lg:flex-row lg:gap-14 lg:overflow-hidden lg:px-10">
+        <LeftRail active={activeId} />
+        <main
+          id="content"
+          tabIndex={-1}
+          className="relative min-h-0 flex-1 outline-none"
+        >
+          <SectionDeck index={index} setIndex={setIndex} />
         </main>
       </div>
-      <Footer />
+
       <Terminal
         name={NAME}
         role={ROLE}

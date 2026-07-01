@@ -27,7 +27,7 @@ type TerminalProps = {
   name: string;
   role: string;
   location: string;
-  social: { email: string; github: string; linkedin: string; whatsapp: string };
+  social: { email: string; github: string; linkedin: string };
   resume: string;
   projects: Project[];
 };
@@ -90,6 +90,8 @@ function Terminal({
   }, []);
 
   const go = useCallback((id: string) => {
+    // Deck mode: switch the active section instead of scrolling to it.
+    if (window.__deckGo?.(id)) return true;
     const el = document.getElementById(id);
     if (!el) return false;
     const lenis = window.__lenis;
@@ -212,11 +214,8 @@ function Terminal({
           out(
             <div className="space-y-0.5">
               <div className={M}>projects/</div>
-              {projects.map((p, i) => (
+              {projects.map((p) => (
                 <div key={p.title}>
-                  <span className={C}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>{" "}
                   <span className={`${GI} inline-block w-[11rem]`}>
                     {slug(p.title)}
                   </span>
@@ -303,8 +302,8 @@ function Terminal({
         case "contact":
           out(
             <span className={M}>
-              email <span className="text-ink">{social.email}</span> · WhatsApp
-              +382 67 474 438. <span className={M}>→ scrolling to contact</span>
+              email <span className="text-ink">{social.email}</span>.{" "}
+              <span className={M}>→ scrolling to contact</span>
             </span>
           );
           go("contact");
@@ -340,7 +339,6 @@ function Terminal({
               {[
                 ["github", social.github, "github.com/Toshkee"],
                 ["linkedin", social.linkedin, "in/tosiicp"],
-                ["whatsapp", social.whatsapp, "+382 67 474 438"],
                 ["email", `mailto:${social.email}`, social.email],
               ].map(([k, href, label]) => (
                 <div key={k}>
