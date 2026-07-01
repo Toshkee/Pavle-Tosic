@@ -3,25 +3,23 @@
 import { useEffect, useRef } from "react";
 
 /* One-shot "compile" cinematic — the payoff after the boot screen's
-   "system ready — press Enter". Concept: make:name.
+   "system ready — press Enter". Concept: make:brand.
 
      I.   a real build log streams  (lex → parse → typecheck → … → emit),
      II.  a linker bar fills and ramps toward 98 %,
      II.5 it JAMS at 98 % with two micro-stutters (loads the spring),
-     III. it SNAPS to 100 %: one phosphor flash washes the screen and every
-          source character on the log lifts off its line and freezes mid-air,
-     IV.  the frozen code streams inward — arcing, depth-scaled, motion-blurred
-          — and WELDS the letters of "Pavle Tošić" out of itself, left-first,
-     V.   a CRT ignition (bloom + shockwave ring + scan sweep) fires, a green
-          "✓ build passed" stamps in with the role, the CRT framing dilates
-          away and the welded name dissolves straight into the real hero.
+     III. it SNAPS to 100 %: one phosphor flash washes the screen,
+     IV.  the brand LOGO POPS in — centred, scaling up with a little overshoot —
+          as the compiled artifact, on a soft phosphor glow,
+     V.   a CRT ignition (bloom + shockwave ring + scan sweep) fires from the
+          logo, a green "✓ build passed" stamps in with the role beneath it, the
+          CRT framing dilates away and the logo dissolves into the real hero.
 
    Pure canvas-2D (no WebGL / three.js), a single time-driven rAF (a dropped
-   frame never desyncs), DPR-capped, viewport-scaled particle counts. Reduced
-   motion, a missing 2D context, the skip keys/click, or a stall all converge
-   on one onDone() so the visitor is never trapped behind the overlay. The name
-   is rasterised in the site's live Mononoki face so the weld lines up with the
-   page underneath. Mounted ONLY during the boot overlay's "cinematic" phase. */
+   frame never desyncs), DPR-capped. Reduced motion, a missing 2D context, the
+   skip keys/click, or a stall all converge on one onDone() so the visitor is
+   never trapped behind the overlay. Mounted ONLY during the boot overlay's
+   "cinematic" phase. */
 
 // ---- palette (exact site tokens — phosphor green only, no other hue) ----
 const BG = "#0a0f0a";
@@ -34,7 +32,6 @@ const NAME_SOFT = "#e6f1e6";
 const MUTED = "#8aa08c";
 const FAINT = "#5b6b5d";
 
-const NAME = "Pavle Tošić";
 const ROLE = "software developer";
 const SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789!<>/{}[]=+*#%&";
 
@@ -75,37 +72,37 @@ const JITTER_PX = 2;
 const SNAP_T = 1.82;
 const FLASH_A = 0.24;
 const FLASH_DUR = 0.13;
-const WELD_START = 2.02;
-const WELD_DUR_EACH = 0.55;
-const WELD_STAGGER = 0.26;
-const CURL_MULT = 0.42;
-const TRAIL_DT = 0.06;
-const NAME_SOLID_START = 2.66;
-const NAME_SOLID_DUR = 0.22;
-const PARTICLE_FADE_DUR = 0.3;
-const IGNITE_T = 2.84;
+// Act IV — the logo pops in as the compiled artifact.
+const LOGO_SRC = "/images/pavle-logo.png";
+const LOGO_ASPECT = 482 / 560; // h / w of the transparent asset
+// The art's alpha-weighted centre sits right & slightly low of its bounding box
+// (the body/arm/coin outweigh the faint motion streaks on the left), so we place
+// THAT point — not the box centre — at screen centre, or it reads as off-centre.
+const LOGO_CX = 0.618;
+const LOGO_CY = 0.516;
+const LOGO_POP_T = 1.95;
+const LOGO_POP_DUR = 0.5;
+// Act V — ignition + "build passed" fire from the settled logo.
+const IGNITE_T = 2.3;
 const BLOOM_A = 0.18;
 const BLOOM_DUR = 0.11;
 const RING_DUR = 0.34;
 const RING_MAX_FRAC = 0.62;
 const SCAN_SWEEP_DUR = 0.28;
-const PASSED_T = 2.98;
+const PASSED_T = 2.52;
 const CHECK_DUR = 0.2;
 const ROLE_DECODE_DUR = 0.26;
-// Hold the fully-resolved name + "build passed" for ~1s before handing off.
+// Hold the logo + "build passed" before handing off to the hero.
 const FRAMING_FADE_START = 4.2;
 const FRAMING_FADE_END = 4.5;
 const HANDOFF_T = 4.3;
 const HANDOFF_DUR = 0.18;
-const NAME_LIFT = 10;
+const LOGO_LIFT = 10;
 const DONE_T = 4.46;
 const SAFETY_MS = 6000;
 
 // ---- perf / scaling ----
-const PCAP_DESKTOP = 170;
-const PCAP_MOBILE = 90;
 const MOBILE_BP = 640;
-const MASK_ALPHA_THRESH = 96;
 const DPR_CAP = 2;
 const SCAN_PERIOD = 3;
 const SCAN_DARK_A = 0.05;
@@ -117,19 +114,14 @@ const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
 const easeIn = (x: number) => x * x;
 const easeInOut = (x: number) =>
   x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-const lerp = (a: number, b: number, p: number) => a + (b - a) * p;
+// overshoot-and-settle, for the logo pop
+const easeOutBack = (x: number) => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+};
 
 type Glyph = { ch: string; x: number; y: number };
-type Pt = { x: number; y: number };
-type Particle = {
-  ch: string;
-  sx: number;
-  sy: number;
-  tx: number;
-  ty: number;
-  stag: number;
-  side: number;
-};
 
 export default function IntroCinematic({ onDone }: { onDone: () => void }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -154,10 +146,19 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
     if (!ctx) return finish();
     mount.appendChild(canvas);
 
+    // Preload the brand logo that pops in for the reveal. If it never loads,
+    // drawLogo just no-ops and the rest of the cinematic is unaffected.
+    const logo = new Image();
+    let logoReady = false;
+    logo.onload = () => {
+      logoReady = true;
+    };
+    logo.src = LOGO_SRC;
+
     const safety = setTimeout(finish, SAFETY_MS);
 
     // The site is set in Mononoki via a next/font CSS variable; read the real
-    // resolved family so the name/log match the page rather than a generic mono.
+    // resolved family so the log matches the page rather than a generic mono.
     const fam =
       getComputedStyle(document.body).fontFamily ||
       'ui-monospace, "SFMono-Regular", Menlo, monospace';
@@ -167,26 +168,16 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
     let H = 0;
     let isMobile = false;
     let LOG: Seg[][] = LOG_DESKTOP;
-    let PCAP = PCAP_DESKTOP;
     let logFs = 13;
     let lineH = 20;
     let charW = 8;
     let logFont = "";
-    let glyphFont = "";
-    let heroFs = 64;
-    let heroFont = "";
-    let nameW = 0;
-    let nameX = 0;
-    let nameBaseY = 0;
     let termX = 0;
     let termTop = 0;
     let barW = 0;
     let barH = 0;
     let logGlyphs: Glyph[] = [];
     let lineW: number[] = [];
-    let namePoints: Pt[] = [];
-    let particles: Particle[] = [];
-    let spawned = false;
     let vignette: CanvasGradient | null = null;
     let scanTile: HTMLCanvasElement | null = null;
 
@@ -204,49 +195,6 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
         }
         lineW[li] = x - termX;
       }
-    };
-
-    // Rasterise the name once to an offscreen canvas and sample its lit pixels
-    // into target points — the letterforms the code welds into. CSS-pixel scale
-    // (no dpr) so the points map straight onto the dpr-scaled main context.
-    const buildNameMask = () => {
-      namePoints = [];
-      const off = document.createElement("canvas");
-      const padX = Math.ceil(heroFs * 0.18);
-      off.width = Math.ceil(nameW) + padX * 2;
-      off.height = Math.ceil(heroFs * 1.5);
-      const o = off.getContext("2d");
-      if (!o) return;
-      const baseY = Math.round(heroFs * 1.06);
-      o.fillStyle = "#fff";
-      o.textAlign = "left";
-      o.textBaseline = "alphabetic";
-      o.font = `700 ${heroFs}px ${fam}`;
-      o.fillText(NAME, padX, baseY);
-      let data: Uint8ClampedArray;
-      try {
-        data = o.getImageData(0, 0, off.width, off.height).data;
-      } catch {
-        return; // tainted/blocked — solid name still renders, weld just no-ops
-      }
-      const step = Math.max(2, Math.round(heroFs * 0.05));
-      const pts: Pt[] = [];
-      for (let y = 0; y < off.height; y += step) {
-        for (let x = 0; x < off.width; x += step) {
-          if (data[(y * off.width + x) * 4 + 3] > MASK_ALPHA_THRESH) {
-            pts.push({ x: nameX + (x - padX), y: nameBaseY - baseY + y });
-          }
-        }
-      }
-      if (pts.length > PCAP) {
-        const stride = pts.length / PCAP;
-        const out: Pt[] = [];
-        for (let i = 0; i < PCAP; i++) out.push(pts[Math.floor(i * stride)]);
-        namePoints = out;
-      } else {
-        namePoints = pts;
-      }
-      namePoints.sort((a, b) => a.x - b.x); // weld resolves left → right
     };
 
     const buildFraming = () => {
@@ -282,7 +230,6 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
 
       isMobile = Math.min(W, H) < MOBILE_BP;
       LOG = isMobile ? LOG_MOBILE : LOG_DESKTOP;
-      PCAP = isMobile ? PCAP_MOBILE : PCAP_DESKTOP;
 
       logFs = Math.max(
         isMobile ? 12 : 11,
@@ -290,62 +237,35 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       );
       lineH = Math.round(logFs * 1.55);
       logFont = `500 ${logFs}px ${fam}`;
-      glyphFont = `600 ${logFs}px ${fam}`;
       ctx.font = logFont;
       charW = ctx.measureText("0").width || logFs * 0.6;
 
-      // Hero name — fit to the left of the column with a right-hand margin.
-      heroFs = Math.max(
-        30,
-        Math.min(92, Math.round(Math.min(W, H) * (isMobile ? 0.082 : 0.088)))
-      );
-      nameX = Math.round(W * 0.14);
-      ctx.font = `700 ${heroFs}px ${fam}`;
-      nameW = ctx.measureText(NAME).width;
-      const availW = W - nameX - W * 0.06;
-      if (nameW > availW) {
-        heroFs = Math.max(28, Math.floor((heroFs * availW) / nameW));
-        ctx.font = `700 ${heroFs}px ${fam}`;
-        nameW = ctx.measureText(NAME).width;
-      }
-      heroFont = `700 ${heroFs}px ${fam}`;
-      nameBaseY = Math.round(H * 0.5);
-
-      // The terminal streams in the same left column the name welds into, the
-      // block centred on the name's baseline so the code collapses in place.
-      termX = nameX;
-      termTop = Math.round(nameBaseY - (LOG.length * lineH) / 2 + logFs);
+      // The terminal streams in a left column, its block centred on the middle
+      // of the screen so the compile reads as happening "in place".
+      termX = Math.round(W * 0.14);
+      termTop = Math.round(H * 0.5 - (LOG.length * lineH) / 2 + logFs);
       barW = Math.min(560, W * 0.46);
       barH = Math.round(logFs * 0.72);
 
       buildLogGlyphs();
-      buildNameMask();
       buildFraming();
-      particles = [];
-      spawned = false;
     };
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(mount);
 
-    const spawnParticles = () => {
-      const n = namePoints.length;
-      const g = logGlyphs.length;
-      if (!n || !g) return;
-      const minX = namePoints[0].x;
-      const span = Math.max(1, namePoints[n - 1].x - minX);
-      particles = namePoints.map((pt, i) => {
-        const og = logGlyphs[(i * 7) % g];
-        return {
-          ch: og.ch,
-          sx: og.x,
-          sy: og.y,
-          tx: pt.x,
-          ty: pt.y,
-          stag: ((pt.x - minX) / span) * WELD_STAGGER,
-          side: i % 2 === 0 ? 1 : -1,
-        };
-      });
+    // Shared centred rect for the logo + its ignition + the caption beneath, so
+    // the three stay aligned across resizes.
+    const logoRect = () => {
+      const maxW = W * (isMobile ? 0.82 : 0.5);
+      const maxH = H * (isMobile ? 0.44 : 0.56);
+      let w = maxW;
+      let h = w * LOGO_ASPECT;
+      if (h > maxH) {
+        h = maxH;
+        w = h / LOGO_ASPECT;
+      }
+      return { cx: W / 2, cy: H * 0.44, w, h };
     };
 
     // ---- Act I / II / II.5 — the terminal ----
@@ -442,84 +362,33 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       ctx.fillText("  link · emitting binary", termX, ly);
     };
 
-    // ---- one glyph of flying code (used for the weld + its motion trails) ----
-    const posAt = (p: Particle, prog: number) => {
-      const arc = Math.sin(prog * Math.PI);
-      return {
-        x: lerp(p.sx, p.tx, prog) + arc * heroFs * 0.12 * p.side,
-        y: lerp(p.sy, p.ty, prog) + arc * heroFs * CURL_MULT * p.side,
-        s: (0.62 + 0.38 * prog) * (1 + arc * 0.18),
-      };
-    };
-    const drawGlyph = (
-      ch: string,
-      x: number,
-      y: number,
-      s: number,
-      a: number,
-      color: string
-    ) => {
+    // ---- Act IV — the logo pops in, centred ----
+    const drawLogo = (t: number) => {
+      if (!logoReady || t < LOGO_POP_T) return;
+      const p = clamp01((t - LOGO_POP_T) / LOGO_POP_DUR);
+      const { cx, cy, w, h } = logoRect();
+      const scale = 0.55 + 0.45 * easeOutBack(p);
+      const alpha = easeOut(clamp01(p * 1.5));
+      const dw = w * scale;
+      const dh = h * scale;
+
+      // Soft phosphor glow behind the logo so it seats on the green-black field.
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, dw * 0.6);
+      glow.addColorStop(0, "rgba(34,197,94,0.28)");
+      glow.addColorStop(1, "rgba(34,197,94,0)");
       ctx.save();
-      ctx.globalAlpha = a;
-      ctx.fillStyle = color;
-      ctx.translate(x, y);
-      ctx.scale(s, s);
-      ctx.fillText(ch, 0, 0);
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = glow;
+      ctx.fillRect(cx - dw, cy - dh, dw * 2, dh * 2);
+      // Offset so the art's visual centroid — not its bounding box — lands at
+      // (cx, cy), which is where the glow, ring and caption are all centred.
+      ctx.drawImage(logo, cx - LOGO_CX * dw, cy - LOGO_CY * dh, dw, dh);
       ctx.restore();
     };
 
-    // ---- Act III / IV — detonate + weld ----
-    const drawWeld = (t: number) => {
-      if (!spawned) {
-        spawnParticles();
-        spawned = true;
-      }
-      // The code dissolves once the name has ignited, leaving the solid name
-      // pristine for the hold + handoff (matches the site's crisp name).
-      const pa = 1 - clamp01((t - IGNITE_T) / PARTICLE_FADE_DUR);
-      if (pa > 0) {
-        ctx.font = glyphFont;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        const trails = isMobile ? 1 : 2;
-        for (const pr of particles) {
-          const prog = clamp01((t - WELD_START - pr.stag) / WELD_DUR_EACH);
-          const main = posAt(pr, prog);
-          if (prog > 0.04) {
-            for (let k = 1; k <= trails; k++) {
-              const tp = posAt(pr, Math.max(0, prog - k * TRAIL_DT));
-              drawGlyph(pr.ch, tp.x, tp.y, tp.s, (0.5 / (k + 1)) * pa, DEEP);
-            }
-          }
-          const locked = prog > 0.96;
-          ctx.shadowColor = ACCENT;
-          ctx.shadowBlur = locked ? 0 : 6 * (1 - prog);
-          drawGlyph(pr.ch, main.x, main.y, main.s, pa, locked ? NAME_HI : BRIGHT);
-        }
-        ctx.shadowBlur = 0;
-      }
-
-      // the crisp name takes over so legibility never rides on particle spread
-      const solid = clamp01((t - NAME_SOLID_START) / NAME_SOLID_DUR);
-      if (solid > 0) {
-        ctx.save();
-        ctx.globalAlpha = solid;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        ctx.font = heroFont;
-        ctx.shadowColor = "rgba(92,240,138,0.85)";
-        ctx.shadowBlur = heroFs * 0.2;
-        ctx.fillStyle = NAME_HI;
-        ctx.fillText(NAME, nameX, nameBaseY);
-        ctx.restore();
-        ctx.shadowBlur = 0;
-      }
-    };
-
-    // ---- Act V — ignition + "build passed" + role ----
+    // ---- Act V — ignition (ring + scan) firing from the logo ----
     const drawIgnition = (t: number) => {
-      const cx = nameX + nameW / 2;
-      const cy = nameBaseY - heroFs * 0.33;
+      const { cx, cy, w, h } = logoRect();
       // shockwave ring
       const rp = clamp01((t - IGNITE_T) / RING_DUR);
       if (rp < 1) {
@@ -531,28 +400,37 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
         ctx.stroke();
         ctx.globalAlpha = 1;
       }
-      // a single scan-line sweeping down the name
+      // a single scan-line sweeping down the logo
       const sp = clamp01((t - IGNITE_T) / SCAN_SWEEP_DUR);
       if (sp < 1) {
-        const y = nameBaseY - heroFs * 0.95 + sp * heroFs * 1.1;
+        const y = cy - h / 2 + sp * h;
         ctx.fillStyle = BRIGHT;
-        ctx.globalAlpha = 0.6 * (1 - sp);
-        ctx.fillRect(nameX, y, nameW, 1.5);
+        ctx.globalAlpha = 0.5 * (1 - sp);
+        ctx.fillRect(cx - (w * 0.9) / 2, y, w * 0.9, 1.5);
         ctx.globalAlpha = 1;
       }
     };
 
+    // ---- Act V — "✓ build passed · role", centred under the logo ----
     const drawPassed = (t: number) => {
-      const y = nameBaseY + heroFs * 0.62;
+      const { cx, cy, h } = logoRect();
+      const y = cy + h / 2 + logFs * 2.0;
+      ctx.save();
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
       ctx.font = logFont;
       ctx.shadowBlur = 0;
 
+      const s = logFs * 0.62;
+      const checkGap = logFs * 0.5;
+      const bpW = ctx.measureText("build passed").width;
+      const dotW = ctx.measureText("  ·  ").width;
+      const roleW = ctx.measureText(ROLE).width; // stable (monospace, fixed len)
+      const startX = cx - (s + checkGap + bpW + dotW + roleW) / 2;
+
       // self-drawing check mark
       const cp = clamp01((t - PASSED_T) / CHECK_DUR);
-      const s = logFs * 0.62;
-      const ax = termX;
+      const ax = startX;
       const ay = y - s * 0.5;
       ctx.strokeStyle = ACCENT;
       ctx.lineWidth = Math.max(1.5, logFs * 0.13);
@@ -568,13 +446,11 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       }
       ctx.stroke();
 
+      const tx = startX + s + checkGap;
       ctx.fillStyle = ACCENT;
-      const tx = ax + s + logFs * 0.5;
       ctx.fillText("build passed", tx, y);
-      const bw = ctx.measureText("build passed").width;
       ctx.fillStyle = FAINT;
-      ctx.fillText("  ·  ", tx + bw, y);
-      const dw = ctx.measureText("  ·  ").width;
+      ctx.fillText("  ·  ", tx + bpW, y);
 
       // role decodes once, left → right
       const rp = clamp01((t - PASSED_T - 0.05) / ROLE_DECODE_DUR);
@@ -586,7 +462,8 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
             : SCRAMBLE[(Math.floor(t * 22) + i * 7) % SCRAMBLE.length];
       }
       ctx.fillStyle = MUTED;
-      ctx.fillText(role, tx + bw + dw, y);
+      ctx.fillText(role, tx + bpW + dotW, y);
+      ctx.restore();
     };
 
     const drawFraming = (t: number) => {
@@ -622,11 +499,11 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       if (startT < 0) startT = now;
       const t = (now - startT) / 1000;
 
-      // handoff: lift the welded name a touch as the canvas fades, so it
-      // dissolves INTO the hero rather than hard-cutting.
+      // handoff: lift the logo a touch as the canvas fades, so it dissolves
+      // INTO the hero rather than hard-cutting.
       const hoff = clamp01((t - HANDOFF_T) / HANDOFF_DUR);
       canvas.style.opacity = String(1 - easeIn(hoff));
-      const lift = -easeIn(hoff) * NAME_LIFT;
+      const lift = -easeIn(hoff) * LOGO_LIFT;
 
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = BG;
@@ -637,13 +514,13 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       } else {
         ctx.save();
         ctx.translate(0, lift);
-        drawWeld(t);
+        drawLogo(t);
         if (t >= IGNITE_T) drawIgnition(t);
         if (t >= PASSED_T) drawPassed(t);
         ctx.restore();
       }
 
-      // phosphor flash at the snap — hides the swap from log to particles
+      // phosphor flash at the snap — masks the swap from log to logo
       if (t >= SNAP_T && t < SNAP_T + FLASH_DUR) {
         ctx.globalAlpha = FLASH_A * (1 - (t - SNAP_T) / FLASH_DUR);
         ctx.fillStyle = BRIGHT;
@@ -660,8 +537,8 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
 
       drawFraming(t);
 
-      // Hand off mid-fade so the overlay's own fade-out overlaps the last
-      // bright name frames (the canvas keeps fading until BootIntro unmounts).
+      // Hand off mid-fade so the overlay's own fade-out overlaps the last bright
+      // logo frames (the canvas keeps fading until BootIntro unmounts).
       if (t >= DONE_T) {
         clearTimeout(safety);
         finish();

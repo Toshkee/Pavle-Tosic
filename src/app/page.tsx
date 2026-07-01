@@ -8,8 +8,11 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   motion,
   AnimatePresence,
@@ -139,6 +142,11 @@ const PROJECTS = [
     shot: "/images/projects/cryptoflow.jpg",
     video: "/video/projects/cryptoflow.mp4" as string | null,
     domain: "cryptofloww.netlify.app",
+    gallery: [
+      { src: "/images/projects/cryptoflow-terminal.jpg", label: "Trading terminal" },
+      { src: "/images/projects/cryptoflow-markets.jpg", label: "Live markets" },
+      { src: "/images/projects/cryptoflow-landing.jpg", label: "Landing" },
+    ] as { src: string; label: string }[],
   },
   {
     title: "Meet2Explore",
@@ -159,6 +167,10 @@ const PROJECTS = [
     shot: "/images/projects/meet2explore.jpg",
     video: "/video/projects/meet2explore.mp4",
     domain: "meet2explore.netlify.app",
+    gallery: [
+      { src: "/images/projects/meet2explore-hero.jpg", label: "Discover destinations" },
+      { src: "/images/projects/meet2explore-trips.jpg", label: "Plan group trips" },
+    ] as { src: string; label: string }[],
   },
   {
     title: "Ronin Duel",
@@ -179,6 +191,10 @@ const PROJECTS = [
     shot: "/images/projects/ronin-duel.jpg",
     video: "/video/projects/ronin-duel.mp4",
     domain: "toshkee.github.io",
+    gallery: [
+      { src: "/images/projects/ronin-duel-menu.jpg", label: "Title & mode select" },
+      { src: "/images/projects/ronin-duel-fight.jpg", label: "In-match combat" },
+    ] as { src: string; label: string }[],
   },
   {
     title: "Arc — Anime Tracker",
@@ -199,6 +215,11 @@ const PROJECTS = [
     shot: "/images/projects/anime-watchlist.jpg",
     video: "/video/projects/anime-watchlist.mp4",
     domain: "arc-anime.vercel.app",
+    gallery: [
+      { src: "/images/projects/anime-watchlist-home.jpg", label: "Search & trending" },
+      { src: "/images/projects/anime-watchlist-browse.jpg", label: "Browse catalogue" },
+      { src: "/images/projects/anime-watchlist-detail.jpg", label: "Title detail" },
+    ] as { src: string; label: string }[],
   },
 ];
 
@@ -955,6 +976,159 @@ const Stack = memo(function Stack() {
    WORK
 ───────────────────────────────────────────────────────────── */
 
+// Full-screen image viewer for a project's screenshot gallery. Rendered through
+// a portal to document.body so it escapes the transformed <article> ancestors
+// (framer-motion writes `transform`, which would otherwise trap position:fixed).
+function Lightbox({
+  items,
+  title,
+  index,
+  setIndex,
+}: {
+  items: { src: string; label: string }[];
+  title: string;
+  index: number | null;
+  setIndex: Dispatch<SetStateAction<number | null>>;
+}) {
+  const reduce = usePrefersReducedMotion();
+  const open = index !== null;
+  const count = items.length;
+  const go = (dir: number) =>
+    setIndex((i) => (i === null ? i : (i + dir + count) % count));
+
+  // While open: Esc closes, arrows navigate, and body scroll is locked.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIndex(null);
+      else if (e.key === "ArrowRight") go(1);
+      else if (e.key === "ArrowLeft") go(-1);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, count]);
+
+  if (typeof document === "undefined") return null;
+  const cur = index !== null ? items[index] : null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && cur && (
+        <motion.div
+          className="fixed inset-0 z-[120] flex flex-col items-center justify-center gap-4 bg-black/85 p-4 backdrop-blur-sm sm:p-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduce ? 0 : 0.22 }}
+          onClick={() => setIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${title} screenshots`}
+        >
+          <button
+            type="button"
+            onClick={() => setIndex(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface/80 font-mono text-muted transition-colors hover:border-accent/60 hover:text-ink"
+          >
+            ✕
+          </button>
+
+          {count > 1 && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous screenshot"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go(-1);
+                }}
+                className="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface/80 text-xl text-muted transition-colors hover:border-accent/60 hover:text-ink sm:left-5"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                aria-label="Next screenshot"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  go(1);
+                }}
+                className="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-line bg-surface/80 text-xl text-muted transition-colors hover:border-accent/60 hover:text-ink sm:right-5"
+              >
+                ›
+              </button>
+            </>
+          )}
+
+          <div
+            className="w-[min(94vw,1200px)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-line bg-bg shadow-2xl">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={index}
+                  className="absolute inset-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduce ? 0 : 0.2 }}
+                >
+                  <Image
+                    src={cur.src}
+                    alt={`${title} — ${cur.label}`}
+                    fill
+                    sizes="94vw"
+                    className="object-contain"
+                    priority
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between font-mono text-xs text-muted">
+              <span className="truncate text-body">{cur.label}</span>
+              <span className="shrink-0 pl-3">
+                {(index ?? 0) + 1} / {count}
+              </span>
+            </div>
+          </div>
+
+          {count > 1 && (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {items.map((g, i) => (
+                <button
+                  key={g.src}
+                  type="button"
+                  aria-label={`Go to ${g.label}`}
+                  aria-current={i === index}
+                  onClick={() => setIndex(i)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === index
+                      ? "w-6 bg-accent"
+                      : "w-2.5 bg-faint/60 hover:bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+}
+
 function ProjectShowcase({
   p,
   index,
@@ -964,6 +1138,7 @@ function ProjectShowcase({
 }) {
   const reduce = usePrefersReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [lb, setLb] = useState<number | null>(null);
   const even = index % 2 === 0;
   // On lg, alternate which side the screenshot sits on. Mobile always stacks
   // screenshot-on-top (natural DOM order).
@@ -1003,54 +1178,92 @@ function ProjectShowcase({
   return (
     <Reveal>
       <article className="group grid items-center gap-6 lg:grid-cols-2 lg:gap-9">
-        {/* Browser-framed demo preview (decorative — the live site opens from
-            the "Live demo" button, not by clicking the frame). */}
-        <motion.div
-          whileHover={
-            reduce
-              ? undefined
-              : {
-                  y: -6,
-                  boxShadow:
-                    "0 0 0 1px rgba(34,197,94,0.32), 0 16px 42px -14px rgba(34,197,94,0.45)",
-                }
-          }
-          transition={{ type: "spring", stiffness: 260, damping: 22 }}
-          className={`${imgOrder} overflow-hidden rounded-xl border border-line bg-surface shadow-sm transition-colors hover:border-accent/50`}
-        >
-          <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-3 py-2">
-            <span className="h-2 w-2 rounded-full bg-faint/70" />
-            <span className="h-2 w-2 rounded-full bg-accent/70" />
-            <span className="h-2 w-2 rounded-full bg-accent-2/70" />
-            <span className="ml-2 truncate font-mono text-[11px] text-muted">
-              {p.domain}
-            </span>
-          </div>
-          <div className="relative aspect-[16/10] overflow-hidden bg-bg">
-            {p.video ? (
-              <video
-                ref={videoRef}
-                src={p.video}
-                poster={p.shot}
-                muted
-                loop
-                playsInline
-                preload="none"
-                controls={reduce}
-                aria-label={`${p.title} demo`}
-                className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-              />
-            ) : (
-              <Image
-                src={p.shot}
-                alt={`${p.title} live preview`}
-                fill
-                sizes="(max-width: 1024px) 100vw, 42vw"
-                className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-              />
-            )}
-          </div>
-        </motion.div>
+        {/* Screenshot column — framed demo on top, then a thumbnail gallery
+            that opens a lightbox. On lg the gallery fills the space next to the
+            taller text column so the row never reads as empty. */}
+        <div className={`${imgOrder} flex flex-col gap-4`}>
+          {/* Browser-framed demo preview (decorative — the live site opens from
+              the "Live demo" button, not by clicking the frame). */}
+          <motion.div
+            whileHover={
+              reduce
+                ? undefined
+                : {
+                    y: -6,
+                    boxShadow:
+                      "0 0 0 1px rgba(34,197,94,0.32), 0 16px 42px -14px rgba(34,197,94,0.45)",
+                  }
+            }
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm transition-colors hover:border-accent/50"
+          >
+            <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-3 py-2">
+              <span className="h-2 w-2 rounded-full bg-faint/70" />
+              <span className="h-2 w-2 rounded-full bg-accent/70" />
+              <span className="h-2 w-2 rounded-full bg-accent-2/70" />
+              <span className="ml-2 truncate font-mono text-[11px] text-muted">
+                {p.domain}
+              </span>
+            </div>
+            <div className="relative aspect-[16/10] overflow-hidden bg-bg">
+              {p.video ? (
+                <video
+                  ref={videoRef}
+                  src={p.video}
+                  poster={p.shot}
+                  muted
+                  loop
+                  playsInline
+                  preload="none"
+                  controls={reduce}
+                  aria-label={`${p.title} demo`}
+                  className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                />
+              ) : (
+                <Image
+                  src={p.shot}
+                  alt={`${p.title} live preview`}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 42vw"
+                  className="object-cover object-top transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                />
+              )}
+            </div>
+          </motion.div>
+
+          {/* Thumbnail gallery — click any shot to open the lightbox */}
+          {p.gallery.length > 0 && (
+            <ul
+              className={`grid gap-3 ${
+                p.gallery.length === 2 ? "grid-cols-2" : "grid-cols-3"
+              }`}
+            >
+              {p.gallery.map((g, i) => (
+                <li key={g.src}>
+                  <button
+                    type="button"
+                    onClick={() => setLb(i)}
+                    aria-label={`View screenshot: ${g.label}`}
+                    className="group/thumb relative block aspect-[16/10] w-full overflow-hidden rounded-lg border border-line bg-bg transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                  >
+                    <Image
+                      src={g.src}
+                      alt={`${p.title} — ${g.label}`}
+                      fill
+                      sizes="(max-width: 1024px) 32vw, 15vw"
+                      className="object-cover object-top transition-transform duration-500 ease-out group-hover/thumb:scale-[1.06]"
+                    />
+                    <span className="pointer-events-none absolute inset-0 flex items-end bg-gradient-to-t from-black/75 via-black/5 to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover/thumb:opacity-100">
+                      <span className="truncate font-mono text-[10px] text-white/90">
+                        {g.label}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         {/* Project detail */}
         <div className={txtOrder}>
@@ -1120,6 +1333,13 @@ function ProjectShowcase({
             </a>
           </div>
         </div>
+
+        <Lightbox
+          items={p.gallery}
+          title={p.title}
+          index={lb}
+          setIndex={setLb}
+        />
       </article>
     </Reveal>
   );
