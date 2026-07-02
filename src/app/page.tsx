@@ -17,6 +17,7 @@ import { createPortal } from "react-dom";
 import {
   motion,
   AnimatePresence,
+  useMotionValue,
 } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { SiGithub, SiGmail } from "react-icons/si";
@@ -40,6 +41,12 @@ const DotGrid = dynamic(() => import("./DotGrid"), {
 const MatrixRain = dynamic(() => import("./MatrixRain"), {
   ssr: false,
 });
+// Playful phosphor characters — a droid that rappels the right margin as you
+// move through the deck, and a bug that roams the viewport greeting the cursor.
+// Desktop-only, purely decorative, so they load after hydration like the
+// canvases above.
+const RappelDroid = dynamic(() => import("./RappelDroid"), { ssr: false });
+const WalkingBug = dynamic(() => import("./WalkingBug"), { ssr: false });
 const HeroTerminal = dynamic(() => import("./HeroTerminal"), {
   ssr: false,
   loading: () => (
@@ -159,11 +166,11 @@ const PROJECTS = [
     problem:
       "Help travellers pick a destination and find people to explore it with.",
     highlights: [
-      "Built in a team of four — owned the React front end",
-      "Destination discovery with travel-companion matching",
-      "React SPA on a Node/Express API",
+      "Team of four with real git flow — feature branches, PRs, merged the final releases",
+      "Owned a full-stack slice — city discovery, trip join/leave, live trip chat",
+      "Socket.IO room-per-trip chat persisting history to MongoDB",
     ],
-    role: "Team of 4 · front end",
+    role: "Team of 4 · full-stack slice",
     context: "General Assembly · 2025",
     stack: ["React", "Node.js", "Express"],
     live: "https://meet2explore.netlify.app/",
@@ -238,12 +245,13 @@ const COLD_APIS: Record<string, string> = {
   "https://meet2explore.netlify.app/": "https://meet2explore-17e5b6e60cab.herokuapp.com/",
 };
 
-// Featured engineering "case file" for CryptoFlow, shown as extra tabs on its
-// kiosk frame. Every line is grounded in the actual repo
-// (github.com/Toshkee/CryptoFlow — its docs/DECISIONS.md, the futures/markets
-// apps and the CI test suite). Don't add claims that aren't in the code.
+// Engineering "case files", shown as extra tabs on each project's kiosk
+// frame. Every line is grounded in the actual repos (cloned + mined) — the
+// arch trees, the "what broke" notes and the code excerpts all point at real
+// files. Don't add claims that aren't in the code.
 const CRYPTOFLOW_CASE = {
   // Lines are kept ≤ ~42 chars so nothing clips at the kiosk frame width.
+  codeFile: "close.py",
   arch: `browser ── react 19 + vite SPA
  │  wss → binance
  │   ticker · depth20 · kline · aggTrade
@@ -300,14 +308,243 @@ wallet.balance += credited
 wallet.save()`,
 };
 
+// Ronin Duel — grounded in github.com/Toshkee/Ronin-Duel (src/core, the
+// vitest suite and .github/workflows/deploy.yml).
+const RONIN_CASE = {
+  codeFile: "Fighter.ts",
+  arch: `browser ── phaser 4 + vite, strict TS
+ │  scenes: boot → menu → fight → result
+ │
+ ├ core/ — zero phaser imports
+ │   combat.ts  pure rules engine
+ │    AABB hits · chip damage · rounds
+ │    16 unit tests, run in plain node
+ │   input.ts  one seam, 5 actions
+ │    keyboard · touch · AI all write
+ │    {left,right,jump,attack,block}
+ │   Fighter.ts  explicit FSM
+ │    idle/run/jump/attack/hurt/dead
+ │
+ ├ AIController — reactive policy
+ │   distance bands · cooldowns
+ │   easy / normal / hard tiers
+ └ audio — 100% synthesized web audio
+     zero sound files shipped`,
+  notes: `## what broke, what I did about it
+
+- game logic tangled with the
+  renderer can't be tested. the
+  combat core is pure TS — no
+  phaser, no DOM — so hit math,
+  chip damage and round rules run
+  as 16 vitest cases in node.
+
+- one swing dealt damage on every
+  overlapping frame. hitboxes now
+  live only on the active window
+  of the attack anim, a hasHit
+  latch caps each swing at one
+  hit, and victims get 0.35s of
+  i-frames.
+
+- the CPU can't cheat: the AI
+  writes the same five input
+  actions a keyboard would — the
+  fighter can't tell them apart.
+
+- CI gates every push: lint,
+  tsc --noEmit, vitest, build —
+  then deploys to github pages.`,
+  code: `// core/Fighter.ts — one hit per swing
+/** True only on the active frames
+ *  of a swing that hasn't
+ *  connected yet. */
+isHitActive(): boolean {
+  if (this.state !== 'attack'
+      || this.hasHit) return false;
+  const p = this.attackDuration > 0
+    ? this.attackElapsed
+        / this.attackDuration
+    : 0;
+  return p >= this.config
+               .attack.activeStart
+      && p <= this.config
+               .attack.activeEnd;
+}
+
+markConnected(): void {
+  this.hasHit = true;
+}`,
+};
+
+// Arc — grounded in github.com/Toshkee/anime-watchlist (lib/anilist, the
+// server actions, prisma/schema.prisma; v1 preserved on legacy-express).
+const ARC_CASE = {
+  codeFile: "watchlist.ts",
+  arch: `browser ── next 16 app router (RSC)
+ │  no client → AniList calls, ever
+ │
+ ├ lib/anilist/
+ │   client.ts  fetch + data cache
+ │    per-query TTLs · cache tags
+ │    429 retry-after · backoff
+ │   normalize.ts  raw → UI contract
+ │
+ ├ server actions ("use server")
+ │   session → requireUserId()
+ │   zod-parsed input · revalidate
+ │
+ ├ auth — edge/node split
+ │   proxy.ts guards /library /stats
+ │   prisma adapter + bcrypt (node)
+ │
+ └ postgres (neon) · prisma
+     Title cache · 7-day TTL
+     entries @@unique(user, title)`,
+  notes: `## what broke, what I did about it
+
+- v1 (express/mongo) had an IDOR:
+  any signed-in user could edit
+  anyone's list by guessing an id.
+  every mutation is now scoped —
+  updateMany({ userId, titleId })
+  with the id read from the
+  session, never from the client.
+
+- v1 wiped the DB on every
+  dashboard load and copied title
+  data per user. now: one cached
+  Title row per anime, a unique
+  (user, title) watchlist entry.
+
+- ongoing shows (one piece) have
+  no episode total, so progress
+  couldn't be clamped. the server
+  re-derives the real ceiling
+  from nextAiringEpisode - 1.
+
+- CI runs lint, tsc and vitest,
+  then playwright against a real
+  postgres service container.`,
+  code: `// actions/watchlist.ts — save progress
+export async function
+updateEntryAction(input: unknown) {
+  const userId = await requireUserId();
+  const { titleId, ...patch } =
+    watchlistUpdateSchema.parse(input);
+
+  // ongoing shows report no fixed
+  // total — re-derive the ceiling.
+  if (patch.progress != null) {
+    const title =
+      await ensureTitleCached(titleId);
+    const cap = title?.episodes ?? null;
+    patch.progress = cap != null
+      ? Math.min(patch.progress, cap)
+      : Math.max(0, patch.progress);
+  }
+
+  await updateEntry(
+    userId, titleId, patch);
+  revalidateFor(titleId);
+  return { ok: true as const };
+}`,
+};
+
+// Meet2Explore — grounded in Toshkee/Meet2Explore-{Backend,Frontend}; the
+// team-of-4 split is from git blame, so nothing here claims teammates' work.
+const M2E_CASE = {
+  codeFile: "trips.js",
+  arch: `netlify ── react 19 SPA (vite)
+ │  services/ per-domain axios
+ │   clients · bearer JWT per call
+ │  sockets/ one io() singleton
+ │   dev/prod url switch
+ │
+ └─ heroku ── express 5 + mongoose
+     ├ auth  bcrypt + jwt (30d)
+     │   protect → req.user
+     ├ trips  join / leave / byCity
+     │   idempotent participants[]
+     ├ messages  history REST
+     └ socket.io  room per trip
+         activity_\${id} · persisted
+         to mongo · system msgs
+
+team of 4 · feature branches + PRs
+my slice: discovery → join → chat`,
+  notes: `## built with a team of four
+
+- nine days, real git flow:
+  feature branches, PRs, merge
+  conflicts and all. I merged the
+  final PRs on both repos and
+  wired the prod URLs + heroku
+  Procfile.
+
+- my vertical slice, client and
+  server: browse trips by city,
+  join/leave with idempotent
+  server checks, and a live
+  room-per-trip chat persisting
+  every message to mongo.
+
+- own-message alignment broke:
+  mongo ObjectId !== string. both
+  tiers now normalize userId with
+  String() before comparing.
+
+- socket listeners leaked across
+  route changes — named handlers
+  + socket.off cleanup in the
+  effect fixed it.`,
+  code: `// tripController.js — join a trip
+export async function joinTrip(req, res) {
+  try {
+    const trip =
+      await Trip.findById(req.params.id);
+
+    if (!trip) {
+      return res.status(404).json({
+        message: "Trip not found",
+      });
+    }
+
+    // idempotent: joining twice
+    // doesn't duplicate you
+    if (trip.participants
+        .includes(req.user._id)) {
+      return res.json(
+        { message: "Already joined" });
+    }
+
+    trip.participants.push(req.user._id);
+    await trip.save();
+
+    res.json({ success: true, trip });
+  } catch (err) {
+    res.status(500)
+      .json({ message: err.message });
+  }
+}`,
+};
+
 type CaseFile = typeof CRYPTOFLOW_CASE;
 type CaseTab = "demo" | "arch" | "notes" | "code";
 const CASE_TABS: { key: CaseTab; file: string }[] = [
   { key: "demo", file: "demo.mp4" },
   { key: "arch", file: "arch.txt" },
   { key: "notes", file: "notes.md" },
-  { key: "code", file: "close.py" },
+  // the code tab's filename comes from each case file (codeFile)
+  { key: "code", file: "" },
 ];
+
+const CASES: Record<string, CaseFile> = {
+  CryptoFlow: CRYPTOFLOW_CASE,
+  "Ronin Duel": RONIN_CASE,
+  "Arc — Anime Tracker": ARC_CASE,
+  Meet2Explore: M2E_CASE,
+};
 
 type Job = {
   role: string;
@@ -1311,7 +1548,7 @@ function ProjectShowcase({
                           : "text-muted hover:text-ink"
                       }`}
                     >
-                      {t.file}
+                      {t.key === "code" ? caseFile.codeFile : t.file}
                     </button>
                   ))}
                 </span>
@@ -1340,7 +1577,9 @@ function ProjectShowcase({
                         <div
                           key={i}
                           className={
-                            ln.trimStart().startsWith("#")
+                            ln.trimStart().startsWith("#") ||
+                            ln.trimStart().startsWith("//") ||
+                            ln.trimStart().startsWith("*")
                               ? "italic text-faint"
                               : undefined
                           }
@@ -1576,7 +1815,7 @@ const Work = memo(function Work() {
       >
         <ProjectShowcase
           p={p}
-          caseFile={p.title === "CryptoFlow" ? CRYPTOFLOW_CASE : undefined}
+          caseFile={CASES[p.title]}
         />
       </motion.div>
 
@@ -1964,6 +2203,20 @@ function SectionDeck({
   const indexRef = useRef(index);
   const lockRef = useRef(false); // true during a transition (prevents skips)
   const accRef = useRef(0); // accumulated wheel intent at a boundary
+  // Momentum guard: one flick must flip ONE section. macOS inertial wheel
+  // events keep arriving for ~1-2s — longer than the 650ms lock — so after a
+  // flip the wheel is DISARMED and the tail swallowed. Re-arming can't use
+  // per-event delta/gap checks: the entrance animation janks the main thread
+  // and Chrome then delivers the tail COALESCED — few events carrying summed
+  // deltas and ~200ms timestamp gaps that mimic a fresh flick (this was the
+  // double-flip bug). Velocity is coalesce-proof (summed delta over a summed
+  // window ≈ true tail speed) and a momentum tail only ever slows down — so
+  // only clear evidence of NEW input re-arms: a speed jump past the decaying
+  // envelope, silence longer than any jank hiccup, or the tail aging out.
+  const armedRef = useRef(true);
+  const lastWheelT = useRef(0); // e.timeStamp of the previous wheel event
+  const envRef = useRef(0); // decaying envelope of recent wheel speed (px/ms)
+  const flipAt = useRef(0); // performance.now() of the last flip
 
   useEffect(() => {
     indexRef.current = index;
@@ -1982,6 +2235,8 @@ function SectionDeck({
       setDir(target > cur ? 1 : -1);
       lockRef.current = true;
       accRef.current = 0;
+      armedRef.current = false; // swallow the rest of the current gesture
+      flipAt.current = performance.now();
       // Matches the enter-transition duration so one gesture advances one section.
       window.setTimeout(() => {
         lockRef.current = false;
@@ -2055,6 +2310,31 @@ function SectionDeck({
     const onWheel = (e: WheelEvent) => {
       if (e.ctrlKey) return; // pinch / ctrl+wheel zoom, not navigation
       if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; // horizontal pan
+      const gap = e.timeStamp - lastWheelT.current;
+      lastWheelT.current = e.timeStamp;
+      const speed = Math.abs(e.deltaY) / Math.max(gap, 8); // px/ms
+      const env = envRef.current * Math.exp(-gap / 350);
+      envRef.current = Math.max(env, speed);
+      // Post-flip momentum: fully inert. It must not flip again OR nudge any
+      // inner scroll (one gesture = one action) — see armedRef above.
+      if (!armedRef.current) {
+        const newGesture =
+          e.timeStamp - flipAt.current > 1700 || // any tail is long dead
+          gap > 400 || // silence longer than any coalesced jank hiccup
+          speed > Math.max(0.3, env * 1.7); // sharp speed-up = fresh flick
+        if (!newGesture) {
+          e.preventDefault();
+          return;
+        }
+        armedRef.current = true;
+        accRef.current = 0;
+        if (gap > 400 && Math.abs(e.deltaY) < 80) {
+          // sub-notch first delta after a real pause is a gesture-start
+          // crumb — count from the next event (mouse notches pass through)
+          e.preventDefault();
+          return;
+        }
+      }
       const down = e.deltaY > 0;
       if (canConsume(e.target, down)) {
         accRef.current = 0;
@@ -2193,6 +2473,18 @@ export default function Home() {
   const [index, setIndex] = useState(0);
   const activeId = NAV[index].id;
 
+  // Playful characters are a desktop-only, non-reduced-motion garnish. The
+  // deck has no window scroll, so the droid rappels off active-section progress
+  // instead: a MotionValue that steps 0→1 as you advance sections (each jump
+  // spikes its velocity → triggers a backflip).
+  const isDesktop = useIsDesktop();
+  const reduced = usePrefersReducedMotion();
+  const showChars = isDesktop && !reduced;
+  const deckProgress = useMotionValue(0);
+  useEffect(() => {
+    deckProgress.set(NAV.length > 1 ? index / (NAV.length - 1) : 0);
+  }, [index, deckProgress]);
+
   // Wake the sleeping free-tier demo APIs as soon as anyone lands: by the time
   // a visitor reaches Work and clicks a live demo, the backend is already up
   // instead of eating its cold start in front of them. no-cors — the response
@@ -2237,6 +2529,16 @@ export default function Home() {
         projects={PROJECTS}
       />
       <AskPanel />
+
+      {/* Ambient characters: droid rappels the right margin (z-30, above the
+          deck content, below the terminal/ask/nav/boot); bug roams over the
+          text (z-30) and dips behind it (z-6, above the matrix-rain bg). */}
+      {showChars && (
+        <>
+          <RappelDroid progress={deckProgress} zIndex={30} edge="clamp(8px, 2vw, 40px)" />
+          <WalkingBug overZ={30} underZ={-6} />
+        </>
+      )}
     </>
   );
 }
