@@ -1318,7 +1318,7 @@ function Lightbox({
   index,
   setIndex,
 }: {
-  items: { src: string; label: string }[];
+  items: { src: string; label: string; video?: boolean; poster?: string }[];
   title: string;
   index: number | null;
   setIndex: Dispatch<SetStateAction<number | null>>;
@@ -1333,16 +1333,23 @@ function Lightbox({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
+      // Arrows on a focused <video> seek it — don't also switch items.
+      const onVideo =
+        (e.target as HTMLElement | null)?.tagName === "VIDEO";
       if (e.key === "Escape") setIndex(null);
-      else if (e.key === "ArrowRight") go(1);
-      else if (e.key === "ArrowLeft") go(-1);
+      else if (e.key === "ArrowRight" && !onVideo) go(1);
+      else if (e.key === "ArrowLeft" && !onVideo) go(-1);
     };
     window.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Modal flag: page-level key handlers (kiosk ←/→, deck PageUp/Down)
+    // check this so they don't switch content under the open lightbox.
+    document.body.dataset.lightbox = "1";
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
+      delete document.body.dataset.lightbox;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, count]);
@@ -1362,7 +1369,8 @@ function Lightbox({
           onClick={() => setIndex(null)}
           role="dialog"
           aria-modal="true"
-          aria-label={`${title} screenshots`}
+          aria-label={`${title} media`}
+          data-deck-ignore
         >
           <button
             type="button"
@@ -1377,7 +1385,7 @@ function Lightbox({
             <>
               <button
                 type="button"
-                aria-label="Previous screenshot"
+                aria-label="Previous media"
                 onClick={(e) => {
                   e.stopPropagation();
                   go(-1);
@@ -1388,7 +1396,7 @@ function Lightbox({
               </button>
               <button
                 type="button"
-                aria-label="Next screenshot"
+                aria-label="Next media"
                 onClick={(e) => {
                   e.stopPropagation();
                   go(1);
@@ -1414,14 +1422,30 @@ function Lightbox({
                   exit={{ opacity: 0 }}
                   transition={{ duration: reduce ? 0 : 0.2 }}
                 >
-                  <Image
-                    src={cur.src}
-                    alt={`${title} — ${cur.label}`}
-                    fill
-                    sizes="94vw"
-                    className="object-contain"
-                    priority
-                  />
+                  {cur.video ? (
+                    // Muted autoplay so it starts without a gesture; native
+                    // controls for scrubbing/pausing (demos have no audio).
+                    <video
+                      src={cur.src}
+                      poster={cur.poster}
+                      controls
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      aria-label={`${title} — ${cur.label}`}
+                      className="h-full w-full object-contain"
+                    />
+                  ) : (
+                    <Image
+                      src={cur.src}
+                      alt={`${title} — ${cur.label}`}
+                      fill
+                      sizes="94vw"
+                      className="object-contain"
+                      priority
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -1474,6 +1498,15 @@ function ProjectShowcase({
   const [lb, setLb] = useState<number | null>(null);
   const [tab, setTab] = useState<CaseTab>("demo");
 
+  // The demo video leads the lightbox reel (index 0) with the screenshots
+  // after it — thumbnail clicks offset accordingly.
+  const lbItems = p.video
+    ? [
+        { src: p.video, label: "demo.mp4", video: true, poster: p.shot },
+        ...p.gallery,
+      ]
+    : p.gallery;
+
   // Only play the demo while it is actually on screen. Under reduced motion we
   // never autoplay and expose native controls instead so it stays reachable.
   // `tab` is a dep: switching back to the demo tab mounts a NEW video element
@@ -1505,6 +1538,21 @@ function ProjectShowcase({
     };
   }, [reduce, tab]);
 
+  // While the lightbox is open its copy of the video plays — pause the inline
+  // one behind the overlay (two decoders otherwise), resume on close.
+  const lbWasOpen = useRef(false);
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (lb !== null) {
+      lbWasOpen.current = true;
+      v.pause();
+    } else if (lbWasOpen.current) {
+      lbWasOpen.current = false;
+      if (!reduce && !document.hidden) v.play().catch(() => {});
+    }
+  }, [lb, reduce]);
+
   const caseText =
     tab === "arch" ? caseFile?.arch : tab === "notes" ? caseFile?.notes : null;
 
@@ -1514,8 +1562,8 @@ function ProjectShowcase({
             project) beside a thumbnail strip; the strip drops under the frame
             on small screens. Clicking a thumb opens the lightbox. */}
         <div className="grid items-start gap-3 lg:grid-cols-[1.55fr_0.6fr]">
-          {/* Browser-framed demo preview (decorative — the live site opens from
-              the "Live demo" button, not by clicking the frame). */}
+          {/* Browser-framed demo preview — clicking the video pops it into the
+              lightbox (the live site still opens from the "Live demo" button). */}
           {/* Hover feedback is colour-only (border + glow): no scale/lift, so
               nothing zooms or bobs while content scrolls under the cursor. */}
           <motion.div
@@ -1590,18 +1638,45 @@ function ProjectShowcase({
                     : caseText}
                 </pre>
               ) : p.video ? (
-                <video
-                  ref={videoRef}
-                  src={p.video}
-                  poster={p.shot}
-                  muted
-                  loop
-                  playsInline
-                  preload="none"
-                  controls={reduce}
-                  aria-label={`${p.title} demo`}
-                  className="h-full w-full object-cover object-top"
-                />
+                <>
+                  <video
+                    ref={videoRef}
+                    src={p.video}
+                    poster={p.shot}
+                    muted
+                    loop
+                    playsInline
+                    preload="none"
+                    controls={reduce}
+                    aria-label={`${p.title} demo`}
+                    className="h-full w-full object-cover object-top"
+                  />
+                  {/* Click to pop the demo into the lightbox — same as the
+                      screenshot thumbs. Under reduced motion the video shows
+                      native controls, so only a corner button is overlaid
+                      (a full-surface one would block them). */}
+                  {reduce ? (
+                    <button
+                      type="button"
+                      onClick={() => setLb(0)}
+                      aria-label={`Expand ${p.title} demo video`}
+                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-md border border-line bg-bg/80 font-mono text-sm text-muted transition-colors hover:border-accent/60 hover:text-ink"
+                    >
+                      ⤢
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setLb(0)}
+                      aria-label={`Expand ${p.title} demo video`}
+                      className="group/expand absolute inset-0 cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/60"
+                    >
+                      <span className="pointer-events-none absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-md border border-line bg-bg/80 font-mono text-sm text-ink opacity-0 transition-opacity duration-300 group-hover/expand:opacity-100">
+                        ⤢
+                      </span>
+                    </button>
+                  )}
+                </>
               ) : (
                 <Image
                   src={p.shot}
@@ -1626,7 +1701,7 @@ function ProjectShowcase({
                 <li key={g.src}>
                   <button
                     type="button"
-                    onClick={() => setLb(i)}
+                    onClick={() => setLb(p.video ? i + 1 : i)}
                     aria-label={`View screenshot: ${g.label}`}
                     className="group/thumb relative block aspect-video w-full overflow-hidden rounded-lg border border-line bg-bg transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
@@ -1713,7 +1788,7 @@ function ProjectShowcase({
         </div>
 
         <Lightbox
-          items={p.gallery}
+          items={lbItems}
           title={p.title}
           index={lb}
           setIndex={setLb}
@@ -1744,6 +1819,7 @@ const Work = memo(function Work() {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (document.body.dataset.lightbox) return; // arrows belong to the modal
       if (e.key === "ArrowRight") {
         e.preventDefault();
         goProject(1);
@@ -2216,7 +2292,10 @@ function SectionDeck({
   const armedRef = useRef(true);
   const lastWheelT = useRef(0); // e.timeStamp of the previous wheel event
   const envRef = useRef(0); // decaying envelope of recent wheel speed (px/ms)
-  const flipAt = useRef(0); // performance.now() of the last flip
+  const disarmAt = useRef(0); // timeStamp of the last disarm (flip or edge-hit)
+  const lastConsumeT = useRef(0); // timeStamp of the last wheel spent on inner scroll
+  const stallEnd = useRef(0); // heartbeat: when the last main-thread stall ended
+  const lastFrameT = useRef(0); // heartbeat: when the last frame rendered
 
   useEffect(() => {
     indexRef.current = index;
@@ -2236,7 +2315,7 @@ function SectionDeck({
       lockRef.current = true;
       accRef.current = 0;
       armedRef.current = false; // swallow the rest of the current gesture
-      flipAt.current = performance.now();
+      disarmAt.current = performance.now();
       // Matches the enter-transition duration so one gesture advances one section.
       window.setTimeout(() => {
         lockRef.current = false;
@@ -2287,6 +2366,23 @@ function SectionDeck({
     return () => document.removeEventListener("click", onClick);
   }, [change, desktop]);
 
+  // Stall heartbeat. A section entrance mounts the whole section in one long
+  // task; wheel events queued behind it are delivered coalesced, with gaps and
+  // speeds that mimic a lifted finger or a fresh flick. The re-arm logic below
+  // must know "that silence was a stall" — so record when long frames end.
+  useEffect(() => {
+    if (!desktop) return;
+    let raf = 0;
+    lastFrameT.current = performance.now();
+    const tick = (t: number) => {
+      if (t - lastFrameT.current > 120) stallEnd.current = t;
+      lastFrameT.current = t;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [desktop]);
+
   // Wheel anywhere on the page drives the deck — not just over the stage, so
   // scrolling over the left rail works too. If anything under the cursor can
   // still scroll (the section itself, the rail on short viewports, or a panel
@@ -2294,6 +2390,12 @@ function SectionDeck({
   // only when nothing can, accumulate intent and flip.
   useEffect(() => {
     if (!desktop) return;
+    // The section scroller's pb-28 padding is dead space: a section whose
+    // CONTENT fits still "overflows" by up to ~112px, and scrolling that
+    // invisible remainder makes a flick feel dead. Within EDGE_SLACK of an
+    // edge the scroller counts as AT it (< the padding, so no content is
+    // ever cut off). Real inner panels keep the exact 1px edge.
+    const EDGE_SLACK = 80;
     const canConsume = (target: EventTarget | null, down: boolean) => {
       let el = target instanceof Element ? target : null;
       for (; el; el = el.parentElement) {
@@ -2301,8 +2403,10 @@ function SectionDeck({
         if (el.scrollHeight <= el.clientHeight + 1) continue;
         const { overflowY } = getComputedStyle(el);
         if (overflowY !== "auto" && overflowY !== "scroll") continue;
-        const atTop = el.scrollTop <= 0;
-        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        const slack = el === scrollerRef.current ? EDGE_SLACK : 1;
+        const atTop = el.scrollTop <= slack - 1;
+        const atBottom =
+          el.scrollTop + el.clientHeight >= el.scrollHeight - slack;
         if (down ? !atBottom : !atTop) return true;
       }
       return false;
@@ -2313,15 +2417,30 @@ function SectionDeck({
       const gap = e.timeStamp - lastWheelT.current;
       lastWheelT.current = e.timeStamp;
       const speed = Math.abs(e.deltaY) / Math.max(gap, 8); // px/ms
-      const env = envRef.current * Math.exp(-gap / 350);
+      // A stall (a section-entrance mount is one long task) starves frames and
+      // delivers the queued tail coalesced — gaps and speeds that mimic fresh
+      // input. While one is in flight, gap/speed signals are artifacts: don't
+      // decay the envelope across the stall and don't re-arm from them.
+      // (Queued input fires BEFORE the heartbeat's next tick, so "no frame
+      // rendered for >120ms as of now" counts as a stall too.)
+      const stalled =
+        performance.now() - lastFrameT.current > 120 ||
+        (stallEnd.current > 0 && e.timeStamp - stallEnd.current < 250);
+      const env = envRef.current * (stalled ? 1 : Math.exp(-gap / 350));
       envRef.current = Math.max(env, speed);
       // Post-flip momentum: fully inert. It must not flip again OR nudge any
       // inner scroll (one gesture = one action) — see armedRef above.
       if (!armedRef.current) {
+        const sinceDisarm = e.timeStamp - disarmAt.current;
         const newGesture =
-          e.timeStamp - flipAt.current > 1700 || // any tail is long dead
-          gap > 400 || // silence longer than any coalesced jank hiccup
-          speed > Math.max(0.3, env * 1.7); // sharp speed-up = fresh flick
+          sinceDisarm > 1700 || // any tail is long dead
+          (!stalled &&
+            // A flip fires ~60px INTO a flick — the same gesture is still
+            // accelerating on the pad, so for a beat no speed-up is trustable:
+            // a human can't lift and re-flick this fast.
+            sinceDisarm > 350 &&
+            (gap > 400 || // real silence — the finger lifted
+              speed > Math.max(0.3, env * 1.7))); // sharp speed-up = fresh flick
         if (!newGesture) {
           e.preventDefault();
           return;
@@ -2338,6 +2457,7 @@ function SectionDeck({
       const down = e.deltaY > 0;
       if (canConsume(e.target, down)) {
         accRef.current = 0;
+        lastConsumeT.current = e.timeStamp;
         return; // room to scroll under the cursor — let it
       }
       e.preventDefault();
@@ -2347,15 +2467,25 @@ function SectionDeck({
       const el = scrollerRef.current;
       if (el) {
         const atEdge = down
-          ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
-          : el.scrollTop <= 0;
+          ? el.scrollTop + el.clientHeight >= el.scrollHeight - EDGE_SLACK
+          : el.scrollTop <= EDGE_SLACK - 1;
         if (!atEdge) {
           el.scrollTop += e.deltaY;
           accRef.current = 0;
+          lastConsumeT.current = e.timeStamp;
           return;
         }
       }
       if (lockRef.current) return;
+      // One gesture = one action extends to inner scroll: a flick that just
+      // scrolled content into its edge must not ALSO flip — swallow the rest
+      // of its momentum; a fresh gesture (pause or sharp flick) advances.
+      if (e.timeStamp - lastConsumeT.current < 300) {
+        armedRef.current = false;
+        disarmAt.current = e.timeStamp;
+        accRef.current = 0;
+        return;
+      }
       accRef.current += e.deltaY;
       if (Math.abs(accRef.current) > 60) go(down ? 1 : -1);
     };
@@ -2395,6 +2525,7 @@ function SectionDeck({
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
+      if (document.body.dataset.lightbox) return; // modal owns the keyboard
       // ←/→ belong to the Work kiosk (project switching) — sections advance
       // via wheel, PageUp/Down, nav and the terminal.
       if (e.key === "PageDown") {

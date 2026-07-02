@@ -313,6 +313,9 @@ export default function WalkingBug({
           rotate: spriteRotate,
           scale,
           transformOrigin: "center",
+          // Own compositor layer: the sprite moves every frame — without it
+          // each step repaints whatever page area it crawls across.
+          willChange: "transform",
         }}
       >
         <BugSprite walk={walk} />

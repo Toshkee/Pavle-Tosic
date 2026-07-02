@@ -254,30 +254,25 @@ export default function RappelDroid({
     animate(startle, [0, 1, 0], { duration: 0.55, ease: "easeOut" });
   };
 
+  // Cursor tracking aims at the CACHED eye position (refreshed by the 200ms
+  // watcher below) — reading getBoundingClientRect on every mousemove while
+  // Motion writes styles each frame forces synchronous layouts of the whole
+  // page and janks scrolling.
+  const eyePos = useRef({ x: 0, y: 0, ok: false });
   useEffect(() => {
-    let raf = 0;
     const onMove = (e: MouseEvent) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const el = droidRef.current;
-        if (!el) return;
-        const r = el.getBoundingClientRect();
-        const cx = r.left + r.width / 2;
-        const cy = r.top + r.height * 0.28; // eyes sit near the top
-        const dx = e.clientX - cx;
-        const dy = e.clientY - cy;
-        const dist = Math.hypot(dx, dy) || 1;
-        pupilTX.set(clamp((dx / dist) * 2.6, -2.6, 2.6));
-        pupilTY.set(clamp((dy / dist) * 2.6, -2.6, 2.6));
-        nearCursor.current = dist < 150;
-        cheerTarget.set(nearCursor.current || nearBug.current ? 1 : 0); // wave hello
-      });
+      const eye = eyePos.current;
+      if (!eye.ok) return;
+      const dx = e.clientX - eye.x;
+      const dy = e.clientY - eye.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      pupilTX.set(clamp((dx / dist) * 2.6, -2.6, 2.6));
+      pupilTY.set(clamp((dy / dist) * 2.6, -2.6, 2.6));
+      nearCursor.current = dist < 150;
+      cheerTarget.set(nearCursor.current || nearBug.current ? 1 : 0); // wave hello
     };
     window.addEventListener("mousemove", onMove, { passive: true });
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(raf);
-    };
+    return () => window.removeEventListener("mousemove", onMove);
   }, [pupilTX, pupilTY, cheerTarget]);
 
   // Doze off when the page goes quiet; wake on any real user activity.
@@ -304,14 +299,21 @@ export default function RappelDroid({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
 
-  // Buddy watch: publish our position and keep an eye out for the bug — look
-  // down at it and wave when it comes close (its visit also wakes us).
+  // Buddy watch: refresh the cached eye position (the page's ONLY recurring
+  // layout read for the droid), publish our position and keep an eye out for
+  // the bug — look down at it and wave when it comes close (its visit also
+  // wakes us). Runs under reduced-motion too, so pupils still aim right.
   useEffect(() => {
-    if (reduce) return;
-    const id = setInterval(() => {
+    const tick = () => {
       const el = droidRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
+      eyePos.current = {
+        x: r.left + r.width / 2,
+        y: r.top + r.height * 0.28, // eyes sit near the top
+        ok: true,
+      };
+      if (reduce) return;
       droidPos.x = r.left + r.width / 2;
       droidPos.y = r.top + r.height / 2;
       droidPos.active = true;
@@ -327,7 +329,9 @@ export default function RappelDroid({
         pupilTY.set(clamp((dy / d) * 2.6, -2.6, 2.6));
       }
       cheerTarget.set(near || nearCursor.current ? 1 : 0);
-    }, 200);
+    };
+    tick(); // aim the pupils correctly before the first interval fires
+    const id = setInterval(tick, 200);
     return () => {
       clearInterval(id);
       droidPos.active = false;
@@ -356,6 +360,9 @@ export default function RappelDroid({
           height: "100%",
           transformOrigin: "top center",
           rotate: swing,
+          // Own compositor layer: this column rotates every frame (idle
+          // pendulum) — without it each tick repaints the page behind it.
+          willChange: "transform",
         }}
       >
         {/* thread — lets go during a flip */}
@@ -374,7 +381,14 @@ export default function RappelDroid({
         {/* droid at the end of the thread (hops on `y`, somersaults inside) */}
         <motion.div
           ref={droidRef}
-          style={{ position: "absolute", top: topPct, left: "50%", x: "-50%", y: lift }}
+          style={{
+            position: "absolute",
+            top: topPct,
+            left: "50%",
+            x: "-50%",
+            y: lift,
+            willChange: "transform",
+          }}
         >
           <motion.div style={{ rotate: flipRot }}>
             <MiniDroid

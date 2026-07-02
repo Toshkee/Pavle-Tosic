@@ -14,6 +14,11 @@ const MAX_LINES = 5;
 
 type Line = { id: string; time: string; text: string; repo: string };
 
+// Fetched once per page load: the section deck REMOUNTS this component on
+// every visit to the GitHub section, and each visit must not re-hit the API
+// (rate limit) or re-jank the section entrance with a fetch + state update.
+let cachedLines: Line[] | null = null;
+
 function relTime(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 3600) return `${Math.max(1, Math.floor(s / 60))}m`;
@@ -69,9 +74,10 @@ function describe(e: GhEvent): string | null {
 
 function GitHubFeed() {
   const reduce = useReducedMotion();
-  const [lines, setLines] = useState<Line[]>([]);
+  const [lines, setLines] = useState<Line[]>(cachedLines ?? []);
 
   useEffect(() => {
+    if (cachedLines) return;
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 6000);
     fetch(`https://api.github.com/users/${USER}/events/public?per_page=30`, {
@@ -92,6 +98,7 @@ function GitHubFeed() {
           });
           if (out.length >= MAX_LINES) break;
         }
+        cachedLines = out;
         setLines(out);
       })
       .catch(() => {

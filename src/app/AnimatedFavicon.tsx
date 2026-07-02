@@ -28,17 +28,13 @@ export default function AnimatedFavicon() {
     const cy = size / 2;
     const R = size * 0.44;
 
-    let raf = 0;
-    let start = 0;
-    let last = 0;
-
-    const draw = (now: number) => {
-      raf = requestAnimationFrame(draw);
-      if (!start) start = now;
-      if (now - last < 90) return; // throttle to ~11 fps — a favicon needs no more
-      last = now;
-      const pulse = 0.5 + 0.5 * Math.sin(((now - start) / 1000) * 2.0);
-
+    // Pre-render ONE full pulse cycle to cached data-URLs, then just cycle
+    // them on a timer. Re-drawing + re-encoding a PNG on a rAF loop for the
+    // whole session (the old approach) is steady background main-thread work.
+    const FRAMES = 35; // ≈ the old 90ms/frame cadence over one π-second cycle
+    const PERIOD = Math.PI * 1000; // ms — sin(2t) repeats every π seconds
+    const frames: string[] = [];
+    const draw = (pulse: number) => {
       ctx.clearRect(0, 0, size, size);
       // pulsing phosphor glow
       const glow = ctx.createRadialGradient(cx, cy, R * 0.3, cx, cy, R * 1.3);
@@ -67,13 +63,21 @@ export default function AnimatedFavicon() {
       ctx.shadowBlur = size * 0.03 * (1 + pulse);
       ctx.fillText("PT", cx, cy + size * 0.02);
       ctx.shadowBlur = 0;
-
-      link.href = canvas.toDataURL("image/png");
     };
-    raf = requestAnimationFrame(draw);
+    for (let i = 0; i < FRAMES; i++) {
+      draw(0.5 + 0.5 * Math.sin(((i / FRAMES) * PERIOD * 2.0) / 1000));
+      frames.push(canvas.toDataURL("image/png"));
+    }
+
+    let frame = 0;
+    const id = setInterval(() => {
+      if (document.hidden) return; // costs nothing in the background
+      link.href = frames[frame];
+      frame = (frame + 1) % FRAMES;
+    }, Math.round(PERIOD / FRAMES));
 
     return () => {
-      cancelAnimationFrame(raf);
+      clearInterval(id);
       link.href = original; // restore the static coin
     };
   }, []);
