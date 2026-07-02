@@ -229,6 +229,33 @@ html.lenis body {
   }
 }
 
+/* Live market ticker (LiveTicker.tsx) — per-row tick flash. Direction is
+   encoded by BRIGHTNESS (bright phosphor = up, dim = down) so the ticker stays
+   inside the monochrome-green palette. The element is re-keyed on every tick to
+   replay the fade; JS omits it under reduced motion, so no global guard needed. */
+.market-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+.market-flash-up {
+  background: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  animation: market-flash 0.7s ease-out forwards;
+}
+.market-flash-down {
+  background: color-mix(in srgb, var(--color-muted) 45%, transparent);
+  animation: market-flash 0.7s ease-out forwards;
+}
+@keyframes market-flash {
+  from {
+    opacity: 0.42;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* ============ BOOT INTRO (BootIntro.tsx) ============ */
 /* The overlay is SSR-rendered, then JS plays/dismisses it. It fades + lifts
    away on `data-leaving`; the global reduced-motion rule zeroes the transition

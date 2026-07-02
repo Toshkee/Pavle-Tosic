@@ -15,7 +15,7 @@ import {
   useVelocity,
   type MotionValue,
 } from "framer-motion";
-import { bugPos, droidPos } from "./characterBus";
+import { bugPos, droidPos, pageCtx } from "./characterBus";
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
@@ -110,13 +110,11 @@ function MiniDroid({
 export default function RappelDroid({
   progress,
   zIndex = 50,
-  edge = "max(96px, 7vw)",
 }: {
   // Descent driver (0→1). Defaults to window scroll; the section-deck passes
   // its active-section progress instead (the page has no window scroll).
   progress?: MotionValue<number>;
   zIndex?: number;
-  edge?: string; // CSS `right` offset of the thread
 } = {}) {
   const reduce = useReducedMotion() ?? false;
   const droidRef = useRef<HTMLDivElement>(null);
@@ -124,18 +122,25 @@ export default function RappelDroid({
   const { scrollYProgress } = useScroll();
   const prog = progress ?? scrollYProgress;
 
-  // Rappel: descend from just under the nav to near the bottom on scroll.
-  const descendRaw = useTransform(prog, [0, 1], reduce ? [16, 16] : [3, 80]);
+  // Hang length: a long thread so the pendulum has room for a big Spider-Man
+  // arc. (Descends a little further with section progress; on a single section
+  // it just hangs at the long length.)
+  const descendRaw = useTransform(prog, [0, 1], reduce ? [16, 16] : [46, 72]);
   const descend = useSpring(descendRaw, { stiffness: 70, damping: 20, mass: 0.5 });
   const topPct = useMotionTemplate`${descend}%`;
 
-  // Swing: gentle idle pendulum + a kick from scroll velocity, pivoting from
-  // the nav anchor.
-  const idle = useTransform(time, (t) => (reduce ? 0 : Math.sin(t / 1000) * 2.4));
+  // Just hangs and sways: a gentle pendulum (two harmonics so it never looks
+  // like a metronome) plus a small kick from scroll velocity, pivoting from the
+  // nav anchor. No traveling / web-launch — he stays put and flips.
+  const idle = useTransform(time, (t) =>
+    reduce ? 0 : Math.sin(t / 720) * 15 + Math.sin(t / 1500) * 4
+  );
   const rawVel = useVelocity(prog);
   const vel = useSpring(rawVel, { stiffness: 80, damping: 16 });
-  const velRot = useTransform(vel, (v) => (reduce ? 0 : clamp(v * 7, -9, 9)));
-  const swing = useTransform([idle, velRot], (v: number[]) => clamp(v[0] + v[1], -8, 8));
+  const velRot = useTransform(vel, (v) => (reduce ? 0 : clamp(v * 7, -12, 12)));
+  const swing = useTransform([idle, velRot], (v: number[]) =>
+    clamp(v[0] + v[1], -24, 24)
+  );
 
   // Backflip: `flip` runs 0→1 for one somersault. Derived: a full spin, an
   // up-and-down hop, and the thread letting go mid-air.
@@ -157,11 +162,17 @@ export default function RappelDroid({
   const jolt = useMotionValue(0); // wake jolt: brief vertical hop
   const lift = useTransform([hop, jolt], (v: number[]) => v[0] + v[1]);
 
+  // Market mood: while the live ticker is on screen the droid reads it (see
+  // pageCtx.marketMood) — it does joy-flips on green and sags on red. `dismay`
+  // is the persistent red-market slump; the green reaction is the flip below.
+  const dismay = useMotionValue(0);
+  const dismaySpring = useSpring(dismay, { stiffness: 30, damping: 16 });
+
   const doFlip = () => {
     if (reduce || flipping.current || sleepingRef.current) return;
     flipping.current = true;
     animate(flip, 1, {
-      duration: 0.85,
+      duration: 0.8,
       ease: [0.45, 0, 0.55, 1],
       onComplete: () => {
         flip.set(0);
@@ -179,14 +190,26 @@ export default function RappelDroid({
     }
   });
 
-  // …and every so often on its own, just for joy.
+  // Flip often — it's the droid's whole vibe now (each flip re-webs and swings
+  // into a new arc, see doFlip).
   useEffect(() => {
     if (reduce) return;
     const id = setInterval(() => {
-      if (Math.random() < 0.55) doFlip();
-    }, 5600);
+      if (Math.random() < 0.8) doFlip();
+    }, 2600);
     return () => clearInterval(id);
     // doFlip is stable enough for a demo; reduce is the only real dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduce]);
+
+  // Green market → the droid backflips for joy (only while the live ticker is
+  // on screen feeding pageCtx.marketMood; it's 0 otherwise, so this stays idle).
+  useEffect(() => {
+    if (reduce) return;
+    const id = setInterval(() => {
+      if (pageCtx.marketMood > 0.35 && Math.random() < 0.6) doFlip();
+    }, 3800);
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
 
@@ -202,28 +225,40 @@ export default function RappelDroid({
     (1 + v[0] * 0.16) * (1 - v[1] * 0.18) * (1 + v[2] * 0.28)
   );
   const blink = useTransform(time, (t): number => (!reduce && t % 3800 < 130 ? 0.12 : 1));
-  const eyeSY = useTransform([blink, cheer, sleepySpring, startle], (v: number[]) =>
-    v[0] * (1 + v[1] * 0.16) * (1 - v[2] * 0.72) * (1 + v[3] * 0.35)
+  const eyeSY = useTransform(
+    [blink, cheer, sleepySpring, startle, dismaySpring],
+    (v: number[]) =>
+      v[0] *
+      (1 + v[1] * 0.16) *
+      (1 - v[2] * 0.72) *
+      (1 + v[3] * 0.35) *
+      (1 - v[4] * 0.32) // half-lidded when the market's red
   );
   const led = useTransform(time, (t) => (reduce ? 0.85 : 0.45 + 0.55 * Math.abs(Math.sin(t / 480))));
   const ledOut = useTransform([led, sleepySpring], (v: number[]) => v[0] * (1 - v[1] * 0.55));
 
   // Arms: idle sway + tuck-in during a flip + a cheerful raised wave when the
   // cursor (or the bug) is near + a sag while asleep.
-  const leftArm = useTransform([time, flip, cheer, sleepySpring], (v: number[]) => {
-    const [t, f, c, s] = v;
-    const swayL = reduce ? 0 : Math.sin(t / 700) * 5;
-    const tuckL = Math.sin(Math.PI * f) * 42;
-    const waveL = c * (90 + (reduce ? 0 : Math.sin(t / 110) * 16));
-    return swayL + tuckL + waveL - s * 12;
-  });
-  const rightArm = useTransform([time, flip, cheer, sleepySpring], (v: number[]) => {
-    const [t, f, c, s] = v;
-    const swayR = reduce ? 0 : Math.sin(t / 700 + Math.PI) * 5;
-    const tuckR = Math.sin(Math.PI * f) * -42;
-    const waveR = c * (-90 + (reduce ? 0 : Math.sin(t / 110 + 0.6) * 16));
-    return swayR + tuckR + waveR + s * 12;
-  });
+  const leftArm = useTransform(
+    [time, flip, cheer, sleepySpring, dismaySpring],
+    (v: number[]) => {
+      const [t, f, c, s, d] = v;
+      const swayL = reduce ? 0 : Math.sin(t / 700) * 5;
+      const tuckL = Math.sin(Math.PI * f) * 42;
+      const waveL = c * (90 + (reduce ? 0 : Math.sin(t / 110) * 16));
+      return swayL + tuckL + waveL - s * 12 - d * 24; // droop on red
+    }
+  );
+  const rightArm = useTransform(
+    [time, flip, cheer, sleepySpring, dismaySpring],
+    (v: number[]) => {
+      const [t, f, c, s, d] = v;
+      const swayR = reduce ? 0 : Math.sin(t / 700 + Math.PI) * 5;
+      const tuckR = Math.sin(Math.PI * f) * -42;
+      const waveR = c * (-90 + (reduce ? 0 : Math.sin(t / 110 + 0.6) * 16));
+      return swayR + tuckR + waveR + s * 12 + d * 24; // droop on red
+    }
+  );
 
   // Floating "z z" while asleep — two glyphs cycling up-and-away, phase-offset.
   const zPhase = (t: number, off: number) => ((t / 1300 + off) % 1 + 1) % 1;
@@ -269,7 +304,12 @@ export default function RappelDroid({
       pupilTX.set(clamp((dx / dist) * 2.6, -2.6, 2.6));
       pupilTY.set(clamp((dy / dist) * 2.6, -2.6, 2.6));
       nearCursor.current = dist < 150;
-      cheerTarget.set(nearCursor.current || nearBug.current ? 1 : 0); // wave hello
+      // wave hello — and keep waving on the About section (its greeter duty)
+      cheerTarget.set(
+        nearCursor.current || nearBug.current || pageCtx.section === "about"
+          ? 1
+          : 0
+      );
     };
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
@@ -317,6 +357,8 @@ export default function RappelDroid({
       droidPos.x = r.left + r.width / 2;
       droidPos.y = r.top + r.height / 2;
       droidPos.active = true;
+      // Live-market reaction: shoulders slump while the ticker shows red.
+      dismay.set(pageCtx.marketMood < -0.3 ? 1 : 0);
       if (!bugPos.active) return;
       const dx = bugPos.x - droidPos.x;
       const dy = bugPos.y - droidPos.y;
@@ -328,7 +370,9 @@ export default function RappelDroid({
         pupilTX.set(clamp((dx / d) * 2.6, -2.6, 2.6));
         pupilTY.set(clamp((dy / d) * 2.6, -2.6, 2.6));
       }
-      cheerTarget.set(near || nearCursor.current ? 1 : 0);
+      cheerTarget.set(
+        near || nearCursor.current || pageCtx.section === "about" ? 1 : 0
+      );
     };
     tick(); // aim the pupils correctly before the first interval fires
     const id = setInterval(tick, 200);
@@ -347,7 +391,9 @@ export default function RappelDroid({
         position: "fixed",
         top: NAV_H,
         bottom: 0,
-        right: edge,
+        // Anchored at screen centre so the big swing stays fully on-screen
+        // (it used to hang at the right edge and swing off).
+        left: "calc(50% - 48px)",
         width: 96,
         pointerEvents: "none",
         zIndex,

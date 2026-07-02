@@ -10,7 +10,7 @@ import {
   useSpring,
   useTransform,
 } from "framer-motion";
-import { bugPos, droidPos } from "./characterBus";
+import { bugPos, droidPos, pageCtx } from "./characterBus";
 
 /* A pixel "bug" (dev pun) that crawls all over the page — wandering the whole
    viewport in 2D, rotating to face where it's headed, ducking behind the text
@@ -105,6 +105,9 @@ export default function WalkingBug({
   const startledUntil = useRef(0); // click nearby → hop + dash away
   const visiting = useRef(false); // currently strolling over to the droid
   const nextVisit = useRef(0);
+  const visitingProject = useRef(false); // crawling onto the active project card
+  const nextProjectVisit = useRef(0);
+  const lastSection = useRef(""); // to notice section changes → spin
   const standing = useRef(false); // mirrors the .pt-stand class (freezes legs)
   const scale = useMotionValue(1); // top-down "hop" reads as a scale pulse
 
@@ -172,6 +175,14 @@ export default function WalkingBug({
 
     const startled = now < startledUntil.current;
 
+    // Notice a section change and celebrate the move with a little spin. Also
+    // drop any in-progress project visit so the next section is reconsidered.
+    if (pageCtx.section !== lastSection.current) {
+      if (lastSection.current) doSpin();
+      lastSection.current = pageCtx.section;
+      visitingProject.current = false;
+    }
+
     // If the cursor is nearby, trot toward it (curious, not scared) — unless
     // we just got spooked by a click.
     let following = false;
@@ -185,12 +196,34 @@ export default function WalkingBug({
       }
     }
 
-    // Every so often, stroll over to the droid and say hi.
-    if (!startled && !following && droidPos.active && now > nextVisit.current) {
-      visiting.current = true;
-      nextVisit.current = now + 16000 + Math.random() * 10000;
+    // On the Work section, crawl onto the active project card; elsewhere,
+    // occasionally stroll over to the droid to say hi. The project takes
+    // precedence there — it's the more contextual thing to do.
+    const onWork = pageCtx.section === "work" && pageCtx.project.active;
+    if (!startled && !following) {
+      if (onWork) {
+        if (!visitingProject.current && now > nextProjectVisit.current) {
+          visitingProject.current = true;
+          nextProjectVisit.current = now + 12000 + Math.random() * 8000;
+        }
+      } else if (
+        !visitingProject.current &&
+        droidPos.active &&
+        now > nextVisit.current
+      ) {
+        visiting.current = true;
+        nextVisit.current = now + 16000 + Math.random() * 10000;
+      }
     }
-    if (visiting.current && !following) {
+    if (visitingProject.current && !following) {
+      if (!onWork) visitingProject.current = false;
+      else
+        target.current = {
+          x: pageCtx.project.x - HALF,
+          y: pageCtx.project.y - HALF,
+        };
+    }
+    if (visiting.current && !following && !visitingProject.current) {
       if (!droidPos.active) visiting.current = false;
       // stand just under the droid (it hangs from its thread above)
       else target.current = { x: droidPos.x - HALF, y: droidPos.y + 34 - HALF };
@@ -214,6 +247,14 @@ export default function WalkingBug({
       setStanding(true);
       return;
     }
+    if (visitingProject.current && !following && dist < 34) {
+      // made it onto the card — spin hello, then perch on it a moment
+      visitingProject.current = false;
+      doSpin();
+      pauseUntil.current = now + 1500;
+      setStanding(true);
+      return;
+    }
     if (visiting.current && !following && dist < 34) {
       // made it to the droid — spin hello, then admire it for a moment
       visiting.current = false;
@@ -229,8 +270,16 @@ export default function WalkingBug({
     }
 
     setStanding(false);
-    // px/s: spooked dash > eager cursor-trot > droid stroll > wander
-    const speed = startled ? 250 : following ? 132 : visiting.current ? 112 : 92;
+    // px/s: spooked dash > eager cursor-trot > droid/project stroll > wander.
+    // Snappier across the board so it gets to the card fast.
+    const speed =
+      startled
+        ? 280
+        : following
+          ? 150
+          : visiting.current || visitingProject.current
+            ? 185
+            : 108;
     x.set(cx + (dx / dist) * speed * dt);
     y.set(cy + (dy / dist) * speed * dt);
 
@@ -293,13 +342,19 @@ export default function WalkingBug({
       const el = containerRef.current;
       if (!el) return;
       el.style.zIndex =
-        visiting.current || Math.random() < 0.5 ? String(overZ) : String(underZ);
+        visiting.current || visitingProject.current || Math.random() < 0.5
+          ? String(overZ)
+          : String(underZ);
     }, 3200);
     return () => clearInterval(id);
   }, [walk, overZ, underZ]);
 
   return (
-    <div ref={containerRef} aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: overZ }}>
+    <div
+      ref={containerRef}
+      aria-hidden
+      style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: overZ }}
+    >
       <style dangerouslySetInnerHTML={{ __html: KEYFRAMES }} />
       <motion.div
         style={{

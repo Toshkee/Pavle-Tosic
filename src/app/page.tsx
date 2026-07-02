@@ -24,6 +24,7 @@ import { SiGithub, SiGmail } from "react-icons/si";
 import { FaLinkedin } from "react-icons/fa";
 import GitHubGraph from "./GitHubGraph";
 import GitHubFeed from "./GitHubFeed";
+import { pageCtx } from "./characterBus";
 import BootIntro from "./BootIntro";
 import Terminal from "./Terminal";
 import AskPanel from "./AskPanel";
@@ -45,14 +46,19 @@ const MatrixRain = dynamic(() => import("./MatrixRain"), {
 // move through the deck, and a bug that roams the viewport greeting the cursor.
 // Desktop-only, purely decorative, so they load after hydration like the
 // canvases above.
-const RappelDroid = dynamic(() => import("./RappelDroid"), { ssr: false });
-const WalkingBug = dynamic(() => import("./WalkingBug"), { ssr: false });
+// The ambient cast (droid, bug + cat/daemon/ghost/slime) — each spawns only on
+// the section it hosts. Client-only + below the fold, so it loads post-hydration.
+const AmbientCast = dynamic(() => import("./AmbientCast"), { ssr: false });
 const HeroTerminal = dynamic(() => import("./HeroTerminal"), {
   ssr: false,
   loading: () => (
     <div className="h-[202px] rounded-xl border border-line bg-[#0a0e0b]" />
   ),
 });
+// Live Binance market feed for the CryptoFlow kiosk's "live" tab. Client-only
+// (WebSocket) and only mounts when that tab is opened, so it stays out of the
+// initial bundle like the canvases above.
+const LiveTicker = dynamic(() => import("./LiveTicker"), { ssr: false });
 
 // Make the bundled Devicon set available for synchronous SSR rendering.
 registerIcons();
@@ -530,7 +536,7 @@ export async function joinTrip(req, res) {
 };
 
 type CaseFile = typeof CRYPTOFLOW_CASE;
-type CaseTab = "demo" | "arch" | "notes" | "code";
+type CaseTab = "demo" | "arch" | "notes" | "code" | "live";
 const CASE_TABS: { key: CaseTab; file: string }[] = [
   { key: "demo", file: "demo.mp4" },
   { key: "arch", file: "arch.txt" },
@@ -538,6 +544,11 @@ const CASE_TABS: { key: CaseTab; file: string }[] = [
   // the code tab's filename comes from each case file (codeFile)
   { key: "code", file: "" },
 ];
+
+// Projects that expose a genuinely-live data tab (not a screenshot). Only
+// CryptoFlow does: its "live" tab streams the real Binance feed the app runs.
+const LIVE_TABBED = new Set<string>(["CryptoFlow"]);
+const LIVE_TAB: { key: CaseTab; file: string } = { key: "live", file: "markets.live" };
 
 const CASES: Record<string, CaseFile> = {
   CryptoFlow: CRYPTOFLOW_CASE,
@@ -1495,8 +1506,29 @@ function ProjectShowcase({
 }) {
   const reduce = usePrefersReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const [lb, setLb] = useState<number | null>(null);
   const [tab, setTab] = useState<CaseTab>("demo");
+
+  // Publish the demo frame's screen position so the ambient bug can crawl onto
+  // the active project card. Only this project's showcase is mounted at a time
+  // (the kiosk remounts per project), so the bug always tracks what's on screen.
+  useEffect(() => {
+    const publish = () => {
+      const el = frameRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      pageCtx.project.x = r.left + r.width / 2;
+      pageCtx.project.y = r.top + r.height / 2;
+      pageCtx.project.active = true;
+    };
+    publish();
+    const id = setInterval(publish, 250);
+    return () => {
+      clearInterval(id);
+      pageCtx.project.active = false;
+    };
+  }, []);
 
   // The demo video leads the lightbox reel (index 0) with the screenshots
   // after it — thumbnail clicks offset accordingly.
@@ -1506,6 +1538,10 @@ function ProjectShowcase({
         ...p.gallery,
       ]
     : p.gallery;
+
+  // CryptoFlow gets an extra "live" tab that streams the real Binance feed.
+  const caseTabs =
+    caseFile && LIVE_TABBED.has(p.title) ? [...CASE_TABS, LIVE_TAB] : CASE_TABS;
 
   // Only play the demo while it is actually on screen. Under reduced motion we
   // never autoplay and expose native controls instead so it stays reachable.
@@ -1567,6 +1603,7 @@ function ProjectShowcase({
           {/* Hover feedback is colour-only (border + glow): no scale/lift, so
               nothing zooms or bobs while content scrolls under the cursor. */}
           <motion.div
+            ref={frameRef}
             whileHover={
               reduce
                 ? undefined
@@ -1584,7 +1621,7 @@ function ProjectShowcase({
                 // The window dots are dropped here — four filenames need the
                 // full bar width at this frame size.
                 <span className="flex min-w-0 items-center gap-1 overflow-x-auto">
-                  {CASE_TABS.map((t) => (
+                  {caseTabs.map((t) => (
                     <button
                       key={t.key}
                       type="button"
@@ -1613,10 +1650,14 @@ function ProjectShowcase({
             </div>
             <div
               className={`relative overflow-hidden bg-bg ${
-                tab === "demo" || !caseFile ? "aspect-[16/10]" : ""
+                tab === "demo" || tab === "live" || !caseFile
+                  ? "aspect-[16/10]"
+                  : ""
               }`}
             >
-              {tab !== "demo" && caseFile ? (
+              {tab === "live" && caseFile ? (
+                <LiveTicker />
+              ) : tab !== "demo" && caseFile ? (
                 // Natural height (no aspect lock) so the whole file is
                 // readable without an inner scrollbar.
                 <pre className="overflow-x-auto p-4 font-mono text-[11px] leading-[1.6] text-body">
@@ -1727,7 +1768,7 @@ function ProjectShowcase({
         {/* Detail — full width below the media, so nothing reads as a
             squeezed side column. Role/context and the links live on the
             title line. */}
-        <div className="mt-6">
+        <div className="mt-4">
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
             <h3 className="font-display text-2xl font-bold text-ink">
               {p.title}
@@ -1764,7 +1805,7 @@ function ProjectShowcase({
             {p.blurb}
           </p>
           {p.highlights && (
-            <ul className="mt-4 space-y-1.5">
+            <ul className="mt-3 space-y-1">
               {p.highlights.map((h) => (
                 <li
                   key={h}
@@ -1775,7 +1816,7 @@ function ProjectShowcase({
               ))}
             </ul>
           )}
-          <ul className="mt-5 flex flex-wrap gap-2">
+          <ul className="mt-4 flex flex-wrap gap-2">
             {p.stack.map((s) => (
               <li
                 key={s}
@@ -1838,7 +1879,7 @@ const Work = memo(function Work() {
     <section
       id="work"
       aria-labelledby="work-heading"
-      className="relative py-14 lg:py-16"
+      className="relative py-14 lg:py-6"
     >
       <div className="stage-pool" aria-hidden />
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
@@ -1887,7 +1928,7 @@ const Work = memo(function Work() {
         }
         animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
         transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
-        className="mt-9"
+        className="mt-5"
       >
         <ProjectShowcase
           p={p}
@@ -1895,7 +1936,7 @@ const Work = memo(function Work() {
         />
       </motion.div>
 
-      <div className="mt-7 hidden font-mono text-[11px] text-faint lg:block">
+      <div className="mt-4 hidden font-mono text-[11px] text-faint lg:block">
         ← / → switch project
       </div>
     </section>
@@ -1956,7 +1997,7 @@ const Experience = memo(function Experience() {
     <section
       id="experience"
       aria-labelledby="experience-heading"
-      className="relative py-14 lg:py-20"
+      className="relative py-14 lg:py-10"
     >
       <div className="stage-pool" aria-hidden />
       <Reveal>
@@ -1965,7 +2006,7 @@ const Experience = memo(function Experience() {
       <RevealHeading
         id="experience-heading"
         text="Where I've been"
-        className="mt-5 mb-10 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+        className="mt-3 mb-6 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
       />
       <ol className="relative ml-2 pl-0">
         <motion.span
@@ -1977,7 +2018,7 @@ const Experience = memo(function Experience() {
           transition={{ duration: 0.9, ease: EASE }}
         />
         {EXPERIENCE.map((e, i) => (
-          <li key={e.role} className="relative pb-12 pl-8 last:pb-0">
+          <li key={e.role} className="relative pb-7 pl-8 last:pb-0">
             <span
               className={`absolute -left-[6.5px] top-1.5 h-3 w-3 rounded-full ring-4 ring-bg ${
                 e.current ? "bg-accent" : "bg-line-strong"
@@ -2616,6 +2657,34 @@ export default function Home() {
     deckProgress.set(NAV.length > 1 ? index / (NAV.length - 1) : 0);
   }, [index, deckProgress]);
 
+  // Publish the active section to the character bus so the ambient droid/bug
+  // can react to where the visitor is (a change cues a flip / spin).
+  useEffect(() => {
+    pageCtx.section = activeId;
+  }, [activeId]);
+
+  // Publish the deck content column's centre — the anchor an on-duty critter
+  // posts beside on its home section. Cheap: one element, polled slowly.
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const publish = () => {
+      const el = mainRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      pageCtx.content.x = r.left + r.width / 2;
+      pageCtx.content.y = r.top + r.height / 2;
+      pageCtx.content.active = true;
+    };
+    publish();
+    const id = setInterval(publish, 400);
+    window.addEventListener("resize", publish);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("resize", publish);
+      pageCtx.content.active = false;
+    };
+  }, []);
+
   // Wake the sleeping free-tier demo APIs as soon as anyone lands: by the time
   // a visitor reaches Work and clicks a live demo, the backend is already up
   // instead of eating its cold start in front of them. no-cors — the response
@@ -2644,6 +2713,7 @@ export default function Home() {
         <LeftRail active={activeId} />
         <main
           id="content"
+          ref={mainRef}
           tabIndex={-1}
           className="relative min-h-0 flex-1 outline-none"
         >
@@ -2661,14 +2731,11 @@ export default function Home() {
       />
       <AskPanel />
 
-      {/* Ambient characters: droid rappels the right margin (z-30, above the
-          deck content, below the terminal/ask/nav/boot); bug roams over the
-          text (z-30) and dips behind it (z-6, above the matrix-rain bg). */}
+      {/* Ambient characters: one host per section, spawning in as you arrive
+          and fading out as you leave (z-30 over content / z-6 under it, above
+          the matrix-rain bg; all below the terminal/ask/nav/boot). */}
       {showChars && (
-        <>
-          <RappelDroid progress={deckProgress} zIndex={30} edge="clamp(8px, 2vw, 40px)" />
-          <WalkingBug overZ={30} underZ={-6} />
-        </>
+        <AmbientCast activeId={activeId} deckProgress={deckProgress} />
       )}
     </>
   );
