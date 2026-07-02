@@ -1,4 +1,9 @@
-import { SYSTEM_PROMPT } from "../../profile";
+import {
+  SYSTEM_PROMPT,
+  FALLBACKS,
+  FALLBACK_NOTE,
+  FALLBACK_DEFAULT,
+} from "../../profile";
 
 /* POST /api/ask — proxies a grounded chat turn to the Gemini API. Runs
    server-side (on the Cloudflare Worker in production) so GEMINI_API_KEY never
@@ -169,7 +174,6 @@ export async function POST(req: Request): Promise<Response> {
   // client, so a recovered attempt still streams one clean, complete reply.
   const plan = [primaryModel, primaryModel, ...fallbackModels];
   let upstreamBody: ReadableStream<Uint8Array> | null = null;
-  let lastStatus = 0;
   for (let i = 0; i < plan.length; i++) {
     if (i > 0) await sleep(250 * i); // backoff: 250ms, 500ms, 750ms…
     const model = plan[i];
@@ -179,7 +183,6 @@ export async function POST(req: Request): Promise<Response> {
         upstreamBody = res.body;
         break;
       }
-      lastStatus = res.status;
       const detail = await res.text().catch(() => "");
       console.error(
         `Gemini API error (${model}, attempt ${i + 1}/${plan.length})`,
@@ -189,7 +192,6 @@ export async function POST(req: Request): Promise<Response> {
       // 400/401/403 won't fix themselves on retry — fail fast.
       if (!RETRYABLE_STATUS.has(res.status)) break;
     } catch (err) {
-      lastStatus = 0;
       console.error(
         `Ask route fetch failed (${model}, attempt ${i + 1}/${plan.length})`,
         err
@@ -198,13 +200,20 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   if (!upstreamBody) {
-    // Distinguish a temporary overload (503/429) so the client invites a retry
-    // instead of showing a dead-end "offline" error.
-    const overloaded = lastStatus === 503 || lastStatus === 429;
-    return Response.json(
-      { error: overloaded ? "overloaded" : "upstream" },
-      overloaded ? { status: 503, headers: { "Retry-After": "4" } } : { status: 502 }
-    );
+    // Gemini is unreachable (quota exhausted, outage) — degrade to a static
+    // grounded reply instead of an error, so the widget never looks dead to a
+    // visitor. The note is honest that the live model is down; the reply comes
+    // from the same facts the model would have used. Upstream statuses were
+    // already logged per attempt above.
+    const lastUser = messages[messages.length - 1].content;
+    const reply =
+      FALLBACKS.find((f) => f.match.test(lastUser))?.reply ?? FALLBACK_DEFAULT;
+    return new Response(FALLBACK_NOTE + reply, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
   }
 
   // Re-stream Gemini's SSE to the client as plain text: parse each `data:`

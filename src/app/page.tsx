@@ -231,6 +231,15 @@ const PROJECTS = [
   },
 ];
 
+// PROJECTS[].live → its backend API, hosted on a free tier that sleeps when
+// idle (CryptoFlow: Render spins down after ~15 min, cold start ~30-60s;
+// Meet2Explore: Heroku eco dyno). Pinged awake on page load (see Home) so a
+// "Live demo" click later hits a warm backend instead of hanging.
+const COLD_APIS: Record<string, string> = {
+  "https://cryptofloww.netlify.app/": "https://cryptoflow-api-cx07.onrender.com/",
+  "https://meet2explore.netlify.app/": "https://meet2explore-17e5b6e60cab.herokuapp.com/",
+};
+
 // Featured engineering "case file" for CryptoFlow, shown as extra tabs on its
 // kiosk frame. Every line is grounded in the actual repo
 // (github.com/Toshkee/CryptoFlow — its docs/DECISIONS.md, the futures/markets
@@ -1446,6 +1455,12 @@ function ProjectShowcase({
               </a>
             </span>
           </div>
+          {COLD_APIS[p.live] && (
+            <p className="mt-2 font-mono text-xs text-faint">
+              demo api runs on a free tier — the first request may take a
+              moment to wake
+            </p>
+          )}
           <p className="mt-3 max-w-[70ch] text-[15px] leading-[1.7] text-body">
             {p.blurb}
           </p>
@@ -2154,9 +2169,24 @@ function SectionDeck({
    PAGE
 ───────────────────────────────────────────────────────────── */
 
+// Once per page load, not per Home mount (StrictMode double-invokes effects).
+let apisWarmed = false;
+
 export default function Home() {
   const [index, setIndex] = useState(0);
   const activeId = NAV[index].id;
+
+  // Wake the sleeping free-tier demo APIs as soon as anyone lands: by the time
+  // a visitor reaches Work and clicks a live demo, the backend is already up
+  // instead of eating its cold start in front of them. no-cors — the response
+  // is opaque and irrelevant, only the hit matters.
+  useEffect(() => {
+    if (apisWarmed) return;
+    apisWarmed = true;
+    for (const url of Object.values(COLD_APIS)) {
+      fetch(url, { mode: "no-cors", cache: "no-store" }).catch(() => {});
+    }
+  }, []);
 
   return (
     <>

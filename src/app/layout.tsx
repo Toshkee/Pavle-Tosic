@@ -20,6 +20,11 @@ const mononoki = localFont({
 const DESCRIPTION =
   "Software developer at Infostream (Montenegro · Remote) — Oracle APEX, .NET, C#, JavaScript/TypeScript and React. I build web apps front to back.";
 
+// Web analytics: Cloudflare Web Analytics is enabled on the zone (dashboard →
+// Analytics & Logs → Web Analytics, site pavletosic.com) and injects its RUM
+// beacon at the edge for real-browser requests. Do NOT also add the manual
+// beacon <script> here — a second beacon would double-count every visit.
+
 export const metadata: Metadata = {
   title: "Pavle Tošić — Software Developer",
   description: DESCRIPTION,
