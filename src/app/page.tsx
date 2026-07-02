@@ -17,8 +17,6 @@ import { createPortal } from "react-dom";
 import {
   motion,
   AnimatePresence,
-  useMotionValue,
-  useSpring,
 } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { SiGithub, SiGmail } from "react-icons/si";
@@ -576,38 +574,25 @@ function RevealHeading({
 }
 
 // Element that eases toward the cursor on hover.
-function Magnetic({
+// Press-scale feedback only. This replaced the magnetic cursor-pull, which
+// slid buttons out of their own glow-hover ring mid-spring — and cursor-
+// reactive motion is out anyway (same call as the spotlight grid / hover
+// zooms). Don't reintroduce the pull.
+function Tap({
   children,
   className = "",
-  strength = 0.35,
 }: {
   children: ReactNode;
   className?: string;
-  strength?: number;
 }) {
   const reduce = usePrefersReducedMotion();
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 200, damping: 14, mass: 0.4 });
-  const sy = useSpring(y, { stiffness: 200, damping: 14, mass: 0.4 });
-
   if (reduce) return <span className={className}>{children}</span>;
 
   return (
     <motion.span
       className={`inline-block ${className}`}
-      style={{ x: sx, y: sy }}
       whileTap={{ scale: 0.96 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        x.set((e.clientX - (r.left + r.width / 2)) * strength);
-        y.set((e.clientY - (r.top + r.height / 2)) * strength);
-      }}
-      onMouseLeave={() => {
-        x.set(0);
-        y.set(0);
-      }}
     >
       {children}
     </motion.span>
@@ -868,22 +853,22 @@ function LeftRail({ active }: { active: string }) {
           variants={ITEM_VARIANTS}
           className="mt-7 flex flex-wrap items-center gap-3"
         >
-          <Magnetic strength={0.3}>
+          <Tap>
             <a
               href="#work"
-              className="glow-hover block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg hover:bg-accent-hover"
+              className="glow-hover block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
             >
               View work
             </a>
-          </Magnetic>
-          <Magnetic strength={0.3}>
+          </Tap>
+          <Tap>
             <a
               href="#contact"
               className="glow-hover block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
             >
               Get in touch
             </a>
-          </Magnetic>
+          </Tap>
           <a
             href={RESUME}
             download
@@ -1743,21 +1728,6 @@ const Contact = memo(function Contact() {
     }
   };
 
-  const channels = [
-    {
-      Icon: SiGithub,
-      label: "GitHub",
-      value: "github.com/Toshkee",
-      href: SOCIAL.github,
-    },
-    {
-      Icon: FaLinkedin,
-      label: "LinkedIn",
-      value: "in/tosiicp",
-      href: SOCIAL.linkedin,
-    },
-  ];
-
   const copyGlyph = (
     <svg
       viewBox="0 0 24 24"
@@ -1805,111 +1775,158 @@ const Contact = memo(function Contact() {
         text="Let's build something."
         className="mt-5 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
       />
-      <Reveal delay={0.1}>
-        <p className="mt-5 max-w-[60ch] text-base leading-[1.7] text-body">
-          Open to full-time or part-time, remote. The fastest way to reach me is
-          email — I usually reply within a day.
-        </p>
-      </Reveal>
-
-      <div className="mt-12 grid items-start gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
-        {/* Primary: the email, copyable, with one clear send CTA. */}
-        <Reveal delay={0.15}>
-          <div>
-            <div className="font-mono text-xs text-muted">drop me a line</div>
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
-              <a
-                href={`mailto:${SOCIAL.email}`}
-                className="link-underline font-mono text-xl font-medium text-accent-ink sm:text-2xl"
-              >
-                {SOCIAL.email}
-              </a>
-              <motion.button
-                type="button"
-                onClick={copyEmail}
-                aria-label="Copy email address"
-                whileTap={reduce ? undefined : { scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                className="glow-hover inline-flex w-[5.4rem] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-bg/40 px-3 py-1.5 font-mono text-xs font-medium text-muted hover:border-accent/60 hover:text-ink"
-              >
-                {reduce ? (
-                  <span
-                    className={`inline-flex items-center gap-1.5 ${copied ? "text-accent-ink" : ""}`}
-                  >
-                    {copied ? checkGlyph : copyGlyph}
-                    {copied ? "copied" : "copy"}
-                  </span>
-                ) : (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={copied ? "done" : "idle"}
-                      initial={{ opacity: 0, scale: 0.85 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.16, ease: EASE }}
+      {/* The payoff of the `./contact.sh` kicker: the section reads as the
+          script's OUTPUT — one keyed line per channel, straight on the stage.
+          Lines reveal in sequence (no per-char typing — that's banned on page
+          text; the stagger alone reads as a script printing). */}
+      <div className="mt-10 max-w-2xl">
+        <ul className="divide-y divide-line/50">
+          <li>
+            <Reveal delay={0.12}>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-2 py-4 sm:px-3">
+                <span className="w-20 shrink-0 font-mono text-xs text-faint">
+                  email
+                </span>
+                <a
+                  href={`mailto:${SOCIAL.email}`}
+                  className="link-underline font-mono text-base font-medium text-accent-ink sm:text-lg"
+                >
+                  {SOCIAL.email}
+                </a>
+                <motion.button
+                  type="button"
+                  onClick={copyEmail}
+                  aria-label="Copy email address"
+                  whileTap={reduce ? undefined : { scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  className="glow-hover inline-flex w-[5.4rem] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-bg/40 px-3 py-1.5 font-mono text-xs font-medium text-muted hover:border-accent/60 hover:text-ink"
+                >
+                  {reduce ? (
+                    <span
                       className={`inline-flex items-center gap-1.5 ${copied ? "text-accent-ink" : ""}`}
                     >
                       {copied ? checkGlyph : copyGlyph}
                       {copied ? "copied" : "copy"}
-                    </motion.span>
-                  </AnimatePresence>
-                )}
-              </motion.button>
-            </div>
+                    </span>
+                  ) : (
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={copied ? "done" : "idle"}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.16, ease: EASE }}
+                        className={`inline-flex items-center gap-1.5 ${copied ? "text-accent-ink" : ""}`}
+                      >
+                        {copied ? checkGlyph : copyGlyph}
+                        {copied ? "copied" : "copy"}
+                      </motion.span>
+                    </AnimatePresence>
+                  )}
+                </motion.button>
+              </div>
+            </Reveal>
             <span aria-live="polite" className="sr-only">
               {copied ? "Email address copied to clipboard" : ""}
             </span>
-            <div className="mt-7 flex flex-wrap items-center gap-4">
-              <Magnetic strength={0.3}>
-                <a
-                  href={`mailto:${SOCIAL.email}`}
-                  className="glow-hover inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-bg hover:bg-accent-hover"
+          </li>
+          <li>
+            <Reveal delay={0.17}>
+              <a
+                href={SOCIAL.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-accent-soft sm:px-3"
+              >
+                <span className="w-20 shrink-0 font-mono text-xs text-faint">
+                  github
+                </span>
+                <span className="font-mono text-sm text-body transition-colors group-hover:text-ink">
+                  github.com/Toshkee
+                </span>
+                <span
+                  className="ml-auto text-muted transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-accent-ink"
+                  aria-hidden
                 >
-                  <SiGmail aria-hidden /> Email me
-                </a>
-              </Magnetic>
+                  ↗
+                </span>
+              </a>
+            </Reveal>
+          </li>
+          <li>
+            <Reveal delay={0.22}>
+              <a
+                href={SOCIAL.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-accent-soft sm:px-3"
+              >
+                <span className="w-20 shrink-0 font-mono text-xs text-faint">
+                  linkedin
+                </span>
+                <span className="font-mono text-sm text-body transition-colors group-hover:text-ink">
+                  in/tosiicp
+                </span>
+                <span
+                  className="ml-auto text-muted transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-accent-ink"
+                  aria-hidden
+                >
+                  ↗
+                </span>
+              </a>
+            </Reveal>
+          </li>
+          <li>
+            <Reveal delay={0.27}>
               <a
                 href={RESUME}
                 download
-                className="link-underline inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-accent-ink"
+                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-accent-soft sm:px-3"
               >
-                Download CV <span aria-hidden>↓</span>
+                <span className="w-20 shrink-0 font-mono text-xs text-faint">
+                  cv
+                </span>
+                <span className="font-mono text-sm text-body transition-colors group-hover:text-ink">
+                  pavle-tosic-cv.pdf
+                </span>
+                <span
+                  className="ml-auto text-muted transition-transform duration-300 group-hover:translate-y-0.5 group-hover:text-accent-ink"
+                  aria-hidden
+                >
+                  ↓
+                </span>
               </a>
-            </div>
+            </Reveal>
+          </li>
+          <li>
+            <Reveal delay={0.32}>
+              <div className="flex flex-wrap items-center gap-x-4 px-2 py-4 sm:px-3">
+                <span className="w-20 shrink-0 font-mono text-xs text-faint">
+                  reply
+                </span>
+                <span className="font-mono text-sm text-body">
+                  usually within 24h
+                </span>
+              </div>
+            </Reveal>
+          </li>
+        </ul>
+
+        <Reveal delay={0.4}>
+          <div className="mt-5 px-2 font-mono text-xs text-faint sm:px-3">
+            <span className="text-accent">✓</span> exit 0
           </div>
         </Reveal>
 
-        {/* Channels as a divided list — straight on the stage, no card. */}
-        <Reveal delay={0.2}>
-          <ul className="divide-y divide-line/60">
-            {channels.map(({ Icon: I, label, value, href }) => (
-              <li key={label}>
-                <a
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex items-center gap-4 rounded-xl px-2 py-4 transition-colors hover:bg-accent-soft sm:px-4"
-                >
-                  <I
-                    className="shrink-0 text-xl text-muted transition-colors group-hover:text-accent-ink"
-                    aria-hidden
-                  />
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-ink">{label}</div>
-                    <div className="truncate font-mono text-xs text-muted">
-                      {value}
-                    </div>
-                  </div>
-                  <span
-                    className="ml-auto text-muted transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-accent-ink"
-                    aria-hidden
-                  >
-                    ↗
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul>
+        <Reveal delay={0.46} className="mt-10">
+          <Tap>
+            <a
+              href={`mailto:${SOCIAL.email}`}
+              className="glow-hover inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
+            >
+              <SiGmail aria-hidden /> Email me
+            </a>
+          </Tap>
         </Reveal>
       </div>
     </section>
