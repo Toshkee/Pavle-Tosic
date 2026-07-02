@@ -7,7 +7,10 @@ import { SiGithub } from "react-icons/si";
    base and framed in the same terminal-window chrome as the Stack/Work panels.
    Data: github-contributions-api.jogruber.de (public, no auth), fetched on the
    client with a timeout + graceful fallback so a third-party outage never
-   breaks the page. Cells fade in on a short contained diagonal wave. */
+   breaks the page. Fetched with no-store (the browser's HTTP cache served
+   days-stale counts) behind a short module-level TTL cache, since the deck
+   remounts this section on every flip. Cells fade in on a short contained
+   diagonal wave. */
 
 const USER = "Toshkee";
 const PROFILE = "https://github.com/Toshkee";
@@ -23,19 +26,30 @@ const LEVEL_COLORS = [
 
 type Day = { date: string; count: number; level: number };
 
+// Module-level cache: instant on quick deck flips (state seeds from it on
+// remount), refetched after the TTL / on a fresh page load, so the count
+// tracks GitHub near-live. Only ever populated client-side.
+let cached: { days: Day[]; total: number; at: number } | null = null;
+const CACHE_TTL = 5 * 60_000;
+const freshCache = () =>
+  cached && Date.now() - cached.at < CACHE_TTL ? cached : null;
+
 export default function GitHubGraph() {
-  const [days, setDays] = useState<Day[] | null>(null);
-  const [total, setTotal] = useState<number | null>(null);
+  const [days, setDays] = useState<Day[] | null>(() => freshCache()?.days ?? null);
+  const [total, setTotal] = useState<number | null>(
+    () => freshCache()?.total ?? null
+  );
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    if (freshCache()) return; // state already seeded from the cache
     let alive = true;
     const ctrl = new AbortController();
     // Bound the third-party call: fall through to the graceful state if it hangs.
     const timeout = setTimeout(() => ctrl.abort(), 6000);
     fetch(`https://github-contributions-api.jogruber.de/v4/${USER}?y=last`, {
       signal: ctrl.signal,
-      cache: "force-cache",
+      cache: "no-store",
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("bad status"))))
       .then((j: { total?: Record<string, number>; contributions: Day[] }) => {
@@ -48,10 +62,21 @@ export default function GitHubGraph() {
           now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
         const cutoff = `${startYear}-09-01`;
         const list = all.filter((d) => d.date >= cutoff);
+        const sum = list.reduce((s, d) => s + (d.count || 0), 0);
+        cached = { days: list, total: sum, at: Date.now() };
         setDays(list);
-        setTotal(list.reduce((s, d) => s + (d.count || 0), 0));
+        setTotal(sum);
       })
-      .catch(() => alive && setFailed(true))
+      .catch(() => {
+        if (!alive) return;
+        // An expired cache still beats an empty section on a network hiccup.
+        if (cached) {
+          setDays(cached.days);
+          setTotal(cached.total);
+        } else {
+          setFailed(true);
+        }
+      })
       .finally(() => clearTimeout(timeout));
     return () => {
       alive = false;

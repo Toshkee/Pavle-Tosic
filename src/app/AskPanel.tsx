@@ -248,7 +248,8 @@ function AskPanel() {
         )}
       </AnimatePresence>
 
-      {/* panel */}
+      {/* panel — data-deck-ignore: the deck's window-level wheel handler
+          leaves this panel's scroll alone (see SectionDeck). */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -266,6 +267,7 @@ function AskPanel() {
                 ? { bottom: kb.inset + 12, maxHeight: kb.height - 24 }
                 : undefined
             }
+            data-deck-ignore
             className="fixed bottom-20 right-4 z-[60] flex h-[min(70vh,560px)] w-[min(94vw,400px)] flex-col overflow-hidden rounded-xl border border-accent/30 bg-[#0a0e0b] shadow-2xl sm:right-6"
           >
             {/* header (window chrome) */}

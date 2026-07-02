@@ -528,7 +528,12 @@ function Terminal({
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 print:hidden">
+    // data-deck-ignore: the deck's window-level wheel handler leaves this
+    // panel's scroll alone (see SectionDeck).
+    <div
+      data-deck-ignore
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-50 print:hidden"
+    >
       <div className="pointer-events-auto mx-auto max-w-6xl px-5 sm:px-8">
         <div className="overflow-hidden rounded-t-xl border border-b-0 border-line bg-[#0a0e0b] shadow-[0_-10px_40px_-12px_rgba(0,0,0,0.6)]">
           {/* window chrome — only when open */}

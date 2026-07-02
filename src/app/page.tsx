@@ -2000,29 +2000,55 @@ function SectionDeck({
     return () => document.removeEventListener("click", onClick);
   }, [change, desktop]);
 
-  // Wheel over the stage: scroll within a tall section; at its edge, accumulate
-  // intent then flip. Scoped to the stage so scrolling the Terminal/Ask panels
-  // (fixed, outside the stage) is never hijacked.
+  // Wheel anywhere on the page drives the deck — not just over the stage, so
+  // scrolling over the left rail works too. If anything under the cursor can
+  // still scroll (the section itself, the rail on short viewports, or a panel
+  // marked data-deck-ignore like the Terminal/Ask), let it consume the wheel;
+  // only when nothing can, accumulate intent and flip.
   useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
+    if (!desktop) return;
+    const canConsume = (target: EventTarget | null, down: boolean) => {
+      let el = target instanceof Element ? target : null;
+      for (; el; el = el.parentElement) {
+        if (el.hasAttribute("data-deck-ignore")) return true;
+        if (el.scrollHeight <= el.clientHeight + 1) continue;
+        const { overflowY } = getComputedStyle(el);
+        if (overflowY !== "auto" && overflowY !== "scroll") continue;
+        const atTop = el.scrollTop <= 0;
+        const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+        if (down ? !atBottom : !atTop) return true;
+      }
+      return false;
+    };
     const onWheel = (e: WheelEvent) => {
-      const el = scrollerRef.current;
-      if (!el) return;
+      if (e.ctrlKey) return; // pinch / ctrl+wheel zoom, not navigation
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; // horizontal pan
       const down = e.deltaY > 0;
-      const atTop = el.scrollTop <= 0;
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-      if ((down && !atBottom) || (!down && !atTop)) {
+      if (canConsume(e.target, down)) {
         accRef.current = 0;
-        return; // room to scroll inside the section — let it
+        return; // room to scroll under the cursor — let it
       }
       e.preventDefault();
+      // Cursor away from the stage (rail, nav, margins): drive the active
+      // section's own scroll first, so a tall section behaves the same
+      // no matter where the wheel happens; flip only at its edge.
+      const el = scrollerRef.current;
+      if (el) {
+        const atEdge = down
+          ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+          : el.scrollTop <= 0;
+        if (!atEdge) {
+          el.scrollTop += e.deltaY;
+          accRef.current = 0;
+          return;
+        }
+      }
       if (lockRef.current) return;
       accRef.current += e.deltaY;
       if (Math.abs(accRef.current) > 60) go(down ? 1 : -1);
     };
-    stage.addEventListener("wheel", onWheel, { passive: false });
-    return () => stage.removeEventListener("wheel", onWheel);
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
   }, [go, desktop]);
 
   // Touch swipe past a section edge to flip (native inner scroll otherwise).
