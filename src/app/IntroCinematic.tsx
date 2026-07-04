@@ -3,17 +3,20 @@
 import { useEffect, useRef } from "react";
 
 /* One-shot "compile" cinematic — the payoff after the boot screen's
-   "system ready — press Enter". Concept: make:brand.
+   "system ready — press Enter". Concept: the build finishes and the monitor
+   powers on — the SITE ITSELF is the reveal, no logo / name artifact.
 
      I.   a real build log streams  (lex → parse → typecheck → … → emit),
      II.  a linker bar fills and ramps toward 98 %,
      II.5 it JAMS at 98 % with two micro-stutters (loads the spring),
      III. it SNAPS to 100 %: one phosphor flash washes the screen,
-     IV.  the brand LOGO POPS in — centred, scaling up with a little overshoot —
-          as the compiled artifact, on a soft phosphor glow,
-     V.   a CRT ignition (bloom + shockwave ring + scan sweep) fires from the
-          logo, a green "✓ build passed" stamps in with the role beneath it, the
-          CRT framing dilates away and the logo dissolves into the real hero.
+     IV.  CRT COLLAPSE — the whole terminal squishes vertically into a single
+          bright phosphor seam (the classic tube power-off line),
+     V.   POWER-ON BLOOM — the seam blooms open like an old monitor igniting:
+          an aperture expands from the centre line, its frontiers glowing,
+          scanlines and a green tint burning off the freshly revealed page.
+          What's inside the aperture is the REAL hero (the boot overlay's
+          background is dropped at bloom start so the site shows through).
 
    Pure canvas-2D (no WebGL / three.js), a single time-driven rAF (a dropped
    frame never desyncs), DPR-capped. Reduced motion, a missing 2D context, the
@@ -31,9 +34,6 @@ const NAME_HI = "#d8ffe2";
 const NAME_SOFT = "#e6f1e6";
 const MUTED = "#8aa08c";
 const FAINT = "#5b6b5d";
-
-const ROLE = "software developer";
-const SCRAMBLE = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789!<>/{}[]=+*#%&";
 
 // ---- log content as pre-coloured segments (drawn in a monospace grid) ----
 type Seg = { t: string; c: string };
@@ -72,33 +72,16 @@ const JITTER_PX = 2;
 const SNAP_T = 1.82;
 const FLASH_A = 0.24;
 const FLASH_DUR = 0.13;
-// Act IV — the logo pops in as the compiled artifact.
-const LOGO_SRC = "/images/pavle-logo.png";
-const LOGO_ASPECT = 482 / 560; // h / w of the transparent asset
-// The art's alpha-weighted centre sits right & slightly low of its bounding box
-// (the body/arm/coin outweigh the faint motion streaks on the left), so we place
-// THAT point — not the box centre — at screen centre, or it reads as off-centre.
-const LOGO_CX = 0.618;
-const LOGO_CY = 0.516;
-const LOGO_POP_T = 1.95;
-const LOGO_POP_DUR = 0.5;
-// Act V — ignition + "build passed" fire from the settled logo.
-const IGNITE_T = 2.3;
-const BLOOM_A = 0.18;
-const BLOOM_DUR = 0.11;
-const RING_DUR = 0.34;
-const RING_MAX_FRAC = 0.62;
-const SCAN_SWEEP_DUR = 0.28;
-const PASSED_T = 2.52;
-const CHECK_DUR = 0.2;
-const ROLE_DECODE_DUR = 0.26;
-// Hold the logo + "build passed" before handing off to the hero.
-const FRAMING_FADE_START = 4.2;
-const FRAMING_FADE_END = 4.5;
-const HANDOFF_T = 4.3;
-const HANDOFF_DUR = 0.18;
-const LOGO_LIFT = 10;
-const DONE_T = 4.46;
+// Act IV — CRT collapse: the terminal squishes into a phosphor seam.
+const COLLAPSE_T = 2.0;
+const COLLAPSE_DUR = 0.3;
+// Seam hold — a beat of pure dark + the humming centre line.
+const SEAM_END_T = 2.55;
+// Act V — power-on bloom: the aperture opens onto the real hero.
+const BLOOM_DUR = 0.6;
+const IGNITE_FLASH_A = 0.16;
+const IGNITE_FLASH_DUR = 0.1;
+const DONE_T = 3.25;
 const SAFETY_MS = 6000;
 
 // ---- perf / scaling ----
@@ -114,12 +97,6 @@ const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
 const easeIn = (x: number) => x * x;
 const easeInOut = (x: number) =>
   x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-// overshoot-and-settle, for the logo pop
-const easeOutBack = (x: number) => {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-};
 
 type Glyph = { ch: string; x: number; y: number };
 
@@ -145,15 +122,6 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return finish();
     mount.appendChild(canvas);
-
-    // Preload the brand logo that pops in for the reveal. If it never loads,
-    // drawLogo just no-ops and the rest of the cinematic is unaffected.
-    const logo = new Image();
-    let logoReady = false;
-    logo.onload = () => {
-      logoReady = true;
-    };
-    logo.src = LOGO_SRC;
 
     const safety = setTimeout(finish, SAFETY_MS);
 
@@ -254,18 +222,16 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
     const ro = new ResizeObserver(resize);
     ro.observe(mount);
 
-    // Shared centred rect for the logo + its ignition + the caption beneath, so
-    // the three stay aligned across resizes.
-    const logoRect = () => {
-      const maxW = W * (isMobile ? 0.82 : 0.5);
-      const maxH = H * (isMobile ? 0.44 : 0.56);
-      let w = maxW;
-      let h = w * LOGO_ASPECT;
-      if (h > maxH) {
-        h = maxH;
-        w = h / LOGO_ASPECT;
-      }
-      return { cx: W / 2, cy: H * 0.44, w, h };
+    // The boot overlay behind this canvas has a solid background; the power-on
+    // bloom reveals the real hero THROUGH cleared canvas pixels, so that
+    // background must be dropped exactly when the aperture starts opening
+    // (never earlier — it also masks the site while the chunk mounts).
+    const overlay = mount.closest<HTMLElement>(".boot-overlay");
+    let overlayCleared = false;
+    const clearOverlayBg = () => {
+      if (overlayCleared) return;
+      overlayCleared = true;
+      if (overlay) overlay.style.background = "transparent";
     };
 
     // ---- Act I / II / II.5 — the terminal ----
@@ -321,7 +287,9 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
     const drawBar = (t: number) => {
       const by = termTop + LOG.length * lineH + lineH * 0.5;
       let pct: number;
-      if (t < BAR_END) {
+      if (t >= SNAP_T) {
+        pct = 100; // snapped — the beat before the collapse reads "done"
+      } else if (t < BAR_END) {
         pct = easeInOut(clamp01((t - BAR_START) / (BAR_END - BAR_START))) * 98;
       } else {
         // stall: 98 → 97 → 98 → 99 flicker, holding the spring before the snap
@@ -362,117 +330,81 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       ctx.fillText("  link · emitting binary", termX, ly);
     };
 
-    // ---- Act IV — the logo pops in, centred ----
-    const drawLogo = (t: number) => {
-      if (!logoReady || t < LOGO_POP_T) return;
-      const p = clamp01((t - LOGO_POP_T) / LOGO_POP_DUR);
-      const { cx, cy, w, h } = logoRect();
-      const scale = 0.55 + 0.45 * easeOutBack(p);
-      const alpha = easeOut(clamp01(p * 1.5));
-      const dw = w * scale;
-      const dh = h * scale;
+    // ---- the phosphor seam — shared by collapse, hold and bloom ----
+    const drawSeam = (t: number, intensity: number) => {
+      const cy = H / 2;
+      // soft glow band around the line
+      const glowH = 26 * intensity;
+      const g = ctx.createLinearGradient(0, cy - glowH, 0, cy + glowH);
+      g.addColorStop(0, "rgba(34,197,94,0)");
+      g.addColorStop(0.5, `rgba(92,240,138,${0.32 * intensity})`);
+      g.addColorStop(1, "rgba(34,197,94,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, cy - glowH, W, glowH * 2);
+      // the line itself, with a faint mains-hum flicker
+      const hum = 0.85 + 0.15 * Math.sin(t * 34);
+      ctx.fillStyle = NAME_HI;
+      ctx.globalAlpha = intensity * hum;
+      ctx.fillRect(0, cy - 1, W, 2);
+      ctx.globalAlpha = 1;
+    };
 
-      // Soft phosphor glow behind the logo so it seats on the green-black field.
-      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, dw * 0.6);
-      glow.addColorStop(0, "rgba(34,197,94,0.28)");
-      glow.addColorStop(1, "rgba(34,197,94,0)");
+    // ---- Act IV — CRT collapse: the terminal squishes into the seam ----
+    const drawCollapse = (t: number) => {
+      const p = clamp01((t - COLLAPSE_T) / COLLAPSE_DUR);
+      const sy = Math.max(0.004, 1 - easeIn(p));
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = glow;
-      ctx.fillRect(cx - dw, cy - dh, dw * 2, dh * 2);
-      // Offset so the art's visual centroid — not its bounding box — lands at
-      // (cx, cy), which is where the glow, ring and caption are all centred.
-      ctx.drawImage(logo, cx - LOGO_CX * dw, cy - LOGO_CY * dh, dw, dh);
+      // squash toward the centre line, with a slight horizontal stretch —
+      // the classic tube-deflection death.
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(1 + 0.08 * easeIn(p), sy);
+      ctx.translate(-W / 2, -H / 2);
+      drawTerminal(SNAP_T); // the last full frame, frozen
       ctx.restore();
+      drawSeam(t, easeIn(p));
     };
 
-    // ---- Act V — ignition (ring + scan) firing from the logo ----
-    const drawIgnition = (t: number) => {
-      const { cx, cy, w, h } = logoRect();
-      // shockwave ring
-      const rp = clamp01((t - IGNITE_T) / RING_DUR);
-      if (rp < 1) {
-        ctx.beginPath();
-        ctx.arc(cx, cy, rp * Math.min(W, H) * RING_MAX_FRAC, 0, Math.PI * 2);
-        ctx.strokeStyle = BRIGHT;
-        ctx.globalAlpha = 0.5 * (1 - rp);
-        ctx.lineWidth = 2 * (1 - rp) + 0.4;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-      }
-      // a single scan-line sweeping down the logo
-      const sp = clamp01((t - IGNITE_T) / SCAN_SWEEP_DUR);
-      if (sp < 1) {
-        const y = cy - h / 2 + sp * h;
-        ctx.fillStyle = BRIGHT;
-        ctx.globalAlpha = 0.5 * (1 - sp);
-        ctx.fillRect(cx - (w * 0.9) / 2, y, w * 0.9, 1.5);
-        ctx.globalAlpha = 1;
-      }
-    };
+    // ---- Act V — power-on bloom: the aperture opens onto the real site ----
+    const drawBloom = (t: number) => {
+      clearOverlayBg();
+      const p = clamp01((t - SEAM_END_T) / BLOOM_DUR);
+      const e = easeOut(p);
+      const cy = H / 2;
+      const hh = cy * e; // aperture half-height
 
-    // ---- Act V — "✓ build passed · role", centred under the logo ----
-    const drawPassed = (t: number) => {
-      const { cx, cy, h } = logoRect();
-      const y = cy + h / 2 + logFs * 2.0;
-      ctx.save();
-      ctx.textAlign = "left";
-      ctx.textBaseline = "alphabetic";
-      ctx.font = logFont;
-      ctx.shadowBlur = 0;
+      // Everything OUTSIDE the aperture stays the page's own dark field, so
+      // fully-open means fully gone. Inside is cleared — the live hero.
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = BG;
+      if (cy - hh > 0) ctx.fillRect(0, 0, W, cy - hh);
+      if (cy - hh > 0) ctx.fillRect(0, cy + hh, W, cy - hh + 1);
 
-      const s = logFs * 0.62;
-      const checkGap = logFs * 0.5;
-      const bpW = ctx.measureText("build passed").width;
-      const dotW = ctx.measureText("  ·  ").width;
-      const roleW = ctx.measureText(ROLE).width; // stable (monospace, fixed len)
-      const startX = cx - (s + checkGap + bpW + dotW + roleW) / 2;
-
-      // self-drawing check mark
-      const cp = clamp01((t - PASSED_T) / CHECK_DUR);
-      const ax = startX;
-      const ay = y - s * 0.5;
-      ctx.strokeStyle = ACCENT;
-      ctx.lineWidth = Math.max(1.5, logFs * 0.13);
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.beginPath();
-      const k1 = clamp01(cp / 0.4);
-      const k2 = clamp01((cp - 0.4) / 0.6);
-      ctx.moveTo(ax, ay + s * 0.55);
-      ctx.lineTo(ax + s * 0.32 * k1, ay + s * 0.55 + s * 0.32 * k1);
-      if (k2 > 0) {
-        ctx.lineTo(ax + s * 0.32 + s * 0.7 * k2, ay + s * 0.87 - s * 0.92 * k2);
-      }
-      ctx.stroke();
-
-      const tx = startX + s + checkGap;
+      if (p >= 1) return;
+      // green phosphor tint + scanlines burning off the revealed page
+      ctx.globalAlpha = 0.1 * (1 - p);
       ctx.fillStyle = ACCENT;
-      ctx.fillText("build passed", tx, y);
-      ctx.fillStyle = FAINT;
-      ctx.fillText("  ·  ", tx + bpW, y);
-
-      // role decodes once, left → right
-      const rp = clamp01((t - PASSED_T - 0.05) / ROLE_DECODE_DUR);
-      let role = "";
-      for (let i = 0; i < ROLE.length; i++) {
-        role +=
-          i / ROLE.length < rp || ROLE[i] === " "
-            ? ROLE[i]
-            : SCRAMBLE[(Math.floor(t * 22) + i * 7) % SCRAMBLE.length];
+      ctx.fillRect(0, cy - hh, W, hh * 2);
+      if (scanTile) {
+        const pat = ctx.createPattern(scanTile, "repeat");
+        if (pat) {
+          ctx.globalAlpha = 0.1 * (1 - p);
+          ctx.fillStyle = pat;
+          ctx.fillRect(0, cy - hh, W, hh * 2);
+        }
       }
-      ctx.fillStyle = MUTED;
-      ctx.fillText(role, tx + bpW + dotW, y);
-      ctx.restore();
+      // glowing frontiers of the opening aperture
+      ctx.globalAlpha = 0.85 * (1 - p * 0.6);
+      ctx.fillStyle = BRIGHT;
+      ctx.fillRect(0, cy - hh, W, 1.5);
+      ctx.fillRect(0, cy + hh - 1.5, W, 1.5);
+      ctx.globalAlpha = 1;
     };
 
+    // CRT framing (scanlines + vignette) — rides along until the collapse
+    // squeezes the picture away, then it dies with the tube.
     const drawFraming = (t: number) => {
-      let a = 1;
-      if (t >= FRAMING_FADE_START) {
-        a = clamp01(
-          1 - (t - FRAMING_FADE_START) / (FRAMING_FADE_END - FRAMING_FADE_START)
-        );
-      }
+      const a =
+        t < COLLAPSE_T ? 1 : 1 - clamp01((t - COLLAPSE_T) / COLLAPSE_DUR);
       if (a <= 0) return;
       if (scanTile) {
         const pat = ctx.createPattern(scanTile, "repeat");
@@ -499,53 +431,46 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       if (startT < 0) startT = now;
       const t = (now - startT) / 1000;
 
-      // handoff: lift the logo a touch as the canvas fades, so it dissolves
-      // INTO the hero rather than hard-cutting.
-      const hoff = clamp01((t - HANDOFF_T) / HANDOFF_DUR);
-      canvas.style.opacity = String(1 - easeIn(hoff));
-      const lift = -easeIn(hoff) * LOGO_LIFT;
-
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = BG;
-      ctx.fillRect(0, 0, W, H);
-
-      if (t < SNAP_T) {
-        drawTerminal(t);
+      if (t < SEAM_END_T) {
+        // screen is still a solid tube — opaque dark field
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, W, H);
+        if (t < COLLAPSE_T) {
+          drawTerminal(t);
+        } else if (t < COLLAPSE_T + COLLAPSE_DUR) {
+          drawCollapse(t);
+        } else {
+          drawSeam(t, 1); // the held seam, humming in the dark
+        }
+        drawFraming(t);
       } else {
-        ctx.save();
-        ctx.translate(0, lift);
-        drawLogo(t);
-        if (t >= IGNITE_T) drawIgnition(t);
-        if (t >= PASSED_T) drawPassed(t);
-        ctx.restore();
+        drawBloom(t);
       }
 
-      // phosphor flash at the snap — masks the swap from log to logo
+      // phosphor flash at the snap — masks the bar → collapse swap
       if (t >= SNAP_T && t < SNAP_T + FLASH_DUR) {
         ctx.globalAlpha = FLASH_A * (1 - (t - SNAP_T) / FLASH_DUR);
         ctx.fillStyle = BRIGHT;
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
       }
-      // CRT ignition bloom
-      if (t >= IGNITE_T && t < IGNITE_T + BLOOM_DUR) {
-        ctx.globalAlpha = BLOOM_A * (1 - (t - IGNITE_T) / BLOOM_DUR);
+      // ignition flash as the aperture starts to open
+      if (t >= SEAM_END_T && t < SEAM_END_T + IGNITE_FLASH_DUR) {
+        ctx.globalAlpha = IGNITE_FLASH_A * (1 - (t - SEAM_END_T) / IGNITE_FLASH_DUR);
         ctx.fillStyle = NAME_HI;
         ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
       }
 
-      drawFraming(t);
-
-      // Hand off mid-fade so the overlay's own fade-out overlaps the last bright
-      // logo frames (the canvas keeps fading until BootIntro unmounts).
       if (t >= DONE_T) {
         clearTimeout(safety);
         finish();
         // Stop here: frame() already re-scheduled this rAF at the top, but the
-        // canvas is fully faded out now, so the ~30 fullscreen draws that would
-        // otherwise run during the 520ms leave/unmount are pure waste landing
-        // exactly at the reveal. cleanup() stays as the unmount backstop.
+        // aperture is fully open (canvas fully cleared), so the ~30 fullscreen
+        // draws that would otherwise run during the 520ms leave/unmount are
+        // pure waste landing exactly at the reveal. cleanup() stays as the
+        // unmount backstop.
         cancelAnimationFrame(raf);
         return;
       }
@@ -571,6 +496,7 @@ export default function IntroCinematic({ onDone }: { onDone: () => void }) {
       window.removeEventListener("keydown", onKey);
       mount.removeEventListener("click", onSkip);
       ro.disconnect();
+      if (overlay) overlay.style.background = "";
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
   }, [onDone]);

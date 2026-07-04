@@ -573,7 +573,6 @@ const EXPERIENCE: Job[] = [
     period: "2025 — Present",
     current: true,
     points: [
-      "Build & maintain web and enterprise applications with Oracle APEX, .NET and C#, alongside JavaScript/TypeScript and React.",
       "NGO Register Portal (Government of Montenegro) — produced the official user-guide video tutorials: e-signature client, document signing, online registration, and registry search.",
     ],
     link: {
