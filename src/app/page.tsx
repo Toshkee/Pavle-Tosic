@@ -23,7 +23,6 @@ import { Icon } from "@iconify/react";
 import { SiGithub, SiGmail } from "react-icons/si";
 import { FaLinkedin } from "react-icons/fa";
 import GitHubGraph from "./GitHubGraph";
-import GitHubFeed from "./GitHubFeed";
 import { pageCtx } from "./characterBus";
 import BootIntro from "./BootIntro";
 import Terminal from "./Terminal";
@@ -1969,7 +1968,6 @@ const GitHub = memo(function GitHub() {
         </p>
         <GitHubGraph />
       </Reveal>
-      <GitHubFeed />
     </section>
   );
 });
