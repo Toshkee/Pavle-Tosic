@@ -73,7 +73,7 @@ const TAGLINE =
   "I build web apps front to back — from Oracle APEX, .NET and C# to React and TypeScript.";
 
 const SOCIAL = {
-  email: "tosiicp@gmail.com",
+  email: "tosicsftw@gmail.com",
   github: "https://github.com/Toshkee",
   linkedin: "https://www.linkedin.com/in/tosiicp/",
 };

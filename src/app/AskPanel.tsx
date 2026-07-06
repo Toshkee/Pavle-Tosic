@@ -11,7 +11,7 @@ import { SUGGESTIONS } from "./suggestions";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const EMAIL = "tosiicp@gmail.com";
+const EMAIL = "tosicsftw@gmail.com";
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function Sparkle({ className = "" }: { className?: string }) {

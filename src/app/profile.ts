@@ -34,7 +34,7 @@ Three of the four began as General Assembly bootcamp projects (2025) and were fu
 - Arc (solo build) — a modern anime tracker (formerly "Anime Watchlist"): search 500,000+ titles from the live AniList GraphQL API, build a watchlist, track episode progress and ratings, and see personal stats. A full rebuild of a bootcamp Express/MongoDB app. Stack: Next.js 16, TypeScript, AniList GraphQL, Prisma, PostgreSQL, Auth.js. Live: arc-anime.vercel.app
 
 # Contact
-- Email: tosiicp@gmail.com
+- Email: tosicsftw@gmail.com
 - GitHub: github.com/Toshkee
 - LinkedIn: linkedin.com/in/tosiicp
 - A downloadable CV (PDF) is available on this site.
@@ -81,14 +81,14 @@ export const FALLBACKS: { match: RegExp; reply: string }[] = [
   {
     match: /open|available|hir(e|ing)|remote|full.?time|part.?time|freelance/i,
     reply:
-      "Yes — Pavle is open to full-time or part-time work, remote. The best first step is an email to tosiicp@gmail.com; his CV is downloadable on this site.",
+      "Yes — Pavle is open to full-time or part-time work, remote. The best first step is an email to tosicsftw@gmail.com; his CV is downloadable on this site.",
   },
   {
     match: /contact|email|reach|linkedin|github|\bcv\b|resume/i,
     reply:
-      "Email: tosiicp@gmail.com\nGitHub: github.com/Toshkee\nLinkedIn: linkedin.com/in/tosiicp\nHis CV (PDF) is downloadable on this site.",
+      "Email: tosicsftw@gmail.com\nGitHub: github.com/Toshkee\nLinkedIn: linkedin.com/in/tosiicp\nHis CV (PDF) is downloadable on this site.",
   },
 ];
 
 export const FALLBACK_DEFAULT =
-  "I can tell you about Pavle's stack, his projects (try CryptoFlow), his job at Infostream, or how to reach him — tosiicp@gmail.com.";
+  "I can tell you about Pavle's stack, his projects (try CryptoFlow), his job at Infostream, or how to reach him — tosicsftw@gmail.com.";
