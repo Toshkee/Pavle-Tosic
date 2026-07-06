@@ -142,13 +142,13 @@ const PROJECTS = [
   {
     title: "CryptoFlow",
     blurb:
-      "A real-time crypto futures & spot trading terminal — it streams live Binance market data over WebSockets into candlestick charts, a depth order book and a live trades tape, then settles every position server-side with paper money. React 19 and TypeScript on a Django REST engine.",
+      "A real-time crypto futures & spot trading terminal — live Binance data streamed over WebSockets into candle charts, a depth order book and a trades tape; every position settles server-side with paper money.",
     problem:
       "Practise leveraged futures trading with the feel of a real exchange — live prices and real settlement math — and none of the real-money risk.",
     highlights: [
-      "Live Binance WebSocket feeds — candles, depth and trades over one multiplexed socket",
-      "Server-authoritative engine — 1–125× leverage; client-supplied prices are ignored",
-      "Concurrency-safe wallet — row locks + atomic transactions, money can't be double-spent",
+      "Live Binance WebSocket feeds — candles, depth and trades on one socket",
+      "Server-authoritative engine — 1–125× leverage, client prices ignored",
+      "Concurrency-safe wallet — row locks and atomic transactions",
     ],
     role: "Solo build",
     context: "General Assembly · rebuilt 2026",
@@ -165,40 +165,40 @@ const PROJECTS = [
     ] as { src: string; label: string }[],
   },
   {
-    title: "Meet2Explore",
+    title: "Arc — Anime Tracker",
     blurb:
-      "Full-stack React travel app to discover destinations and find companions — built collaboratively with a team of four.",
+      "A modern anime tracker — search 500,000+ live AniList titles, build a watchlist, track episodes and ratings, then turn your taste into stats. A bootcamp CRUD app rebuilt on Next.js 16 and TypeScript.",
     problem:
-      "Help travellers pick a destination and find people to explore it with.",
+      "Track what you're watching against a live, half-million-title catalogue — and rebuild a fragile bootcamp CRUD app into a typed, tested, server-rendered product.",
     highlights: [
-      "Team of four with real git flow — feature branches, PRs, merged the final releases",
-      "Owned a full-stack slice — city discovery, trip join/leave, live trip chat",
-      "Socket.IO room-per-trip chat persisting history to MongoDB",
+      "Live AniList GraphQL catalogue, proxied and cached server-side",
+      "Auth.js sign-in, owner-scoped watchlist — Prisma + PostgreSQL",
+      "Stats dashboard — episodes, hours, completion, score and genre mix",
     ],
-    role: "Team of 4 · full-stack slice",
-    context: "General Assembly · 2025",
-    stack: ["React", "Node.js", "Express"],
-    live: "https://meet2explore.netlify.app/",
-    code: "https://github.com/Toshkee/meet2explore",
-    shot: "/images/projects/meet2explore.jpg",
-    video: "/video/projects/meet2explore.mp4",
-    domain: "meet2explore.netlify.app",
+    role: "Solo build",
+    context: "General Assembly · rebuilt 2026",
+    stack: ["Next.js 16", "TypeScript", "AniList API", "Prisma", "PostgreSQL"],
+    live: "https://arc-anime.vercel.app",
+    code: "https://github.com/Toshkee/anime-watchlist",
+    shot: "/images/projects/anime-watchlist.jpg",
+    video: "/video/projects/anime-watchlist.mp4",
+    domain: "arc-anime.vercel.app",
     gallery: [
-      { src: "/images/projects/meet2explore-hero.jpg", label: "Discover destinations" },
-      { src: "/images/projects/meet2explore-trips.jpg", label: "Plan group trips" },
-      { src: "/images/projects/meet2explore-meet.jpg", label: "Meet new people" },
+      { src: "/images/projects/anime-watchlist-home.jpg", label: "Search & trending" },
+      { src: "/images/projects/anime-watchlist-browse.jpg", label: "Browse catalogue" },
+      { src: "/images/projects/anime-watchlist-detail.jpg", label: "Title detail" },
     ] as { src: string; label: string }[],
   },
   {
     title: "Ronin Duel",
     blurb:
-      "A juice-driven 2D fighting game that runs in the browser — two dueling ronin, frame-accurate combat and an AI opponent, built on Phaser 4 and TypeScript. A full rebuild of a vanilla-JS bootcamp prototype into a tested, CI-deployed game.",
+      "A juice-driven 2D fighting game in the browser — two dueling ronin, frame-accurate combat and an AI opponent. A vanilla-JS bootcamp prototype rebuilt into a tested, CI-deployed Phaser 4 game.",
     problem:
       "Make browser combat actually feel good — weighty hits, a real AI opponent and game-feel polish — on top of a tested, production-grade codebase.",
     highlights: [
-      "Frame-accurate combat — hitboxes live only on active frames, with a unit-tested damage core",
-      "Single-player vs a state-machine AI (Easy / Normal / Hard) or 2-player local",
-      "Hitstop, screen shake, knockback and slow-mo KO; sound synthesised with Web Audio",
+      "Hitboxes live only on active frames — unit-tested damage core",
+      "State-machine AI (Easy / Normal / Hard) or 2-player local",
+      "Hitstop, screen shake, knockback, slow-mo KO — Web Audio sound",
     ],
     role: "Solo build",
     context: "General Assembly · rebuilt 2026",
@@ -215,28 +215,28 @@ const PROJECTS = [
     ] as { src: string; label: string }[],
   },
   {
-    title: "Arc — Anime Tracker",
+    title: "Meet2Explore",
     blurb:
-      "A modern anime tracker — search 500,000+ titles from the live AniList GraphQL API, build a watchlist, track episode progress and ratings, then turn your taste into stats. A full rebuild of a bootcamp Express and MongoDB app on Next.js 16 and TypeScript.",
+      "Full-stack React travel app to discover destinations and find companions — built collaboratively with a team of four.",
     problem:
-      "Track what you're watching against a live, half-million-title catalogue — and rebuild a fragile bootcamp CRUD app into a typed, tested, server-rendered product.",
+      "Help travellers pick a destination and find people to explore it with.",
     highlights: [
-      "Live AniList GraphQL catalogue of 500k+ titles, proxied and cached server-side",
-      "Auth.js sign-in and an owner-scoped watchlist with optimistic UI — Prisma + PostgreSQL",
-      "Stats dashboard — episodes, hours, completion rate, score and genre mix",
+      "Team of four with real git flow — branches, PRs, merged final releases",
+      "Owned a full-stack slice — city discovery, trip join/leave, live chat",
+      "Socket.IO room-per-trip chat persisting history to MongoDB",
     ],
-    role: "Solo build",
-    context: "General Assembly · rebuilt 2026",
-    stack: ["Next.js 16", "TypeScript", "AniList API", "Prisma", "PostgreSQL"],
-    live: "https://arc-anime.vercel.app",
-    code: "https://github.com/Toshkee/anime-watchlist",
-    shot: "/images/projects/anime-watchlist.jpg",
-    video: "/video/projects/anime-watchlist.mp4",
-    domain: "arc-anime.vercel.app",
+    role: "Team of 4 · full-stack slice",
+    context: "General Assembly · 2025",
+    stack: ["React", "Node.js", "Express"],
+    live: "https://meet2explore.netlify.app/",
+    code: "https://github.com/Toshkee/meet2explore",
+    shot: "/images/projects/meet2explore.jpg",
+    video: "/video/projects/meet2explore.mp4",
+    domain: "meet2explore.netlify.app",
     gallery: [
-      { src: "/images/projects/anime-watchlist-home.jpg", label: "Search & trending" },
-      { src: "/images/projects/anime-watchlist-browse.jpg", label: "Browse catalogue" },
-      { src: "/images/projects/anime-watchlist-detail.jpg", label: "Title detail" },
+      { src: "/images/projects/meet2explore-hero.jpg", label: "Discover destinations" },
+      { src: "/images/projects/meet2explore-trips.jpg", label: "Plan group trips" },
+      { src: "/images/projects/meet2explore-meet.jpg", label: "Meet new people" },
     ] as { src: string; label: string }[],
   },
 ];
@@ -1070,7 +1070,7 @@ function LeftRail({ active }: { active: string }) {
           trigger="mount"
           text={NAME}
           delay={0.2}
-          className="text-4xl font-bold leading-[1.06] text-ink sm:text-5xl"
+          className="font-display text-5xl font-bold leading-[1.02] tracking-tight text-ink sm:text-6xl"
         />
         <motion.p
           variants={ITEM_VARIANTS}
@@ -1169,7 +1169,7 @@ const About = memo(function About() {
     <section
       id="about"
       aria-labelledby="about-heading"
-      className="relative py-14 lg:py-20"
+      className="relative py-14 lg:py-10"
     >
       <div className="stage-pool" aria-hidden />
       <Reveal>
@@ -1178,14 +1178,14 @@ const About = memo(function About() {
       <Reveal delay={0.06}>
         <h2
           id="about-heading"
-          className="mt-5 max-w-[22ch] font-display text-3xl font-bold leading-[1.15] text-ink sm:text-4xl lg:text-5xl"
+          className="mt-5 max-w-[22ch] font-display text-4xl font-bold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-6xl"
         >
           I turn ideas into{" "}
           <span className="text-gradient">shipped, working software</span>.
         </h2>
       </Reveal>
       <Reveal delay={0.12}>
-        <div className="mt-8 max-w-[62ch] space-y-4 text-[15px] leading-[1.75] text-body sm:text-base">
+        <div className="mt-6 max-w-[62ch] space-y-4 text-[15px] leading-[1.75] text-body sm:text-base">
           <p>
             Software developer at{" "}
             <span className="font-medium text-ink">Infostream</span>, working
@@ -1202,12 +1202,10 @@ const About = memo(function About() {
             UI — with{" "}
             <span className="font-medium text-ink">AI tools</span> and{" "}
             <span className="font-medium text-ink">MCPs</span>{" "}
-            in my workflow. A few side projects of my own are in the works;
-            they&apos;ll land here as they ship. Open to full-time or
-            part-time, remote.
+            in my workflow. Open to full-time or part-time, remote.
           </p>
         </div>
-        <div className="mt-8 flex flex-wrap gap-8">
+        <div className="mt-6 flex flex-wrap gap-8">
           {LANGUAGES.map((l) => (
             <div key={l.label}>
               <div className="text-sm font-medium text-ink">{l.label}</div>
@@ -1216,7 +1214,7 @@ const About = memo(function About() {
           ))}
         </div>
       </Reveal>
-      <Reveal delay={0.18} className="mt-10">
+      <Reveal delay={0.18} className="mt-7">
         <HeroTerminal />
       </Reveal>
     </section>
@@ -1278,7 +1276,7 @@ const Stack = memo(function Stack() {
       <RevealHeading
         id="stack-heading"
         text="The stack"
-        className="mt-5 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+        className="mt-5 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
       />
       <Reveal delay={0.1}>
         <p className="mt-4 max-w-[60ch] leading-[1.7] text-body">
@@ -1768,7 +1766,7 @@ function ProjectShowcase({
             title line. */}
         <div className="mt-4">
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
-            <h3 className="font-display text-2xl font-bold text-ink">
+            <h3 className="font-display text-3xl font-bold tracking-tight text-ink sm:text-4xl">
               {p.title}
             </h3>
             <span className="font-mono text-xs text-muted">
@@ -1888,7 +1886,7 @@ const Work = memo(function Work() {
           <RevealHeading
             id="work-heading"
             text="Things I've built"
-            className="mt-4 text-3xl font-bold text-ink sm:text-4xl"
+            className="mt-4 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl"
           />
         </div>
         <Reveal delay={0.1} className="flex items-center gap-3 font-mono text-sm">
@@ -1926,7 +1924,7 @@ const Work = memo(function Work() {
         }
         animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
         transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
-        className="mt-5"
+        className="mt-4"
       >
         <ProjectShowcase
           p={p}
@@ -1934,7 +1932,7 @@ const Work = memo(function Work() {
         />
       </motion.div>
 
-      <div className="mt-4 hidden font-mono text-[11px] text-faint lg:block">
+      <div className="mt-2 hidden font-mono text-[11px] text-faint lg:block">
         ← / → switch project
       </div>
     </section>
@@ -1959,7 +1957,7 @@ const GitHub = memo(function GitHub() {
       <RevealHeading
         id="github-heading"
         text="On GitHub"
-        className="mt-5 mb-4 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+        className="mt-5 mb-4 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
       />
       <Reveal>
         <p className="mb-8 max-w-[60ch] leading-[1.7] text-body">
@@ -2003,7 +2001,7 @@ const Experience = memo(function Experience() {
       <RevealHeading
         id="experience-heading"
         text="Where I've been"
-        className="mt-3 mb-6 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+        className="mt-3 mb-6 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
       />
       <ol className="relative ml-2 pl-0">
         <motion.span
@@ -2015,7 +2013,7 @@ const Experience = memo(function Experience() {
           transition={{ duration: 0.9, ease: EASE }}
         />
         {EXPERIENCE.map((e, i) => (
-          <li key={e.role} className="relative pb-7 pl-8 last:pb-0">
+          <li key={e.role} className="relative pb-6 pl-8 last:pb-0">
             <span
               className={`absolute -left-[6.5px] top-1.5 h-3 w-3 rounded-full ring-4 ring-bg ${
                 e.current ? "bg-accent" : "bg-line-strong"
@@ -2032,7 +2030,9 @@ const Experience = memo(function Experience() {
                 {e.period && <span className="text-faint">{e.period}</span>}
               </div>
               <div className="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h3 className="text-lg font-semibold text-ink">{e.role}</h3>
+                <h3 className="font-display text-xl font-semibold tracking-tight text-ink">
+                  {e.role}
+                </h3>
                 <span className="text-sm text-muted">{e.org}</span>
               </div>
               <ul className="mt-3 space-y-2">
@@ -2126,7 +2126,7 @@ const Contact = memo(function Contact() {
       <RevealHeading
         id="contact-heading"
         text="Let's build something."
-        className="mt-5 text-3xl font-bold text-ink sm:text-4xl lg:text-5xl"
+        className="mt-5 font-display text-4xl font-bold leading-[1.04] tracking-tight text-ink sm:text-6xl lg:text-7xl"
       />
       {/* The payoff of the `./contact.sh` kicker: the section reads as the
           script's OUTPUT — one keyed line per channel, straight on the stage.

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import ConsoleSignature from "./ConsoleSignature";
 import AnimatedFavicon from "./AnimatedFavicon";
@@ -14,6 +15,17 @@ const mononoki = localFont({
     { path: "./fonts/mononoki-700.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-mononoki",
+  display: "swap",
+});
+
+// Space Grotesk — display face for headlines only (name, section headings,
+// project titles). Descends from Space Mono, so it reads as the terminal
+// mono's big sibling rather than a second voice. Mono stays everywhere else.
+// latin-ext is required: the site title is "Pavle Tošić" (š/ć).
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "700"],
+  variable: "--font-grotesk",
   display: "swap",
 });
 
@@ -72,9 +84,17 @@ export default function RootLayout({
   // suppressHydrationWarning: the inline script below sets `pt-skip-boot` on
   // <html> before hydration, so the class intentionally differs from the
   // server HTML. This suppresses the warning for <html>'s attributes only.
+  // Font variables live on <html>, not <body>: Tailwind v4 @theme tokens
+  // (--font-display etc.) are substituted at :root, so var(--font-grotesk)
+  // must be defined there — on <body> it silently fails and font-display
+  // falls back to the inherited mono.
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${mononoki.variable} antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${mononoki.variable} ${spaceGrotesk.variable}`}
+    >
+      <body className="antialiased">
         {/* Render-blocking, runs before the boot overlay paints: returning-
             session visitors (sessionStorage) and reduced-motion users skip the
             intro with no flash. The class hides .boot-overlay via CSS; the

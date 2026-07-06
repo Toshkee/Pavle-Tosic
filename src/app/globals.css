@@ -7,11 +7,14 @@
 ================================================================= */
 
 @theme {
-  /* Mononoki everywhere — the whole site is monospace. */
+  /* Mononoki everywhere — the whole site is monospace... */
   --font-sans: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
     monospace;
-  --font-display: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
-    monospace;
+  /* ...EXCEPT headlines. Space Grotesk (Space Mono's grotesk sibling) is the
+     display layer — big type only (name, section headings, project titles).
+     Body, chrome, labels and everything terminal stay Mononoki. */
+  --font-display: var(--font-grotesk), var(--font-mononoki), ui-monospace,
+    "SFMono-Regular", Menlo, monospace;
   --font-mono: var(--font-mononoki), ui-monospace, "SFMono-Regular", Menlo,
     monospace;
 
