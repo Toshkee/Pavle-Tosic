@@ -22,7 +22,7 @@ const IntroCinematic = dynamic(() => import("./IntroCinematic"), {
 
 const STEPS: { k: string; v: string }[] = [
   { k: "kernel", v: "mononoki · phosphor-green" },
-  { k: "stack", v: "typescript · react · c# · .net" },
+  { k: "stack", v: "typescript · react · node · oracle apex" },
   { k: "projects", v: "4 loaded" },
   { k: "github", v: "@toshkee online" },
   { k: "contact", v: "channels up" },

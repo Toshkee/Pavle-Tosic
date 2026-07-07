@@ -190,7 +190,7 @@ function Terminal({
           out(
             <span className={M}>
               <span className="text-ink">{name}</span> - {role} · {location}.
-              Software developer at Infostream (Oracle APEX, .NET, C#);
+              Software developer at Infostream (mostly Oracle APEX & SQL);
               strongest in JavaScript/TypeScript & React. Building web apps front
               to back. <span className={M}>→ scrolling to about</span>
             </span>
@@ -201,11 +201,11 @@ function Terminal({
         case "stack":
           out(
             <span className={M}>
-              languages: JS, TS, C#, Python, SQL
+              languages: JS, TS, SQL, Python (learning C#)
               <br />
               frontend: React, HTML, CSS
               <br />
-              backend: Node, Express, .NET
+              backend: Node, Express
               <br />
               platforms: Oracle APEX, PostgreSQL, Git.{" "}
               <span className={M}>→ scrolling to stack</span>
@@ -386,7 +386,7 @@ function Terminal({
                 {[
                   ["os", "pavle.os 2026"],
                   ["shell", "zsh"],
-                  ["stack", "typescript · react · c# · .net"],
+                  ["stack", "typescript · react · node · oracle apex"],
                   ["editor", "vscode + claude code"],
                   ["since", "2025 @ infostream"],
                   ["contact", social.email],

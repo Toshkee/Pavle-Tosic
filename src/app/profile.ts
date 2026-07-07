@@ -13,7 +13,7 @@ export const SYSTEM_PROMPT = `You are "Pavle's AI", a concise assistant embedded
 
 # Who Pavle is
 - Pavle Tošić — Software Developer based in Montenegro.
-- Currently a Software Developer at Infostream (since 2025): builds and maintains web and enterprise applications with Oracle APEX, .NET and C#, alongside JavaScript/TypeScript and React.
+- Currently a Software Developer at Infostream (since 2025): builds and maintains web and enterprise applications, working mostly with Oracle APEX and SQL. He is also learning C# and .NET on the job (not yet expert in them).
 - At Infostream he produced the official user-guide video tutorials for the NGO Register Portal of the Government of Montenegro (e-signature client, document signing, online registration, registry search). Important: he PRODUCED the user-guide tutorials — do NOT claim he built or developed the portal itself.
 - Strongest in JavaScript/TypeScript and React; comfortable full-stack, front to back, and happy to pick up whatever framework a project needs.
 - Completed General Assembly's Fullstack Software Engineering program (Sep–Dec 2025, 420+ hours). Also completed a six-month ethical-hacking course (Z-Security, Udemy, 2023).
@@ -21,9 +21,9 @@ export const SYSTEM_PROMPT = `You are "Pavle's AI", a concise assistant embedded
 - Open to full-time or part-time, remote work.
 
 # Skills
-- Languages: JavaScript, TypeScript, C#, Python, SQL.
+- Languages: JavaScript, TypeScript, SQL, Python; learning C#.
 - Frontend: React, Next.js, HTML, CSS, Tailwind CSS.
-- Backend & runtime: Node.js, Express, .NET, Django REST.
+- Backend & runtime: Node.js, Express, Django REST; learning .NET.
 - Platforms & tooling: Oracle APEX, PostgreSQL, Prisma, GraphQL, WebSockets, Git.
 
 # Projects
@@ -34,7 +34,7 @@ Three of the four began as General Assembly bootcamp projects (2025) and were fu
 - Arc (solo build) — a modern anime tracker (formerly "Anime Watchlist"): search 500,000+ titles from the live AniList GraphQL API, build a watchlist, track episode progress and ratings, and see personal stats. A full rebuild of a bootcamp Express/MongoDB app. Stack: Next.js 16, TypeScript, AniList GraphQL, Prisma, PostgreSQL, Auth.js. Live: arc-anime.vercel.app
 
 # Contact
-- Email: tosicsftw@gmail.com
+- Email: tosiicsftw@gmail.com
 - GitHub: github.com/Toshkee
 - LinkedIn: linkedin.com/in/tosiicp
 - A downloadable CV (PDF) is available on this site.
@@ -66,12 +66,12 @@ export const FALLBACKS: { match: RegExp; reply: string }[] = [
   {
     match: /infostream|day.?job|\bjob\b|employ|experience|background|career/i,
     reply:
-      "Pavle is a Software Developer at Infostream in Montenegro (since 2025) — he builds and maintains web and enterprise applications with Oracle APEX, .NET and C#, alongside JavaScript/TypeScript and React. At Infostream he produced the official user-guide video tutorials for the Government of Montenegro's NGO Register Portal.",
+      "Pavle is a Software Developer at Infostream in Montenegro (since 2025) — he builds and maintains web and enterprise applications, working mostly with Oracle APEX and SQL. At Infostream he produced the official user-guide video tutorials for the Government of Montenegro's NGO Register Portal.",
   },
   {
     match: /stack|tech|skill|language|framework|tool/i,
     reply:
-      "Strongest: JavaScript/TypeScript and React. Day to day he also works with Oracle APEX, .NET and C#. Rest of the stack: Next.js, Node.js, Express, Django REST, SQL/PostgreSQL, Prisma, GraphQL, WebSockets, Git.",
+      "Strongest: JavaScript/TypeScript and React. At his day job he mostly works with Oracle APEX and SQL, and he's learning C# and .NET. Rest of the stack: Next.js, Node.js, Express, Django REST, PostgreSQL, Prisma, GraphQL, WebSockets, Git.",
   },
   {
     match: /project|built|portfolio|ronin|\barc\b|anime|meet2explore|game/i,
@@ -81,14 +81,14 @@ export const FALLBACKS: { match: RegExp; reply: string }[] = [
   {
     match: /open|available|hir(e|ing)|remote|full.?time|part.?time|freelance/i,
     reply:
-      "Yes — Pavle is open to full-time or part-time work, remote. The best first step is an email to tosicsftw@gmail.com; his CV is downloadable on this site.",
+      "Yes — Pavle is open to full-time or part-time work, remote. The best first step is an email to tosiicsftw@gmail.com; his CV is downloadable on this site.",
   },
   {
     match: /contact|email|reach|linkedin|github|\bcv\b|resume/i,
     reply:
-      "Email: tosicsftw@gmail.com\nGitHub: github.com/Toshkee\nLinkedIn: linkedin.com/in/tosiicp\nHis CV (PDF) is downloadable on this site.",
+      "Email: tosiicsftw@gmail.com\nGitHub: github.com/Toshkee\nLinkedIn: linkedin.com/in/tosiicp\nHis CV (PDF) is downloadable on this site.",
   },
 ];
 
 export const FALLBACK_DEFAULT =
-  "I can tell you about Pavle's stack, his projects (try CryptoFlow), his job at Infostream, or how to reach him — tosicsftw@gmail.com.";
+  "I can tell you about Pavle's stack, his projects (try CryptoFlow), his job at Infostream, or how to reach him — tosiicsftw@gmail.com.";

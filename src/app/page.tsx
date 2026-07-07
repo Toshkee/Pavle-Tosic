@@ -70,10 +70,10 @@ const NAME = "Pavle Tošić";
 const ROLE = "Software Developer";
 const LOCATION = "Montenegro";
 const TAGLINE =
-  "I build web apps front to back, from Oracle APEX, .NET and C# to React and TypeScript.";
+  "I build web apps front to back: TypeScript and React first, Oracle APEX and SQL at the day job.";
 
 const SOCIAL = {
-  email: "tosicsftw@gmail.com",
+  email: "tosiicsftw@gmail.com",
   github: "https://github.com/Toshkee",
   linkedin: "https://www.linkedin.com/in/tosiicp/",
 };
@@ -1202,12 +1202,12 @@ const About = memo(function About() {
             Software developer at{" "}
             <span className="font-medium text-ink">Infostream</span>, working
             mostly with{" "}
-            <span className="font-medium text-ink">Oracle APEX</span>,{" "}
-            <span className="font-medium text-ink">.NET</span>, and{" "}
-            <span className="font-medium text-ink">C#</span>.{" "}
+            <span className="font-medium text-ink">Oracle APEX</span> and{" "}
+            <span className="font-medium text-ink">SQL</span>.{" "}
             <span className="font-medium text-ink">JavaScript</span> and{" "}
             <span className="font-medium text-ink">TypeScript</span>{" "}
-            are my strongest area, and I pick up whatever a project needs.
+            are my strongest area, everything I build on my own runs on them,
+            and I pick up whatever a project needs.
           </p>
           <p>
             I build web apps front to back, database and API through to the
