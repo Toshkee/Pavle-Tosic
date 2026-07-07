@@ -30,7 +30,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 const DESCRIPTION =
-  "Software developer at Infostream (Montenegro · Remote) — JavaScript/TypeScript and React, plus Oracle APEX and SQL. I build web apps front to back.";
+  "Software developer at Infostream (Montenegro · Remote). TypeScript and React by choice, Oracle APEX and SQL on the job. I build web apps front to back.";
 
 // Web analytics: Cloudflare Web Analytics is enabled on the zone (dashboard →
 // Analytics & Logs → Web Analytics, site pavletosic.com) and injects its RUM

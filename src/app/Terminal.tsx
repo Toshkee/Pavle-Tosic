@@ -190,8 +190,8 @@ function Terminal({
           out(
             <span className={M}>
               <span className="text-ink">{name}</span> - {role} · {location}.
-              Software developer at Infostream (mostly Oracle APEX & SQL);
-              strongest in JavaScript/TypeScript & React. Building web apps front
+              Software developer at Infostream (enterprise apps on Oracle APEX
+              & SQL); strongest in TypeScript & React. Building web apps front
               to back. <span className={M}>→ scrolling to about</span>
             </span>
           );

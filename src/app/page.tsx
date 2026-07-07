@@ -70,7 +70,7 @@ const NAME = "Pavle Tošić";
 const ROLE = "Software Developer";
 const LOCATION = "Montenegro";
 const TAGLINE =
-  "I build web apps front to back: TypeScript and React first, Oracle APEX and SQL at the day job.";
+  "I build web apps front to back. TypeScript and React by choice, Oracle APEX and SQL on the job.";
 
 const SOCIAL = {
   email: "tosiicsftw@gmail.com",
@@ -1200,14 +1200,14 @@ const About = memo(function About() {
         <div className="mt-6 max-w-[62ch] space-y-4 text-[15px] leading-[1.75] text-body sm:text-base">
           <p>
             Software developer at{" "}
-            <span className="font-medium text-ink">Infostream</span>, working
-            mostly with{" "}
+            <span className="font-medium text-ink">Infostream</span>, building
+            enterprise software on{" "}
             <span className="font-medium text-ink">Oracle APEX</span> and{" "}
             <span className="font-medium text-ink">SQL</span>.{" "}
-            <span className="font-medium text-ink">JavaScript</span> and{" "}
-            <span className="font-medium text-ink">TypeScript</span>{" "}
-            are my strongest area, everything I build on my own runs on them,
-            and I pick up whatever a project needs.
+            <span className="font-medium text-ink">TypeScript</span> and{" "}
+            <span className="font-medium text-ink">React</span>{" "}
+            are where I&apos;m strongest: every project on this site runs on
+            them, front to back. New stack? I&apos;ll pick it up.
           </p>
           <p>
             I build web apps front to back, database and API through to the
