@@ -70,7 +70,7 @@ const NAME = "Pavle Tošić";
 const ROLE = "Software Developer";
 const LOCATION = "Montenegro";
 const TAGLINE =
-  "I build web apps front to back — from Oracle APEX, .NET and C# to React and TypeScript.";
+  "I build web apps front to back, from Oracle APEX, .NET and C# to React and TypeScript.";
 
 const SOCIAL = {
   email: "tosicsftw@gmail.com",
@@ -142,16 +142,16 @@ const PROJECTS = [
   {
     title: "CryptoFlow",
     blurb:
-      "A real-time crypto futures & spot trading terminal — live Binance data streamed over WebSockets into candle charts, a depth order book and a trades tape; every position settles server-side with paper money.",
+      "A real-time crypto futures & spot trading terminal: live Binance data streamed over WebSockets into candle charts, a depth order book and a trades tape; every position settles server-side with paper money.",
     problem:
-      "Practise leveraged futures trading with the feel of a real exchange — live prices and real settlement math — and none of the real-money risk.",
+      "Practise leveraged futures trading with the feel of a real exchange, live prices and real settlement math included, and none of the real-money risk.",
     highlights: [
-      "Live Binance WebSocket feeds — candles, depth and trades on one socket",
-      "Server-authoritative engine — 1–125× leverage, client prices ignored",
-      "Concurrency-safe wallet — row locks and atomic transactions",
+      "Live Binance WebSocket feeds: candles, depth and trades on one socket",
+      "Server-authoritative engine: 1-125× leverage, client prices ignored",
+      "Concurrency-safe wallet: row locks and atomic transactions",
     ],
     role: "Solo build",
-    context: "General Assembly · rebuilt 2026",
+    context: "General Assembly, rebuilt 2026",
     stack: ["React 19", "TypeScript", "Django REST", "WebSockets", "PostgreSQL"],
     live: "https://cryptofloww.netlify.app/",
     code: "https://github.com/Toshkee/CryptoFlow",
@@ -165,18 +165,18 @@ const PROJECTS = [
     ] as { src: string; label: string }[],
   },
   {
-    title: "Arc — Anime Tracker",
+    title: "Arc: Anime Tracker",
     blurb:
-      "A modern anime tracker — search 500,000+ live AniList titles, build a watchlist, track episodes and ratings, then turn your taste into stats. A bootcamp CRUD app rebuilt on Next.js 16 and TypeScript.",
+      "A modern anime tracker: search 500,000+ live AniList titles, build a watchlist, track episodes and ratings, then turn your taste into stats. A bootcamp CRUD app rebuilt on Next.js 16 and TypeScript.",
     problem:
-      "Track what you're watching against a live, half-million-title catalogue — and rebuild a fragile bootcamp CRUD app into a typed, tested, server-rendered product.",
+      "Track what you're watching against a live, half-million-title catalogue, and rebuild a fragile bootcamp CRUD app into a typed, tested, server-rendered product.",
     highlights: [
       "Live AniList GraphQL catalogue, proxied and cached server-side",
-      "Auth.js sign-in, owner-scoped watchlist — Prisma + PostgreSQL",
-      "Stats dashboard — episodes, hours, completion, score and genre mix",
+      "Auth.js sign-in, owner-scoped watchlist on Prisma + PostgreSQL",
+      "Stats dashboard: episodes, hours, completion, score and genre mix",
     ],
     role: "Solo build",
-    context: "General Assembly · rebuilt 2026",
+    context: "General Assembly, rebuilt 2026",
     stack: ["Next.js 16", "TypeScript", "AniList API", "Prisma", "PostgreSQL"],
     live: "https://arc-anime.vercel.app",
     code: "https://github.com/Toshkee/anime-watchlist",
@@ -192,16 +192,16 @@ const PROJECTS = [
   {
     title: "Ronin Duel",
     blurb:
-      "A juice-driven 2D fighting game in the browser — two dueling ronin, frame-accurate combat and an AI opponent. A vanilla-JS bootcamp prototype rebuilt into a tested, CI-deployed Phaser 4 game.",
+      "A juice-driven 2D fighting game in the browser: two dueling ronin, frame-accurate combat and an AI opponent. A vanilla-JS bootcamp prototype rebuilt into a tested, CI-deployed Phaser 4 game.",
     problem:
-      "Make browser combat actually feel good — weighty hits, a real AI opponent and game-feel polish — on top of a tested, production-grade codebase.",
+      "Make browser combat actually feel good, with weighty hits, a real AI opponent and game-feel polish, on top of a tested, production-grade codebase.",
     highlights: [
-      "Hitboxes live only on active frames — unit-tested damage core",
+      "Hitboxes live only on active frames, backed by a unit-tested damage core",
       "State-machine AI (Easy / Normal / Hard) or 2-player local",
-      "Hitstop, screen shake, knockback, slow-mo KO — Web Audio sound",
+      "Hitstop, screen shake, knockback, slow-mo KO and Web Audio sound",
     ],
     role: "Solo build",
-    context: "General Assembly · rebuilt 2026",
+    context: "General Assembly, rebuilt 2026",
     stack: ["Phaser 4", "TypeScript", "Vite", "Vitest", "Playwright"],
     live: "https://toshkee.github.io/Ronin-Duel/",
     code: "https://github.com/Toshkee/Ronin-Duel",
@@ -217,16 +217,16 @@ const PROJECTS = [
   {
     title: "Meet2Explore",
     blurb:
-      "Full-stack React travel app to discover destinations and find companions — built collaboratively with a team of four.",
+      "Full-stack React travel app to discover destinations and find companions, built collaboratively with a team of four.",
     problem:
       "Help travellers pick a destination and find people to explore it with.",
     highlights: [
-      "Team of four with real git flow — branches, PRs, merged final releases",
-      "Owned a full-stack slice — city discovery, trip join/leave, live chat",
+      "Team of four with real git flow: branches, PRs, merged final releases",
+      "Owned a full-stack slice: city discovery, trip join/leave, live chat",
       "Socket.IO room-per-trip chat persisting history to MongoDB",
     ],
-    role: "Team of 4 · full-stack slice",
-    context: "General Assembly · 2025",
+    role: "Team of 4, full-stack slice",
+    context: "General Assembly, 2025",
     stack: ["React", "Node.js", "Express"],
     live: "https://meet2explore.netlify.app/",
     code: "https://github.com/Toshkee/meet2explore",
@@ -552,7 +552,7 @@ const LIVE_TAB: { key: CaseTab; file: string } = { key: "live", file: "markets.l
 const CASES: Record<string, CaseFile> = {
   CryptoFlow: CRYPTOFLOW_CASE,
   "Ronin Duel": RONIN_CASE,
-  "Arc — Anime Tracker": ARC_CASE,
+  "Arc: Anime Tracker": ARC_CASE,
   Meet2Explore: M2E_CASE,
 };
 
@@ -569,10 +569,10 @@ const EXPERIENCE: Job[] = [
   {
     role: "Software Developer",
     org: "Infostream",
-    period: "2025 — Present",
+    period: "2025..present",
     current: true,
     points: [
-      "NGO Register Portal (Government of Montenegro) — produced the official user-guide video tutorials: e-signature client, document signing, online registration, and registry search.",
+      "NGO Register Portal (Government of Montenegro): produced the official user-guide video tutorials for the e-signature client, document signing, online registration, and registry search.",
     ],
     link: {
       href: "https://ngo.gov.me/Uputstva/PreuzmiteSoftwareIUputstva",
@@ -582,10 +582,10 @@ const EXPERIENCE: Job[] = [
   {
     role: "Fullstack Software Engineering",
     org: "General Assembly",
-    period: "Sep 2025 — Dec 2025",
+    period: "Sep 2025..Dec 2025",
     current: false,
     points: [
-      "420+ hours of intensive training in frontend — JavaScript, React, HTML & CSS.",
+      "420+ hours of intensive training in frontend: JavaScript, React, HTML & CSS.",
       "Backend fundamentals, APIs, databases & security basics; team-based real-world projects.",
     ],
   },
@@ -602,8 +602,8 @@ const EXPERIENCE: Job[] = [
     period: "",
     current: false,
     points: [
-      "Kosta Cukić Private High School, Belgrade — final two years.",
-      "Mirko Vešović Economics High School, Podgorica — first two years.",
+      "Kosta Cukić Private High School, Belgrade (final two years).",
+      "Mirko Vešović Economics High School, Podgorica (first two years).",
     ],
   },
 ];
@@ -970,7 +970,7 @@ function VerticalNav({ active }: { active: string }) {
       <p aria-hidden className="mb-2 select-none text-[11px] text-faint">
         ~/pavle
       </p>
-      <ul className="space-y-0.5">
+      <ul className="max-w-[15rem] space-y-0.5">
         {NAV.map((item) => {
           const on = active === item.id;
           return (
@@ -1018,6 +1018,16 @@ function VerticalNav({ active }: { active: string }) {
                   }`}
                 >
                   {item.file}
+                </span>
+                {/* plain-English column, `ls`-style — the filenames stay the
+                    star, this keeps them scannable for non-terminal visitors */}
+                <span
+                  aria-hidden
+                  className={`ml-auto text-[11px] transition-colors ${
+                    on ? "text-accent-ink/80" : "text-faint/70 group-hover:text-faint"
+                  }`}
+                >
+                  {item.label}
                 </span>
               </a>
             </li>
@@ -1099,10 +1109,12 @@ function LeftRail({ active }: { active: string }) {
           variants={ITEM_VARIANTS}
           className="mt-7 flex flex-wrap items-center gap-3"
         >
+          {/* THE primary action — the one solid fill on the page; everything
+              else stays ghost so the hierarchy reads in one glance. */}
           <Tap>
             <a
               href="#work"
-              className="glow-hover block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
+              className="glow-hover block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition-colors hover:bg-accent-hover"
             >
               View work
             </a>
@@ -1195,11 +1207,11 @@ const About = memo(function About() {
             <span className="font-medium text-ink">C#</span>.{" "}
             <span className="font-medium text-ink">JavaScript</span> and{" "}
             <span className="font-medium text-ink">TypeScript</span>{" "}
-            are my strongest area — and I pick up whatever a project needs.
+            are my strongest area, and I pick up whatever a project needs.
           </p>
           <p>
-            I build web apps front to back — database and API through to the
-            UI — with{" "}
+            I build web apps front to back, database and API through to the
+            UI, with{" "}
             <span className="font-medium text-ink">AI tools</span> and{" "}
             <span className="font-medium text-ink">MCPs</span>{" "}
             in my workflow. Open to full-time or part-time, remote.
@@ -1280,7 +1292,7 @@ const Stack = memo(function Stack() {
       />
       <Reveal delay={0.1}>
         <p className="mt-4 max-w-[60ch] leading-[1.7] text-body">
-          What I actually build with — a JavaScript/TypeScript core, the frontend
+          What I actually build with: a JavaScript/TypeScript core, the frontend
           I design and animate in, and the backend that ships and stores it.
         </p>
       </Reveal>
@@ -1793,7 +1805,7 @@ function ProjectShowcase({
           </div>
           {COLD_APIS[p.live] && (
             <p className="mt-2 font-mono text-xs text-faint">
-              demo api runs on a free tier — the first request may take a
+              demo api runs on a free tier, so the first request may take a
               moment to wake
             </p>
           )}
@@ -1961,7 +1973,7 @@ const GitHub = memo(function GitHub() {
       />
       <Reveal>
         <p className="mb-8 max-w-[60ch] leading-[1.7] text-body">
-          Where I build in the open — commits across personal projects, games
+          Where I build in the open: commits across personal projects, games
           and experiments.
         </p>
         <GitHubGraph />
@@ -2277,7 +2289,7 @@ const Contact = memo(function Contact() {
               href={`mailto:${SOCIAL.email}`}
               className="glow-hover inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
             >
-              <SiGmail aria-hidden /> Email me
+              <SiGmail aria-hidden /> Get in touch
             </a>
           </Tap>
         </Reveal>
@@ -2350,6 +2362,28 @@ function SectionDeck({
       )
         return;
       setDir(target > cur ? 1 : -1);
+      // Phosphor persistence: clone the outgoing section into an inert ghost
+      // that decays over the incoming one (CRT afterglow). Imperative and
+      // outside React on purpose — the keyed remount unmounts the original in
+      // this same commit. One-shot cost per flip; skipped under reduced motion.
+      const from = scrollerRef.current;
+      const stage = stageRef.current;
+      if (!reduce && from && stage) {
+        const ghost = from.cloneNode(true) as HTMLElement;
+        ghost.setAttribute("aria-hidden", "true");
+        // strip ids so anchors/scroll-spy never see duplicates for the beat
+        // it exists; hide media clones (a paused <video> renders as a black
+        // slab — the rain behind reads better than a dead rectangle).
+        ghost.querySelectorAll("[id]").forEach((el) => el.removeAttribute("id"));
+        ghost.querySelectorAll("video").forEach((v) => {
+          v.removeAttribute("autoplay");
+          v.style.visibility = "hidden";
+        });
+        ghost.classList.add("phosphor-ghost");
+        stage.appendChild(ghost);
+        ghost.scrollTop = from.scrollTop;
+        window.setTimeout(() => ghost.remove(), 460);
+      }
       lockRef.current = true;
       accRef.current = 0;
       armedRef.current = false; // swallow the rest of the current gesture
@@ -2360,7 +2394,7 @@ function SectionDeck({
       }, 650);
       setIndex(target);
     },
-    [setIndex]
+    [setIndex, reduce]
   );
 
   const go = useCallback(

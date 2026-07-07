@@ -15,6 +15,43 @@ import { pageCtx } from "./characterBus";
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
 
+/* Text avoid-zones — rects of readable copy (headings, paragraphs, list rows,
+   links) in the rail and the deck. All critters share one TTL-cached scan so
+   nobody reads layout per frame; a critter dims while crossing a zone and
+   prefers wander targets on open ground. */
+const ZONE_PAD = 10;
+const ZONE_TTL = 1200;
+const ZONE_SELECTOR = [
+  "#content",
+  "#home",
+]
+  .flatMap((root) =>
+    ["h1", "h2", "h3", "p", "li", "a", "button"].map((t) => `${root} ${t}`)
+  )
+  .join(", ");
+let zoneCache: { rects: DOMRect[]; at: number } = { rects: [], at: 0 };
+function textZones(): DOMRect[] {
+  const now = performance.now();
+  if (now - zoneCache.at > ZONE_TTL) {
+    const rects: DOMRect[] = [];
+    document.querySelectorAll(ZONE_SELECTOR).forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < window.innerHeight)
+        rects.push(r);
+    });
+    zoneCache = { rects, at: now };
+  }
+  return zoneCache.rects;
+}
+const inZone = (px: number, py: number) =>
+  textZones().some(
+    (r) =>
+      px > r.left - ZONE_PAD &&
+      px < r.right + ZONE_PAD &&
+      py > r.top - ZONE_PAD &&
+      py < r.bottom + ZONE_PAD
+  );
+
 // What a critter does while it's on duty at its home section.
 export type Task = "bounce" | "spin" | "haunt" | "sit";
 
@@ -60,6 +97,8 @@ export default function Roamer({
   const y = useMotionValue(sy);
   const faceX = useMotionValue(1); // scaleX: 1 faces right, -1 faces left
   const opacity = useMotionValue(1); // dipped by the "haunt" fade
+  const dim = useMotionValue(1); // dipped while crossing a text zone
+  const dimmed = useRef(false);
   const lookX = useMotionValue(0);
   const lookY = useMotionValue(0);
   const look = { x: lookX, y: lookY };
@@ -111,10 +150,15 @@ export default function Roamer({
 
   const pick = () => {
     const m = 30;
-    target.current = {
-      x: m + Math.random() * (window.innerWidth - w - 2 * m),
-      y: m + Math.random() * (window.innerHeight - h - 2 * m),
-    };
+    // Prefer open ground: retry a few times before settling on a spot that
+    // sits over copy (the dim below covers the transit either way).
+    for (let i = 0; i < 8; i++) {
+      target.current = {
+        x: m + Math.random() * (window.innerWidth - w - 2 * m),
+        y: m + Math.random() * (window.innerHeight - h - 2 * m),
+      };
+      if (!inZone(target.current.x + w / 2, target.current.y + h / 2)) break;
+    }
   };
   // Flip to face travel, with a deadzone so tiny wobble never flickers it.
   const setFace = (dx: number) => {
@@ -152,6 +196,14 @@ export default function Roamer({
       const lx = clamp((dx / d) * 2.6, -2.6, 2.6);
       lookX.set(face.current === -1 ? -lx : lx);
       lookY.set(clamp((dy / d) * 2.4, -2, 2));
+    }
+
+    // Go ghost-quiet over copy so the page stays readable (zones are TTL-cached
+    // in textZones — no layout read per frame).
+    const overText = inZone(ccx, ccy);
+    if (overText !== dimmed.current) {
+      dimmed.current = overText;
+      animate(dim, overText ? 0.35 : 1, { duration: 0.3, ease: "easeOut" });
     }
 
     // Every section change gets a happy hop.
@@ -292,8 +344,11 @@ export default function Roamer({
           willChange: "transform",
         }}
       >
-        {/* spin layer (daemon's "background process" trick) */}
-        <motion.div style={{ rotate: spinRot, transformOrigin: "center" }}>
+        {/* spin layer (daemon's "background process" trick) — also carries the
+            text-zone dim, multiplying with the outer haunt fade */}
+        <motion.div
+          style={{ rotate: spinRot, transformOrigin: "center", opacity: dim }}
+        >
           {/* hop layer (bounce + squash), grounded at the feet */}
           <motion.div
             style={{ y: hopY, scaleY: hopScaleY, transformOrigin: "bottom center" }}

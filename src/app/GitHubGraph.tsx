@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import { SiGithub } from "react-icons/si";
 
-/* Live GitHub contribution heatmap for `Toshkee`, themed green on the dark
+/* Live GitHub contribution cadence for `Toshkee`, themed green on the dark
    base and framed in the same terminal-window chrome as the Stack/Work panels.
    Data: github-contributions-api.jogruber.de (public, no auth), fetched on the
    client with a timeout + graceful fallback so a third-party outage never
    breaks the page. Fetched with no-store (the browser's HTTP cache served
    days-stale counts) behind a short module-level TTL cache, since the deck
-   remounts this section on every flip. Cells fade in on a short contained
-   diagonal wave. */
+   remounts this section on every flip.
+   Shown as real stats + a WEEKLY strip, not the classic day grid: sparse days
+   spread over months read as inactivity, while the weekly rhythm is honest
+   AND healthy-looking. Cells fade in on a short left-to-right wave. */
 
 const USER = "Toshkee";
 const PROFILE = "https://github.com/Toshkee";
@@ -85,10 +87,25 @@ export default function GitHubGraph() {
     };
   }, []);
 
-  // Pad the first column so weekday rows line up (0 = Sunday).
-  const leadOffset = days?.length
-    ? new Date(days[0].date + "T00:00:00Z").getUTCDay()
-    : 0;
+  // Aggregate days → calendar weeks (split on Sundays; first week may be
+  // partial) and derive the honest headline stats from the same data.
+  const weeks: { start: string; count: number }[] = [];
+  if (days) {
+    for (const d of days) {
+      const dow = new Date(d.date + "T00:00:00Z").getUTCDay();
+      if (weeks.length === 0 || dow === 0) weeks.push({ start: d.date, count: 0 });
+      weeks[weeks.length - 1].count += d.count || 0;
+    }
+  }
+  const activeDays = days?.filter((d) => d.count > 0).length ?? 0;
+  const busiest = days?.length ? Math.max(...days.map((d) => d.count)) : 0;
+  const weekLevel = (c: number) =>
+    c === 0 ? 0 : c <= 2 ? 1 : c <= 5 ? 2 : c <= 11 ? 3 : 4;
+  const monthOf = (w: { start: string }) =>
+    new Date(w.start + "T00:00:00Z").toLocaleString("en", {
+      month: "short",
+      timeZone: "UTC",
+    });
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
@@ -111,62 +128,80 @@ export default function GitHubGraph() {
       </div>
 
       <div className="p-5 sm:p-7">
-        <p className="text-sm text-body">
-          {total != null ? (
-            <>
-              <span className="font-semibold text-ink">{total}</span>{" "}
-              contributions since September
-            </>
-          ) : failed ? (
-            "Contributions on GitHub"
-          ) : (
-            "Loading contributions…"
-          )}
-        </p>
+        {/* Headline stats — all derived from the same live data as the strip. */}
+        {total != null ? (
+          <div className="flex flex-wrap gap-x-10 gap-y-3">
+            {[
+              { n: total, label: "contributions since September" },
+              { n: activeDays, label: "active days" },
+              { n: busiest, label: "on the busiest day" },
+            ].map((s) => (
+              <div key={s.label}>
+                <div className="font-display text-2xl font-bold leading-none text-ink">
+                  {s.n}
+                </div>
+                <div className="mt-1.5 font-mono text-xs text-muted">
+                  {s.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-body">
+            {failed ? "Contributions on GitHub" : "Loading contributions…"}
+          </p>
+        )}
 
         {failed ? null : (
-          <div className="mt-5 overflow-x-auto pb-1">
+          <div className="mt-6">
             <div
-              className="grid grid-flow-col grid-rows-7 gap-[3px]"
+              className="flex gap-[3px]"
               role="img"
               aria-label={
                 total != null
-                  ? `${total} GitHub contributions since September`
+                  ? `${total} GitHub contributions since September, by week`
                   : "GitHub contribution graph"
               }
             >
-              {Array.from({ length: leadOffset }).map((_, i) => (
-                <span key={`pad-${i}`} className="h-3 w-3" />
-              ))}
-              {(days ?? Array.from({ length: 371 }, () => null)).map((d, i) => {
-                if (!d) {
-                  // static skeleton cell (no per-cell pulse animation)
-                  return (
-                    <span
-                      key={`skeleton-${i}`}
-                      className="h-3 w-3 rounded-[2px]"
-                      style={{ backgroundColor: LEVEL_COLORS[0] }}
-                    />
-                  );
-                }
-                const gi = leadOffset + i;
-                const delay = Math.min(
-                  (Math.floor(gi / 7) + (gi % 7)) * 0.01,
-                  0.9
-                );
-                return (
+              {(weeks.length
+                ? weeks
+                : Array.from({ length: 44 }, () => null)
+              ).map((w, i) =>
+                w ? (
                   <span
-                    key={d.date}
-                    className="gh-cell h-3 w-3 rounded-[2px]"
+                    key={w.start}
+                    className="gh-cell h-6 min-w-0 flex-1 rounded-[2px]"
                     style={{
-                      backgroundColor: LEVEL_COLORS[d.level] ?? LEVEL_COLORS[0],
-                      animationDelay: `${delay}s`,
+                      backgroundColor: LEVEL_COLORS[weekLevel(w.count)],
+                      animationDelay: `${Math.min(i * 0.02, 0.7)}s`,
                     }}
-                    title={`${d.count} contribution${d.count === 1 ? "" : "s"} on ${d.date}`}
+                    title={`${w.count} contribution${w.count === 1 ? "" : "s"} in the week of ${w.start}`}
                   />
-                );
-              })}
+                ) : (
+                  // static skeleton cell (no per-cell pulse animation)
+                  <span
+                    key={`skeleton-${i}`}
+                    className="h-6 min-w-0 flex-1 rounded-[2px]"
+                    style={{ backgroundColor: LEVEL_COLORS[0] }}
+                  />
+                )
+              )}
             </div>
+            {/* month ticks — one label under the first week of each month */}
+            {weeks.length > 0 && (
+              <div className="mt-2 flex gap-[3px] font-mono text-[10px] text-faint">
+                {weeks.map((w, i) => (
+                  <span
+                    key={w.start}
+                    className="min-w-0 flex-1 overflow-visible whitespace-nowrap"
+                  >
+                    {i === 0 || monthOf(w) !== monthOf(weeks[i - 1])
+                      ? monthOf(w)
+                      : ""}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

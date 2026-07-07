@@ -146,13 +146,13 @@ function AskPanel() {
           /* no/!JSON body — fall through to the generic message */
         }
         if (code === "overloaded") {
-          setError("The assistant is busy right now — give it a few seconds and ask again.");
+          setError("The assistant is busy right now. Give it a few seconds and ask again.");
         } else if (code === "rate_limited") {
-          setError("Whoa, one at a time — wait a moment and try again.");
+          setError("Whoa, one at a time. Wait a moment and try again.");
         } else if (code === "not_configured") {
           setError("The assistant isn't switched on yet.");
         } else {
-          setError(`The assistant is offline right now — email Pavle at ${EMAIL}.`);
+          setError(`The assistant is offline right now. Email Pavle at ${EMAIL}.`);
         }
         return;
       }
@@ -195,13 +195,13 @@ function AskPanel() {
       if (reduce) {
         await drain;
         if (started) setLast(target);
-        else setError("Hmm, no answer came back — try rephrasing.");
+        else setError("Hmm, no answer came back. Try rephrasing.");
       } else {
         // Type the reply out at a steady, visible cadence regardless of how the
         // network chunked it (flash-lite often sends it in 2–3 big bursts).
         while (!started && !netDone) await sleep(16);
         if (!started) {
-          setError("Hmm, no answer came back — try rephrasing.");
+          setError("Hmm, no answer came back. Try rephrasing.");
         } else {
           let shown = 0;
           while (!netDone || shown < target.length) {
@@ -217,7 +217,7 @@ function AskPanel() {
         await drain;
       }
     } catch {
-      setError("Couldn't reach the assistant — check your connection.");
+      setError("Couldn't reach the assistant. Check your connection.");
     } finally {
       setLoading(false);
       setStreaming(false);
@@ -298,7 +298,7 @@ function AskPanel() {
                 <div className="space-y-3">
                   <p className="text-muted">
                     <span className="text-accent-2">{"//"}</span> Ask me anything
-                    about Pavle — his stack, projects, or experience.
+                    about Pavle: his stack, projects, or experience.
                   </p>
                   <div className="flex flex-col gap-1.5">
                     {SUGGESTIONS.map((s) => (
@@ -396,7 +396,7 @@ function AskPanel() {
                 </button>
               </div>
               <p className="mt-1.5 font-mono text-[10px] text-faint">
-                AI-generated · may be imprecise — confirm important details with Pavle.
+                AI-generated, may be imprecise. Confirm important details with Pavle.
               </p>
             </form>
           </motion.div>

@@ -73,7 +73,7 @@ function Terminal({
       id: -1,
       node: (
         <div className={M}>
-          <span className="text-ink">{name}</span> — interactive shell. type{" "}
+          <span className="text-ink">{name}</span> - interactive shell. type{" "}
           <span className={GI}>help</span> to explore.
         </div>
       ),
@@ -189,7 +189,7 @@ function Terminal({
         case "about":
           out(
             <span className={M}>
-              <span className="text-ink">{name}</span> — {role} · {location}.
+              <span className="text-ink">{name}</span> - {role} · {location}.
               Software developer at Infostream (Oracle APEX, .NET, C#);
               strongest in JavaScript/TypeScript & React. Building web apps front
               to back. <span className={M}>→ scrolling to about</span>
@@ -201,9 +201,14 @@ function Terminal({
         case "stack":
           out(
             <span className={M}>
-              languages: JS · TS · C# · Python · SQL — frontend: React · HTML ·
-              CSS — backend: Node · Express · .NET — platforms: Oracle APEX ·
-              PostgreSQL · Git. <span className={M}>→ scrolling to stack</span>
+              languages: JS, TS, C#, Python, SQL
+              <br />
+              frontend: React, HTML, CSS
+              <br />
+              backend: Node, Express, .NET
+              <br />
+              platforms: Oracle APEX, PostgreSQL, Git.{" "}
+              <span className={M}>→ scrolling to stack</span>
             </span>
           );
           go("stack");
@@ -543,7 +548,7 @@ function Terminal({
               <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
               <span className="h-2.5 w-2.5 rounded-full bg-accent-2/70" />
               <span className="ml-2 text-[11px] text-muted">
-                visitor@pavletosic — zsh
+                visitor@pavletosic - zsh
               </span>
               <button
                 type="button"
@@ -599,7 +604,7 @@ function Terminal({
               autoComplete="off"
               autoCapitalize="off"
               aria-label="Terminal command input"
-              placeholder={open ? "" : "type a command — try “help”"}
+              placeholder={open ? "" : "type a command, try “help”"}
               className="min-w-0 flex-1 bg-transparent text-ink caret-accent outline-none placeholder:text-muted"
             />
             {!open && (

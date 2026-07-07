@@ -76,7 +76,7 @@ export const FALLBACKS: { match: RegExp; reply: string }[] = [
   {
     match: /project|built|portfolio|ronin|\barc\b|anime|meet2explore|game/i,
     reply:
-      "Four showcased projects:\n- CryptoFlow — real-time crypto trading terminal (React 19, Django REST)\n- Ronin Duel — 2D browser fighting game (Phaser 4, TypeScript)\n- Arc — anime tracker on the live AniList API (Next.js 16, Prisma)\n- Meet2Explore — team-built travel app (React, Node)\nAll have live demos in the Work section.",
+      "Four showcased projects:\n- CryptoFlow: real-time crypto trading terminal (React 19, Django REST)\n- Ronin Duel: 2D browser fighting game (Phaser 4, TypeScript)\n- Arc: anime tracker on the live AniList API (Next.js 16, Prisma)\n- Meet2Explore: team-built travel app (React, Node)\nAll have live demos in the Work section.",
   },
   {
     match: /open|available|hir(e|ing)|remote|full.?time|part.?time|freelance/i,

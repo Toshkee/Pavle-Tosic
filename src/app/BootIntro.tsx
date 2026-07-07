@@ -156,7 +156,7 @@ export default function BootIntro() {
             <span className="h-2.5 w-2.5 rounded-full bg-faint/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-accent/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-accent-2/70" />
-            <span className="ml-2 text-[11px] text-muted">pavle.os — boot</span>
+            <span className="ml-2 text-[11px] text-muted">pavle.os - boot</span>
           </div>
           <p className="text-muted">
             <span className="text-accent">$</span> ./boot --portfolio
@@ -181,7 +181,7 @@ export default function BootIntro() {
                 onClick={() => enterRef.current?.()}
                 className="text-left text-accent-ink transition-opacity hover:opacity-80"
               >
-                ▸ system ready — press{" "}
+                ▸ system ready - press{" "}
                 <kbd className="mx-0.5 rounded border border-accent/50 bg-accent-soft px-1.5 py-0.5 text-[11px] font-medium text-accent-ink">
                   ⏎ Enter
                 </kbd>{" "}

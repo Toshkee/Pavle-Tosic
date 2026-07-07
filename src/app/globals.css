@@ -215,6 +215,29 @@ html.lenis body {
   }
 }
 
+/* Phosphor persistence: on a deck flip the OUTGOING section leaves a green
+   afterglow that decays like a CRT trace while the next section focus-pulls
+   in. The ghost is a one-shot inert DOM clone (SectionDeck.change) removed
+   right after the animation; sepia+hue-rotate pushes every colour to
+   phosphor green. Never created under reduced motion. */
+.phosphor-ghost {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  animation: phosphor-decay 0.42s ease-out both;
+}
+@keyframes phosphor-decay {
+  from {
+    opacity: 0.55;
+    filter: sepia(1) hue-rotate(70deg) saturate(2.5) brightness(1.15) blur(0.5px);
+  }
+  to {
+    opacity: 0;
+    filter: sepia(1) hue-rotate(70deg) saturate(2.5) brightness(1.5) blur(3px);
+  }
+}
+
 /* GitHub heatmap cells fade in on a short contained diagonal wave when the
    data lands. fill-mode `both` + the global reduced-motion rule means cells
    resolve to fully-visible instantly when motion is reduced. */
