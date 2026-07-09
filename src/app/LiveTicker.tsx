@@ -49,7 +49,7 @@ function fmtPrice(n: number): string {
   return n.toFixed(5);
 }
 
-type Status = "connecting" | "live" | "reconnecting";
+type Status = "connecting" | "live" | "reconnecting" | "offline";
 
 function LiveTicker() {
   const reduce = useReducedMotion();
@@ -86,6 +86,7 @@ function LiveTicker() {
     let stopped = false;
     let ws: WebSocket | null = null;
     let retry = 0;
+    let everLive = false; // the socket opened at least once this mount
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
     // Push the ref's latest state into React. A fresh object per row so React
@@ -138,6 +139,7 @@ function LiveTicker() {
 
       ws.onopen = () => {
         retry = 0;
+        everLive = true;
         if (!stopped) setStatus("live");
       };
 
@@ -172,8 +174,17 @@ function LiveTicker() {
 
       ws.onclose = () => {
         if (stopped) return;
-        setStatus("reconnecting");
         retry += 1;
+        // A socket that has NEVER opened after several tries means this
+        // network blocks WebSockets (corporate proxy, strict firewall) —
+        // stop hammering and say so honestly instead of spinning on
+        // "reconnecting" forever. A feed that was live and dropped keeps
+        // retrying: that's a transient, not a wall.
+        if (!everLive && retry >= 4) {
+          setStatus("offline");
+          return;
+        }
+        setStatus("reconnecting");
         // Exponential backoff, capped — the feed is decorative, don't hammer it.
         reconnectTimer = setTimeout(connect, Math.min(1000 * 2 ** retry, 10000));
       };
@@ -198,6 +209,8 @@ function LiveTicker() {
     };
   }, []);
 
+  const hasData = rows.some((r) => r.price > 0);
+
   return (
     <div className="absolute inset-0 flex flex-col bg-bg font-mono">
       {/* Header — exchange + a pulsing status lamp */}
@@ -220,7 +233,20 @@ function LiveTicker() {
         </span>
       </div>
 
-      {/* Market rows */}
+      {/* Market rows — or an honest offline note when this network blocks the
+          socket AND the REST snapshot, so the tab never sits on dead dashes. */}
+      {status === "offline" && !hasData ? (
+        <div className="flex flex-1 flex-col items-start justify-center gap-1.5 px-4 text-[11px] leading-relaxed">
+          <p className="text-muted">
+            <span className="text-accent">$</span> connect
+            stream.binance.com… <span className="text-faint">blocked</span>
+          </p>
+          <p className="text-faint">
+            this network won&apos;t let the live feed through. the real thing
+            runs in the demo · cryptofloww.netlify.app
+          </p>
+        </div>
+      ) : (
       <ul
         className="flex-1 divide-y divide-line/40 overflow-y-auto"
         aria-label="Live cryptocurrency prices from Binance"
@@ -271,11 +297,15 @@ function LiveTicker() {
           );
         })}
       </ul>
+      )}
 
       {/* The honesty line — this is the real feed, not a screenshot */}
       <div className="border-t border-line/60 px-3 py-1.5 text-[9px] leading-tight text-faint">
-        streamed live over one websocket — the same public Binance feed CryptoFlow
-        runs
+        {status === "offline"
+          ? hasData
+            ? "live socket unreachable on this network · showing the 24h REST snapshot"
+            : "live socket unreachable on this network"
+          : "streamed live over one websocket, the same public Binance feed CryptoFlow runs"}
       </div>
     </div>
   );

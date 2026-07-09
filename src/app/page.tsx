@@ -1518,26 +1518,6 @@ function ProjectShowcase({
   const [lb, setLb] = useState<number | null>(null);
   const [tab, setTab] = useState<CaseTab>("demo");
 
-  // Publish the demo frame's screen position so the ambient bug can crawl onto
-  // the active project card. Only this project's showcase is mounted at a time
-  // (the kiosk remounts per project), so the bug always tracks what's on screen.
-  useEffect(() => {
-    const publish = () => {
-      const el = frameRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      pageCtx.project.x = r.left + r.width / 2;
-      pageCtx.project.y = r.top + r.height / 2;
-      pageCtx.project.active = true;
-    };
-    publish();
-    const id = setInterval(publish, 250);
-    return () => {
-      clearInterval(id);
-      pageCtx.project.active = false;
-    };
-  }, []);
-
   // The demo video leads the lightbox reel (index 0) with the screenshots
   // after it — thumbnail clicks offset accordingly.
   const lbItems = p.video
@@ -2379,6 +2359,9 @@ function SectionDeck({
           v.removeAttribute("autoplay");
           v.style.visibility = "hidden";
         });
+        // The clone carries the scroller's entrance class — drop it so the
+        // ghost plays phosphor-decay, not a second entrance.
+        ghost.classList.remove("deck-enter-up", "deck-enter-down");
         ghost.classList.add("phosphor-ghost");
         stage.appendChild(ghost);
         ghost.scrollTop = from.scrollTop;
@@ -2632,32 +2615,32 @@ function SectionDeck({
           (revealing the rain behind), and the new one flies in with a focus-pull
           (slide + de-blur). Simpler and more robust than AnimatePresence
           exit orchestration, which stalls when the index change fires from a
-          native listener (wheel / keys / nav-click) rather than a React onClick. */}
-      <motion.div
+          native listener (wheel / keys / nav-click) rather than a React onClick.
+          The entrance itself is a CSS animation, not a JS tween: a rAF stall
+          (occluded window, the section-mount long task) freezes a JS-driven
+          tween mid-flight until the next heartbeat, but the style system
+          resolves a CSS animation from wall-clock time, so it always completes
+          on its own (same pattern as .gh-cell). */}
+      <div
         key={index}
         ref={scrollerRef}
-        initial={
-          reduce
-            ? false
-            : { opacity: 0, y: dir > 0 ? 70 : -70, filter: "blur(7px)" }
-        }
-        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-        transition={{ duration: reduce ? 0 : 0.6, ease: EASE }}
-        className="absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-none pb-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className={`absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-none pb-28 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+          reduce ? "" : dir > 0 ? "deck-enter-up" : "deck-enter-down"
+        }`}
       >
         <Active />
-      </motion.div>
+      </div>
 
       {/* Cinematic cue: a soft phosphor band sweeps the stage in the travel
-          direction each time the section changes (keyed to index). */}
+          direction each time the section changes (keyed to index). CSS for the
+          same stall-proofing as the entrance above. */}
       {!reduce && (
-        <motion.div
+        <div
           key={`scan-${index}`}
           aria-hidden
-          initial={{ y: dir > 0 ? "-35vh" : "85vh", opacity: 0 }}
-          animate={{ y: dir > 0 ? "115vh" : "-45vh", opacity: [0, 0.9, 0] }}
-          transition={{ duration: 0.65, ease: EASE }}
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-40 bg-gradient-to-b from-transparent via-accent/20 to-transparent blur-md"
+          className={`pointer-events-none absolute inset-x-0 top-0 z-10 h-40 bg-gradient-to-b from-transparent via-accent/20 to-transparent blur-md ${
+            dir > 0 ? "deck-scan-down" : "deck-scan-up"
+          }`}
         />
       )}
 
@@ -2694,27 +2677,7 @@ export default function Home() {
     pageCtx.section = activeId;
   }, [activeId]);
 
-  // Publish the deck content column's centre — the anchor an on-duty critter
-  // posts beside on its home section. Cheap: one element, polled slowly.
   const mainRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    const publish = () => {
-      const el = mainRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      pageCtx.content.x = r.left + r.width / 2;
-      pageCtx.content.y = r.top + r.height / 2;
-      pageCtx.content.active = true;
-    };
-    publish();
-    const id = setInterval(publish, 400);
-    window.addEventListener("resize", publish);
-    return () => {
-      clearInterval(id);
-      window.removeEventListener("resize", publish);
-      pageCtx.content.active = false;
-    };
-  }, []);
 
   // Wake the sleeping free-tier demo APIs as soon as anyone lands: by the time
   // a visitor reaches Work and clicks a live demo, the backend is already up

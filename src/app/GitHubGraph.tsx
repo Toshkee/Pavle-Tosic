@@ -146,10 +146,28 @@ export default function GitHubGraph() {
               </div>
             ))}
           </div>
+        ) : failed ? (
+          // Third-party feed unreachable — say so in the site's own voice and
+          // point at the real profile instead of leaving a bare skeleton.
+          <div className="font-mono text-sm leading-relaxed">
+            <p className="text-muted">
+              <span className="text-accent">$</span> tail -f github.log
+              <span className="text-faint"> · connection timed out</span>
+            </p>
+            <p className="mt-1 text-faint">
+              the commits are still there:{" "}
+              <a
+                href={PROFILE}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-underline text-accent-ink"
+              >
+                github.com/{USER} ↗
+              </a>
+            </p>
+          </div>
         ) : (
-          <p className="text-sm text-body">
-            {failed ? "Contributions on GitHub" : "Loading contributions…"}
-          </p>
+          <p className="text-sm text-body">Loading contributions…</p>
         )}
 
         {failed ? null : (
@@ -205,17 +223,19 @@ export default function GitHubGraph() {
           </div>
         )}
 
-        <div className="mt-4 flex items-center gap-1.5 text-xs text-muted">
-          <span>Less</span>
-          {LEVEL_COLORS.map((c, i) => (
-            <span
-              key={i}
-              className="h-3 w-3 rounded-[2px]"
-              style={{ backgroundColor: c }}
-            />
-          ))}
-          <span>More</span>
-        </div>
+        {!failed && (
+          <div className="mt-4 flex items-center gap-1.5 text-xs text-muted">
+            <span>Less</span>
+            {LEVEL_COLORS.map((c, i) => (
+              <span
+                key={i}
+                className="h-3 w-3 rounded-[2px]"
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <span>More</span>
+          </div>
+        )}
       </div>
     </div>
   );

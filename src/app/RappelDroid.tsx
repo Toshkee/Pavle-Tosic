@@ -15,7 +15,7 @@ import {
   useVelocity,
   type MotionValue,
 } from "framer-motion";
-import { bugPos, droidPos, pageCtx } from "./characterBus";
+import { pageCtx } from "./characterBus";
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
@@ -275,10 +275,9 @@ export default function RappelDroid({
   const z2y = useTransform(time, (t) => -zPhase(t, 0.5) * 12);
   const z2x = useTransform(time, (t) => zPhase(t, 0.5) * 5);
 
-  // Wake with a startle (also called by the bug's visits). Refs/MotionValues
-  // only, so the identity doesn't matter to the effects below.
+  // Wake with a startle. Refs/MotionValues only, so the identity doesn't
+  // matter to the effects below.
   const nearCursor = useRef(false);
-  const nearBug = useRef(false);
   const wake = () => {
     lastActive.current = Date.now();
     if (!sleepingRef.current) return;
@@ -306,9 +305,7 @@ export default function RappelDroid({
       nearCursor.current = dist < 150;
       // wave hello — and keep waving on the About section (its greeter duty)
       cheerTarget.set(
-        nearCursor.current || nearBug.current || pageCtx.section === "about"
-          ? 1
-          : 0
+        nearCursor.current || pageCtx.section === "about" ? 1 : 0
       );
     };
     window.addEventListener("mousemove", onMove, { passive: true });
@@ -339,10 +336,9 @@ export default function RappelDroid({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
 
-  // Buddy watch: refresh the cached eye position (the page's ONLY recurring
-  // layout read for the droid), publish our position and keep an eye out for
-  // the bug — look down at it and wave when it comes close (its visit also
-  // wakes us). Runs under reduced-motion too, so pupils still aim right.
+  // Watch tick: refresh the cached eye position (the page's ONLY recurring
+  // layout read for the droid) and read the live-market mood. Runs under
+  // reduced-motion too, so pupils still aim right.
   useEffect(() => {
     const tick = () => {
       const el = droidRef.current;
@@ -354,33 +350,12 @@ export default function RappelDroid({
         ok: true,
       };
       if (reduce) return;
-      droidPos.x = r.left + r.width / 2;
-      droidPos.y = r.top + r.height / 2;
-      droidPos.active = true;
       // Live-market reaction: shoulders slump while the ticker shows red.
       dismay.set(pageCtx.marketMood < -0.3 ? 1 : 0);
-      if (!bugPos.active) return;
-      const dx = bugPos.x - droidPos.x;
-      const dy = bugPos.y - droidPos.y;
-      const d = Math.hypot(dx, dy) || 1;
-      const near = d < 130;
-      if (near && sleepingRef.current) wake();
-      nearBug.current = near;
-      if (near && !nearCursor.current && !sleepingRef.current) {
-        pupilTX.set(clamp((dx / d) * 2.6, -2.6, 2.6));
-        pupilTY.set(clamp((dy / d) * 2.6, -2.6, 2.6));
-      }
-      cheerTarget.set(
-        near || nearCursor.current || pageCtx.section === "about" ? 1 : 0
-      );
     };
     tick(); // aim the pupils correctly before the first interval fires
     const id = setInterval(tick, 200);
-    return () => {
-      clearInterval(id);
-      droidPos.active = false;
-    };
-    // wake only touches refs/MotionValues — stable across renders.
+    return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce, pupilTX, pupilTY, cheerTarget]);
 

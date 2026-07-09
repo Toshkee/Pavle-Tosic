@@ -48,6 +48,11 @@ export const CRITTER_KEYFRAMES = `
 .cr-pulse{animation:cPulse 1.1s ease-in-out infinite}
 .cr-legA{animation:cLegA 0.3s ease-in-out infinite;transform-box:fill-box}
 .cr-legB{animation:cLegB 0.3s ease-in-out infinite;transform-box:fill-box}
+@keyframes cTalkBob{0%,100%{transform:translateY(0)}30%{transform:translateY(-2.5px)}65%{transform:translateY(-0.5px)}}
+.cr-talkbob{animation:cTalkBob .5s ease-in-out infinite}
+@keyframes cMouth{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.7)}}
+.cr-mouth{animation:cMouth .32s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.cr-still .cr-legA,.cr-still .cr-legB{animation-play-state:paused}
 `;
 
 /** Injects the shared critter keyframes once. */
@@ -135,7 +140,7 @@ export function BeetleMk2() {
 }
 
 /* ── 3. Terminal Cat — sits, tail flick, ears twitch, blink, eye-track ── */
-export function TerminalCat({ look }: { look?: Look }) {
+export function TerminalCat({ look, talking }: { look?: Look; talking?: boolean }) {
   return (
     <svg width={72} height={78} viewBox="0 0 56 60" fill="none" shapeRendering="crispEdges" style={{ filter: glow, display: "block" }}>
       <g className="cr-breath" style={{ transformOrigin: "28px 58px" }}>
@@ -157,7 +162,9 @@ export function TerminalCat({ look }: { look?: Look }) {
             <rect x={31} y={28} width={3} height={4} rx={1} fill={GB} />
           </Pupils>
         </g>
-        <path d="M27 35 L29 35 L28 37 Z" fill={GB} />
+        <g className={talking ? "cr-mouth" : undefined}>
+          <path d="M27 35 L29 35 L28 37 Z" fill={GB} />
+        </g>
         <g stroke="rgba(34,197,94,0.5)" strokeWidth={1}>
           <path d="M18 32 L8 30" />
           <path d="M18 35 L8 36" />
@@ -170,7 +177,7 @@ export function TerminalCat({ look }: { look?: Look }) {
 }
 
 /* ── 4. Daemon — a background-daemon imp (horns, trident, fangs) ── */
-export function Daemon({ look }: { look?: Look }) {
+export function Daemon({ look, talking }: { look?: Look; talking?: boolean }) {
   return (
     <svg width={72} height={82} viewBox="0 0 56 64" fill="none" shapeRendering="crispEdges" style={{ filter: glow, display: "block" }}>
       <g className="cr-float">
@@ -192,16 +199,18 @@ export function Daemon({ look }: { look?: Look }) {
             <rect x={30} y={25} width={4} height={4} rx={1} fill={GB} />
           </Pupils>
         </g>
-        <path d="M22 31 q6 4 12 0" stroke={GB} strokeWidth={1.4} fill="none" />
-        <path d="M24 31 l1 3 l1 -3 Z" fill={GB} />
-        <path d="M31 31 l1 3 l1 -3 Z" fill={GB} />
+        <g className={talking ? "cr-mouth" : undefined}>
+          <path d="M22 31 q6 4 12 0" stroke={GB} strokeWidth={1.4} fill="none" />
+          <path d="M24 31 l1 3 l1 -3 Z" fill={GB} />
+          <path d="M31 31 l1 3 l1 -3 Z" fill={GB} />
+        </g>
       </g>
     </svg>
   );
 }
 
 /* ── 5. Ghost — floating pixel spectre with an occasional glitch ── */
-export function Ghost({ look }: { look?: Look }) {
+export function Ghost({ look, talking }: { look?: Look; talking?: boolean }) {
   return (
     <svg width={64} height={68} viewBox="0 0 52 56" fill="none" shapeRendering="crispEdges" style={{ filter: glow, display: "block" }}>
       <g className="cr-bob2">
@@ -215,7 +224,9 @@ export function Ghost({ look }: { look?: Look }) {
               <rect x={30} y={27} width={3} height={4} rx={1} fill={GB} />
             </Pupils>
           </g>
-          <ellipse cx={26} cy={38} rx={3} ry={2.4} fill={D2} />
+          <g className={talking ? "cr-mouth" : undefined}>
+            <ellipse cx={26} cy={38} rx={3} ry={2.4} fill={D2} />
+          </g>
         </g>
       </g>
     </svg>
@@ -223,7 +234,7 @@ export function Ghost({ look }: { look?: Look }) {
 }
 
 /* ── 6. Blob — a bouncing terminal slime, squash-and-stretch ── */
-export function Blob({ look }: { look?: Look }) {
+export function Blob({ look, talking }: { look?: Look; talking?: boolean }) {
   return (
     <svg width={64} height={58} viewBox="0 0 52 46" fill="none" shapeRendering="crispEdges" style={{ filter: glow, display: "block" }}>
       <g className="cr-squash" style={{ transformOrigin: "26px 44px" }}>
@@ -238,7 +249,9 @@ export function Blob({ look }: { look?: Look }) {
             <rect x={30} y={33} width={3} height={4} rx={1} fill={GB} />
           </Pupils>
         </g>
-        <path d="M22 40 q4 3 8 0" stroke={GB} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+        <g className={talking ? "cr-mouth" : undefined}>
+          <path d="M22 40 q4 3 8 0" stroke={GB} strokeWidth={1.4} fill="none" strokeLinecap="round" />
+        </g>
       </g>
     </svg>
   );
