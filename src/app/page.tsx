@@ -718,6 +718,15 @@ const ITEM_VARIANTS = {
   },
 };
 
+// Slide-only sibling for the rail tagline: it's the page's LCP element, and
+// an opacity fade defers its final paint until after hydration — which
+// Lighthouse (throttled) scores as a ~10s LCP. Sliding it in fully opaque
+// keeps the stagger read while letting it count from the first SSR paint.
+const LCP_ITEM_VARIANTS = {
+  hidden: { y: 22 },
+  visible: { y: 0, transition: { duration: 0.6, ease: EASE } },
+};
+
 // Container that staggers its <StaggerItem> children in as it enters view.
 function StaggerGroup({
   children,
@@ -1090,7 +1099,7 @@ function LeftRail({ active }: { active: string }) {
           <span className="text-muted">{LOCATION}</span>
         </motion.p>
         <motion.p
-          variants={ITEM_VARIANTS}
+          variants={LCP_ITEM_VARIANTS}
           className="mt-5 max-w-sm text-[15px] leading-relaxed text-body"
         >
           {TAGLINE}
@@ -1145,13 +1154,13 @@ function LeftRail({ active }: { active: string }) {
         className="mt-10 flex items-center gap-1 lg:mt-auto lg:border-t lg:border-line/60 lg:pt-8"
       >
         <IconLink href={SOCIAL.github} label="GitHub">
-          <SiGithub />
+          <SiGithub aria-hidden />
         </IconLink>
         <IconLink href={SOCIAL.linkedin} label="LinkedIn">
-          <FaLinkedin />
+          <FaLinkedin aria-hidden />
         </IconLink>
         <IconLink href={`mailto:${SOCIAL.email}`} label="Email">
-          <SiGmail />
+          <SiGmail aria-hidden />
         </IconLink>
       </motion.div>
 

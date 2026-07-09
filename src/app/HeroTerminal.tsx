@@ -24,7 +24,9 @@ const TOKEN_RE =
 type Token = { text: string; cls: keyof typeof STYLE };
 
 const STYLE = {
-  com: { color: "#4b5d4f", fontStyle: "italic" },
+  // Comment tone matches --color-faint: the old #4b5d4f sat at ~2.8:1 on the
+  // panel and failed WCAG AA; this keeps comments the dimmest token at ~4.9:1.
+  com: { color: "#788b7a", fontStyle: "italic" },
   str: { color: "#7ee8a0" },
   num: { color: "#7ee8a0" },
   kw: { color: "#5cf08a", fontWeight: 600 },

@@ -534,9 +534,11 @@ function Terminal({
 
   return (
     // data-deck-ignore: the deck's window-level wheel handler leaves this
-    // panel's scroll alone (see SectionDeck).
-    <div
+    // panel's scroll alone (see SectionDeck). <aside> so the bar lives in a
+    // landmark (axe: no content outside landmarks).
+    <aside
       data-deck-ignore
+      aria-label="Interactive terminal"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-50 print:hidden"
     >
       <div className="pointer-events-auto mx-auto max-w-6xl px-5 sm:px-8">
@@ -615,7 +617,7 @@ function Terminal({
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
 
