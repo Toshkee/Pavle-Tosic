@@ -10,14 +10,22 @@ import { memo, useEffect, useRef } from "react";
 
    It REACTS to the active SECTION: changing sections fires a brief "surge"
    (columns speed up + brighten, then settle), so moving through the deck feels
-   like the rain responds. The canvas is CSS-blurred so the glyphs melt into
-   soft streaks of light — with the aurora blobs gone, this is what tints the
-   page green.
+   like the rain responds. The glyphs are blurred into soft streaks of light —
+   with the aurora blobs gone, this is what tints the page green.
 
-   Perf: rendered at 1x (the blur hides retina sharpness), redraw capped at
-   ~30fps, the loop
-   PAUSES while the tab is hidden, and under prefers-reduced-motion we paint one
-   sparse static frame and never loop. */
+   Perf: the blur is BAKED into a pre-rendered glyph atlas (gaussian blur is
+   linear, so pre-blurred sprites composite the same as blurring the frame).
+   The old approach — sharp fillText + a CSS blur(4px) on the element — made
+   the GPU re-blur the whole viewport on every repaint, and each of the ~2000
+   glyphs per frame paid fillText + an rgba() string allocation. Now a frame is
+   plain drawImage blits with globalAlpha set once per trail tier, and there is
+   no CSS filter at all (kept only as a fallback where ctx.filter is missing).
+   And because the output is bokeh, the canvas renders at HALF resolution and
+   the browser upscales it — the bilinear stretch is invisible inside the blur
+   and quarters the pixels every blit touches (which is what keeps the sprite
+   path cheap even under software rasterization). Redraw capped at ~30fps, the
+   loop PAUSES while the tab is hidden, and under prefers-reduced-motion we
+   paint one sparse static frame and never loop. */
 
 const HEAD = "92, 240, 138"; // --color-accent-ink — bright leading glyph
 const TRAIL = "34, 197, 94"; // --color-accent — dimmer trail
@@ -26,9 +34,41 @@ const FONT_SIZE = 15; // px (CSS)
 const TRAIL_LEN = 16; // glyphs lit above the head
 const FPS = 1000 / 30;
 const BASE_ALPHA = 0.65; // global dimmer — the rain carries the page's ambient colour now
-const BLUR_PX = 4; // CSS blur — melts glyphs into soft light streaks (ambience, not noise)
+const BLUR_PX = 4; // baked into the glyph atlas — melts glyphs into soft light streaks (CSS px)
+
+// Internal render scale: the layout stays in CSS px, but the canvas backing
+// store (and the atlas) live at half size and the browser stretches it back up.
+const RES = 0.5;
+const STEP = FONT_SIZE * RES; // one grid cell, in device px
+// Sprites need room for the baked blur to bleed (~2.5σ of the scaled blur).
+const PAD = Math.ceil(BLUR_PX * RES * 2.5);
+const CELL = Math.ceil(FONT_SIZE * RES + PAD * 2);
+const FONT = `${FONT_SIZE * RES}px ui-monospace, Menlo, monospace`;
 
 const rand = (n: number) => Math.floor(Math.random() * n);
+
+// Glyph atlas: every glyph pre-drawn in both colours at full alpha, blurred
+// once here instead of per frame (at the render scale, so the baked blur
+// matches BLUR_PX after the upscale). Row 0 = head colour, row 1 = trail.
+// Returns null where ctx.filter is unsupported (the caller then falls back to
+// sharp fillText under the old CSS element blur).
+function buildAtlas(): HTMLCanvasElement | null {
+  const atlas = document.createElement("canvas");
+  atlas.width = GLYPHS.length * CELL;
+  atlas.height = CELL * 2;
+  const ctx = atlas.getContext("2d");
+  if (!ctx || !("filter" in ctx)) return null;
+  ctx.font = FONT;
+  ctx.textBaseline = "top";
+  ctx.filter = `blur(${BLUR_PX * RES}px)`;
+  for (let row = 0; row < 2; row++) {
+    ctx.fillStyle = `rgb(${row === 0 ? HEAD : TRAIL})`;
+    for (let i = 0; i < GLYPHS.length; i++) {
+      ctx.fillText(GLYPHS[i], i * CELL + PAD, row * CELL + PAD);
+    }
+  }
+  return atlas;
+}
 
 function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -54,8 +94,13 @@ function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    let w = 0;
-    let h = 0;
+    const atlas = buildAtlas();
+    // No ctx.filter support (old Safari): draw sharp and blur the element the
+    // old way. Everyone else gets pre-blurred sprites and no CSS filter.
+    canvas.style.filter = atlas ? "" : `blur(${BLUR_PX}px)`;
+
+    let dw = 0; // canvas backing size, device px (RES × CSS px)
+    let dh = 0;
     let cols = 0;
     let rows = 0;
     let heads = new Float32Array(0); // head row per column (float)
@@ -63,17 +108,16 @@ function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
     let grid = new Uint16Array(0); // glyph index per cell [col * rows + row]
 
     const setup = () => {
-      // The canvas is CSS-blurred, so retina sharpness is wasted — render at 1x.
-      const dpr = 1;
-      w = window.innerWidth;
-      h = window.innerHeight;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      dw = Math.ceil(w * RES);
+      dh = Math.ceil(h * RES);
+      canvas.width = dw;
+      canvas.height = dh;
       canvas.style.width = w + "px";
       canvas.style.height = h + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.textBaseline = "top";
-      ctx.font = `${FONT_SIZE}px ui-monospace, Menlo, monospace`;
+      ctx.font = FONT;
       cols = Math.ceil(w / FONT_SIZE);
       rows = Math.ceil(h / FONT_SIZE) + 2;
       heads = new Float32Array(cols);
@@ -87,35 +131,56 @@ function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
     };
     setup();
 
+    // One sprite blit. With the atlas the blur is already in the pixels; the
+    // fallback draws sharp text (the element's CSS blur softens it instead).
+    const blit = (glyphIdx: number, headRow: boolean, x: number, y: number) => {
+      if (atlas) {
+        ctx.drawImage(
+          atlas,
+          glyphIdx * CELL,
+          headRow ? 0 : CELL,
+          CELL,
+          CELL,
+          x - PAD,
+          y - PAD,
+          CELL,
+          CELL
+        );
+      } else {
+        ctx.fillStyle = `rgb(${headRow ? HEAD : TRAIL})`;
+        ctx.fillText(GLYPHS[glyphIdx], x, y);
+      }
+    };
+
     const draw = (dt: number) => {
-      ctx.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, dw, dh);
       const surge = surgeRef.current;
       const speedMul = 1 + surge * 2.2;
-      for (let c = 0; c < cols; c++) {
-        const hd = heads[c];
-        const hInt = Math.floor(hd);
-        const x = c * FONT_SIZE;
-        for (let k = 0; k < TRAIL_LEN; k++) {
-          const row = hInt - k;
-          if (row < 0 || row >= rows) continue;
-          const glyph = GLYPHS[grid[c * rows + row]];
-          if (k === 0) {
-            const a = (0.85 + 0.15 * surge) * BASE_ALPHA;
-            ctx.fillStyle = `rgba(${HEAD}, ${Math.min(a, 0.95)})`;
-          } else {
-            const fade = 1 - k / TRAIL_LEN;
-            const a = fade * fade * (0.55 + 0.3 * surge) * BASE_ALPHA;
-            ctx.fillStyle = `rgba(${TRAIL}, ${a})`;
-          }
-          ctx.fillText(glyph, x, row * FONT_SIZE);
+      // Trail tiers share an alpha, so draw tier-by-tier: globalAlpha is set
+      // TRAIL_LEN times per frame instead of per glyph.
+      for (let k = 0; k < TRAIL_LEN; k++) {
+        if (k === 0) {
+          ctx.globalAlpha = Math.min((0.85 + 0.15 * surge) * BASE_ALPHA, 0.95);
+        } else {
+          const fade = 1 - k / TRAIL_LEN;
+          ctx.globalAlpha = fade * fade * (0.55 + 0.3 * surge) * BASE_ALPHA;
         }
-        heads[c] = hd + speeds[c] * speedMul * dt;
+        for (let c = 0; c < cols; c++) {
+          const row = Math.floor(heads[c]) - k;
+          if (row < 0 || row >= rows) continue;
+          blit(grid[c * rows + row], k === 0, c * STEP, row * STEP);
+        }
+      }
+      ctx.globalAlpha = 1;
+      for (let c = 0; c < cols; c++) {
+        const hInt = Math.floor(heads[c]);
+        heads[c] += speeds[c] * speedMul * dt;
         // Occasionally re-randomise the leading glyph (the classic flicker).
         if (hInt >= 0 && hInt < rows && Math.random() < 0.5) {
           grid[c * rows + hInt] = rand(GLYPHS.length);
         }
         // Reset once the whole trail has fallen past the bottom.
-        if ((heads[c] - TRAIL_LEN) * FONT_SIZE > h) {
+        if ((heads[c] - TRAIL_LEN) * STEP > dh) {
           heads[c] = -rand(10);
           speeds[c] = 6 + Math.random() * 10;
         }
@@ -124,11 +189,12 @@ function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
     };
 
     const staticFrame = () => {
-      ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = `rgba(${TRAIL}, 0.16)`;
+      ctx.clearRect(0, 0, dw, dh);
+      ctx.globalAlpha = 0.16;
       for (let c = 0; c < cols; c++) {
-        ctx.fillText(GLYPHS[rand(GLYPHS.length)], c * FONT_SIZE, rand(rows) * FONT_SIZE);
+        blit(rand(GLYPHS.length), false, c * STEP, rand(rows) * STEP);
       }
+      ctx.globalAlpha = 1;
     };
 
     let raf = 0;
@@ -176,7 +242,7 @@ function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
       ref={canvasRef}
       aria-hidden
       className="pointer-events-none fixed inset-0 h-full w-full"
-      style={{ zIndex: -8, filter: `blur(${BLUR_PX}px)` }}
+      style={{ zIndex: -8 }}
     />
   );
 }

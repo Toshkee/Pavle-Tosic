@@ -33,7 +33,7 @@ const LINES: Record<string, string[]> = {
   about: [
     "hey, welcome in. let me show you around, I know how this place is wired.",
     "this right half is a section deck: one slide on stage at a time, your wheel flips it at the edges.",
-    "the rain behind everything is a canvas-2d matrix, blurred in css for the bokeh. it surges when you switch sections.",
+    "the rain behind everything is a canvas-2d matrix. every glyph is a pre-blurred sprite, so the bokeh is free. it surges when you switch sections.",
     "me? I swing on two sine waves so I never look like a metronome. flick your scroll hard and I backflip.",
   ],
   stack: [
