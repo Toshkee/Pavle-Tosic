@@ -240,7 +240,7 @@ function AskPanel() {
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.2 }}
             aria-label="Ask Pavle's AI assistant"
-            className="glow-hover fixed bottom-20 right-4 z-[60] flex items-center gap-2 rounded-full border border-accent/40 bg-[#0a0e0b] px-4 py-2.5 font-mono text-sm text-accent-ink shadow-2xl transition-colors hover:border-accent/70 sm:right-6"
+            className="tonal-hover fixed bottom-20 right-4 z-[60] flex items-center gap-2 rounded-full border border-accent/40 bg-[#0a0e0b] px-4 py-2.5 font-mono text-sm text-accent-ink shadow-2xl transition-colors hover:border-accent/70 sm:right-6"
           >
             <Sparkle className="h-4 w-4 text-accent" />
             Ask&nbsp;AI
@@ -306,7 +306,7 @@ function AskPanel() {
                         key={s}
                         type="button"
                         onClick={() => send(s)}
-                        className="glow-hover w-full rounded-lg border border-line bg-bg/40 px-3 py-2 text-left text-body transition-colors hover:border-accent/50 hover:text-ink"
+                        className="tonal-hover w-full rounded-lg border border-line bg-bg/40 px-3 py-2 text-left text-body transition-colors hover:border-accent/50 hover:text-ink"
                       >
                         {s}
                       </button>
@@ -387,7 +387,7 @@ function AskPanel() {
                   type="submit"
                   disabled={loading || streaming || !input.trim()}
                   aria-label="Send"
-                  className="glow-hover flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-bg transition-opacity hover:bg-accent-2 disabled:opacity-40"
+                  className="tonal-hover flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-bg transition-opacity hover:bg-accent-2 disabled:opacity-40"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 2L11 13" />

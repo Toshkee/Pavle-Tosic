@@ -218,12 +218,11 @@ function LiveTicker() {
         <span className="text-faint">binance · spot · usdt</span>
         <span className="flex items-center gap-1.5">
           <span className="relative flex h-1.5 w-1.5" aria-hidden>
-            {status === "live" && !reduce && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
-            )}
             <span
               className={`relative inline-flex h-1.5 w-1.5 rounded-full ${
-                status === "live" ? "bg-accent" : "bg-faint"
+                status === "live"
+                  ? `bg-accent ${reduce ? "" : "animate-pulse"}`
+                  : "bg-faint"
               }`}
             />
           </span>

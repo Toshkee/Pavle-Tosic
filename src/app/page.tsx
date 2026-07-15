@@ -666,7 +666,9 @@ function useIsDesktop() {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// Single element that focuses in (blur + slide) when scrolled into view.
+// Single element that slides into place when scrolled into view. Transform
+// only — never opacity: if the in-view trigger doesn't fire (throttled tab,
+// hydration hiccup, screenshot pass) the content must still be readable.
 function Reveal({
   children,
   className = "",
@@ -697,8 +699,8 @@ function Reveal({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, ...offset, scale: scale ? 0.94 : 1 }}
-      whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+      initial={{ ...offset, scale: scale ? 0.94 : 1 }}
+      whileInView={{ x: 0, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.8, delay, ease: EASE }}
     >
@@ -707,25 +709,14 @@ function Reveal({
   );
 }
 
-// Per-item variant for staggered groups (lists, grids). Opacity + slide only
-// (no filter:blur — it would stack on the .glass backdrop-filter and jank).
+// Per-item variant for staggered groups (lists, grids). Slide only, never
+// opacity: content stays readable even if the reveal never fires, and the
+// fully-opaque first SSR paint keeps the rail tagline counting as LCP.
 const ITEM_VARIANTS = {
-  hidden: { opacity: 0, y: 22 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.6, ease: EASE },
-  },
-};
-
-// Slide-only sibling for the rail tagline: it's the page's LCP element, and
-// an opacity fade defers its final paint until after hydration — which
-// Lighthouse (throttled) scores as a ~10s LCP. Sliding it in fully opaque
-// keeps the stagger read while letting it count from the first SSR paint.
-const LCP_ITEM_VARIANTS = {
   hidden: { y: 22 },
   visible: { y: 0, transition: { duration: 0.6, ease: EASE } },
 };
+const LCP_ITEM_VARIANTS = ITEM_VARIANTS;
 
 // Container that staggers its <StaggerItem> children in as it enters view.
 function StaggerGroup({
@@ -755,7 +746,9 @@ function StaggerGroup({
   );
 }
 
-// Heading whose words slide up from behind a mask (smooth, not per-character).
+// Heading whose words settle up into place with a stagger (smooth, not
+// per-character). Transform only — no mask, no opacity — so the text reads
+// fine even when the reveal never fires.
 function RevealHeading({
   text,
   className = "",
@@ -813,11 +806,13 @@ function RevealHeading({
         <span
           key={i}
           aria-hidden
-          className="mr-[0.28em] inline-block overflow-hidden pb-[0.12em] align-bottom -mb-[0.12em] last:mr-0"
+          className="mr-[0.28em] inline-block align-bottom last:mr-0"
         >
+          {/* Unmasked slide — the word must stay readable even if the
+              in-view trigger never fires (throttled tab, hydration stall). */}
           <motion.span
             className="inline-block"
-            variants={{ hidden: { y: "115%" }, visible: { y: 0 } }}
+            variants={{ hidden: { y: "0.45em" }, visible: { y: 0 } }}
             transition={{ duration: 0.7, ease: EASE }}
           >
             {w}
@@ -830,7 +825,7 @@ function RevealHeading({
 
 // Element that eases toward the cursor on hover.
 // Press-scale feedback only. This replaced the magnetic cursor-pull, which
-// slid buttons out of their own glow-hover ring mid-spring — and cursor-
+// slid buttons out of their own tonal-hover ring mid-spring — and cursor-
 // reactive motion is out anyway (same call as the spotlight grid / hover
 // zooms). Don't reintroduce the pull.
 function Tap({
@@ -1106,11 +1101,10 @@ function LeftRail({ active }: { active: string }) {
         </motion.p>
         <motion.div
           variants={ITEM_VARIANTS}
-          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 font-mono text-xs text-accent-ink"
+          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/30 bg-surface px-3 py-1 font-mono text-xs text-accent-ink"
         >
           <span className="relative flex h-2 w-2" aria-hidden>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75 motion-reduce:animate-none" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+            <span className="relative inline-flex h-2 w-2 animate-pulse rounded-full bg-accent motion-reduce:animate-none" />
           </span>
           open to full-time / part-time · remote
         </motion.div>
@@ -1123,19 +1117,19 @@ function LeftRail({ active }: { active: string }) {
           <Tap>
             <a
               href="#work"
-              className="glow-hover block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition-colors hover:bg-accent-hover"
+              className="tonal-hover block rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-bg transition-colors hover:bg-accent-hover"
             >
               View work
             </a>
           </Tap>
-          <Tap>
-            <a
-              href="#contact"
-              className="glow-hover block rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
-            >
-              Get in touch
-            </a>
-          </Tap>
+          {/* Secondary actions read as quiet links, not a ghost twin of the
+              primary — one fill, everything else typographic. */}
+          <a
+            href="#contact"
+            className="link-underline ml-2 inline-flex items-center text-sm font-medium text-body transition-colors hover:text-accent-ink"
+          >
+            Get in touch
+          </a>
           <a
             href={RESUME}
             download
@@ -1194,15 +1188,12 @@ const About = memo(function About() {
     >
       <div className="stage-pool" aria-hidden />
       <Reveal>
-        <Kicker cmd="cat about.md" />
-      </Reveal>
-      <Reveal delay={0.06}>
         <h2
           id="about-heading"
-          className="mt-5 max-w-[22ch] font-display text-4xl font-bold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-6xl"
+          className="max-w-[22ch] font-display text-4xl font-bold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-6xl"
         >
           I turn ideas into{" "}
-          <span className="text-gradient">shipped, working software</span>.
+          <span className="text-accent-ink">shipped, working software</span>.
         </h2>
       </Reveal>
       <Reveal delay={0.12}>
@@ -1264,7 +1255,7 @@ function TechChip({ t }: { t: Tech }) {
       variants={reduce ? undefined : ITEM_VARIANTS}
       whileHover={reduce ? undefined : { y: -3 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="glow-hover group inline-flex items-center gap-2 rounded-lg border border-line bg-bg/40 px-3 py-2 hover:border-accent/60"
+      className="tonal-hover group inline-flex items-center gap-2 rounded-lg border border-line bg-bg/40 px-3 py-2 hover:border-accent/60"
     >
       <span
         className={`flex h-5 w-5 shrink-0 items-center justify-center text-[18px] opacity-90 transition-transform duration-300 group-hover:scale-110 ${
@@ -1291,13 +1282,10 @@ const Stack = memo(function Stack() {
       className="relative py-14 lg:py-20"
     >
       <div className="stage-pool" aria-hidden />
-      <Reveal>
-        <Kicker cmd="cat stack.config" />
-      </Reveal>
       <RevealHeading
         id="stack-heading"
         text="The stack"
-        className="mt-5 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
+        className="font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
       />
       <Reveal delay={0.1}>
         <p className="mt-4 max-w-[60ch] leading-[1.7] text-body">
@@ -1806,7 +1794,7 @@ function ProjectShowcase({
               {p.highlights.map((h) => (
                 <li
                   key={h}
-                  className="relative max-w-[80ch] pl-5 text-sm leading-relaxed text-body before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
+                  className="relative max-w-[80ch] pl-5 text-sm leading-relaxed text-body before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-line-strong"
                 >
                   {h}
                 </li>
@@ -1881,13 +1869,10 @@ const Work = memo(function Work() {
       <div className="stage-pool" aria-hidden />
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div>
-          <Reveal>
-            <Kicker cmd="ls work/" />
-          </Reveal>
           <RevealHeading
             id="work-heading"
             text="Things I've built"
-            className="mt-4 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl"
+            className="font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl"
           />
         </div>
         <Reveal delay={0.1} className="flex items-center gap-3 font-mono text-sm">
@@ -2040,7 +2025,7 @@ const Experience = memo(function Experience() {
                 {e.points.map((pt) => (
                   <li
                     key={pt}
-                    className="relative pl-5 text-[15px] leading-relaxed text-body before:absolute before:left-0 before:top-2.5 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
+                    className="relative pl-5 text-[15px] leading-relaxed text-body before:absolute before:left-0 before:top-2.5 before:h-1.5 before:w-1.5 before:rounded-full before:bg-line-strong"
                   >
                     {pt}
                   </li>
@@ -2153,7 +2138,7 @@ const Contact = memo(function Contact() {
                   aria-label="Copy email address"
                   whileTap={reduce ? undefined : { scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className="glow-hover inline-flex w-[5.4rem] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-bg/40 px-3 py-1.5 font-mono text-xs font-medium text-muted hover:border-accent/60 hover:text-ink"
+                  className="tonal-hover inline-flex w-[5.4rem] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line bg-bg/40 px-3 py-1.5 font-mono text-xs font-medium text-muted hover:border-accent/60 hover:text-ink"
                 >
                   {reduce ? (
                     <span
@@ -2190,7 +2175,7 @@ const Contact = memo(function Contact() {
                 href={SOCIAL.github}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-accent-soft sm:px-3"
+                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-surface sm:px-3"
               >
                 <span className="w-20 shrink-0 font-mono text-xs text-faint">
                   github
@@ -2213,7 +2198,7 @@ const Contact = memo(function Contact() {
                 href={SOCIAL.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-accent-soft sm:px-3"
+                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-surface sm:px-3"
               >
                 <span className="w-20 shrink-0 font-mono text-xs text-faint">
                   linkedin
@@ -2235,7 +2220,7 @@ const Contact = memo(function Contact() {
               <a
                 href={RESUME}
                 download
-                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-accent-soft sm:px-3"
+                className="group flex flex-wrap items-center gap-x-4 px-2 py-4 transition-colors hover:bg-surface sm:px-3"
               >
                 <span className="w-20 shrink-0 font-mono text-xs text-faint">
                   cv
@@ -2276,9 +2261,9 @@ const Contact = memo(function Contact() {
           <Tap>
             <a
               href={`mailto:${SOCIAL.email}`}
-              className="glow-hover inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
+              className="tonal-hover inline-flex items-center gap-2 rounded-full border border-line-strong px-5 py-2.5 text-sm font-medium text-ink hover:border-accent hover:text-accent-ink"
             >
-              <SiGmail aria-hidden /> Get in touch
+              <SiGmail aria-hidden /> Email me
             </a>
           </Tap>
         </Reveal>

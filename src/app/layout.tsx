@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import ConsoleSignature from "./ConsoleSignature";
 import AnimatedFavicon from "./AnimatedFavicon";
@@ -18,14 +17,14 @@ const mononoki = localFont({
   display: "swap",
 });
 
-// Space Grotesk — display face for headlines only (name, section headings,
-// project titles). Descends from Space Mono, so it reads as the terminal
-// mono's big sibling rather than a second voice. Mono stays everywhere else.
-// latin-ext is required: the site title is "Pavle Tošić" (š/ć).
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin", "latin-ext"],
-  weight: ["500", "700"],
-  variable: "--font-grotesk",
+// Tanker (Fontshare, self-hosted under the ITF Free Font License — see
+// fonts/TANKER-LICENSE-FFL.txt) — display face for headlines only (name,
+// section headings, project titles). Single heavy weight, caps-forward:
+// stencil/poster energy against the terminal mono. Mono stays everywhere
+// else. Glyph coverage verified for the site title "Pavle Tošić" (š/ć).
+const tanker = localFont({
+  src: [{ path: "./fonts/tanker-400.woff2", weight: "400", style: "normal" }],
+  variable: "--font-tanker",
   display: "swap",
 });
 
@@ -85,14 +84,14 @@ export default function RootLayout({
   // <html> before hydration, so the class intentionally differs from the
   // server HTML. This suppresses the warning for <html>'s attributes only.
   // Font variables live on <html>, not <body>: Tailwind v4 @theme tokens
-  // (--font-display etc.) are substituted at :root, so var(--font-grotesk)
+  // (--font-display etc.) are substituted at :root, so var(--font-tanker)
   // must be defined there — on <body> it silently fails and font-display
   // falls back to the inherited mono.
   return (
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${mononoki.variable} ${spaceGrotesk.variable}`}
+      className={`${mononoki.variable} ${tanker.variable}`}
     >
       <body className="antialiased">
         {/* Render-blocking, runs before the boot overlay paints: returning-
