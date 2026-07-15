@@ -96,23 +96,6 @@ section {
   }
 }
 
-/* Mobile section snap: the desktop deck flips one section at a time, so give
-   the stacked mobile document the same decisive feel. `mandatory` is safe even
-   though some sections outgrow a phone viewport: per spec, a snap area larger
-   than the snapport scrolls freely inside itself and only snaps at its edges
-   (proximity was tried first and touch flings sail straight past it). The
-   #home header must be a snap target too — under mandatory, anything that
-   isn't one becomes an impossible resting place. */
-@media (max-width: 1023px) {
-  html {
-    scroll-snap-type: y mandatory;
-  }
-  section,
-  #home {
-    scroll-snap-align: start;
-  }
-}
-
 :where(a, button, [tabindex]):focus-visible {
   outline: 2px solid var(--color-accent-ink);
   outline-offset: 3px;

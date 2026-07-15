@@ -174,6 +174,11 @@ function Terminal({
 
       const [cmd, ...args] = trimmed.split(/\s+/);
       const arg = args.join(" ").toLowerCase();
+      // Every command also rains: MatrixRain streams the typed name down a
+      // few columns and surges briefly (its "pt:rain-cmd" listener).
+      window.dispatchEvent(
+        new CustomEvent("pt:rain-cmd", { detail: cmd.toLowerCase() })
+      );
       const out = (node: ReactNode) =>
         print(<div className="whitespace-pre-wrap break-words">{node}</div>);
 
@@ -275,6 +280,7 @@ function Terminal({
                 ["whoami", "short bio"],
                 ["neofetch", "system info"],
                 ["crt", "toggle retro CRT mode"],
+                ["snake", "play snake, right here"],
                 ["clear", "clear the screen"],
                 ["exit", "close the terminal"],
               ].map(([c, d]) => (
@@ -284,8 +290,7 @@ function Terminal({
                 </div>
               ))}
               <div className={`${M} pt-1`}>
-                tip: ↑/↓ history · Tab completes · ⌘K toggles · there may be a
-                snake
+                tip: ↑/↓ history · Tab completes · ⌘K toggles
               </div>
             </div>
           );
