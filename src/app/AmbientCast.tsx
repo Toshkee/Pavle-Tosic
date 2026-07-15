@@ -2,7 +2,7 @@
 
 import { type MotionValue } from "framer-motion";
 import RappelDroid from "./RappelDroid";
-import GuideCritter, { GuideBubble } from "./GuideCritter";
+import PeekCritter, { GuideBubble } from "./GuideCritter";
 import {
   CritterKeyframes,
   TerminalCat,
@@ -13,10 +13,10 @@ import {
 } from "./critterSprites";
 
 /* The ambient cast, recast as TOUR GUIDES. Each character spawns only on the
-   section it hosts and holds one fixed post there (no roaming), narrating how
-   that part of the site is actually built through a typed speech bubble
-   (GuideCritter). The rappel droid is the one exception: it keeps its swing,
-   with its commentary pinned to the stage beside the arc.
+   section it hosts and POPS UP from behind the bottom terminal bar to speak
+   (PeekCritter), sinking back down when its lines are done. The rappel droid
+   is the one exception: it keeps its swing on the about section, with its
+   commentary pinned to the stage beside the arc.
 
      about → droid (swings + greets) · stack → slime · work → bug ·
      github → daemon · experience → ghost · contact → cat
@@ -25,9 +25,9 @@ import {
    Mount is instant (the section's own entrance covers the change). Desktop-
    only, non-reduced-motion; the page gates the whole thing. */
 
-/* One shared post, right of the content column and above the Ask AI launcher,
-   so the guide is always found in the same spot. */
-const POST = { right: 40, bottom: 170 };
+/* One shared surfacing spot: inside the terminal bar's width at every
+   desktop viewport (bar is centered max-w-6xl), left of the Ask AI dock. */
+const RIGHT = 210;
 
 const LINES: Record<string, string[]> = {
   about: [
@@ -84,34 +84,34 @@ export default function AmbientCast({
         </>
       )}
       {activeId === "stack" && (
-        <GuideCritter lines={LINES.stack} post={POST} w={64} h={58}>
+        <PeekCritter lines={LINES.stack} right={RIGHT} w={64} h={58}>
           {(look, talking) => <Blob look={look} talking={talking} />}
-        </GuideCritter>
+        </PeekCritter>
       )}
       {activeId === "work" && (
-        <GuideCritter lines={LINES.work} post={POST} w={66} h={56}>
+        <PeekCritter lines={LINES.work} right={RIGHT} w={66} h={56}>
           {(_, talking) => (
-            // top-down beetle: legs pause at the post, antennae keep sniffing
+            // top-down beetle: legs pause while risen, antennae keep sniffing
             <span className={talking ? undefined : "cr-still"}>
               <BeetleMk2 />
             </span>
           )}
-        </GuideCritter>
+        </PeekCritter>
       )}
       {activeId === "github" && (
-        <GuideCritter lines={LINES.github} post={POST} w={72} h={82}>
+        <PeekCritter lines={LINES.github} right={RIGHT} w={72} h={82}>
           {(look, talking) => <Daemon look={look} talking={talking} />}
-        </GuideCritter>
+        </PeekCritter>
       )}
       {activeId === "experience" && (
-        <GuideCritter lines={LINES.experience} post={POST} w={64} h={68}>
+        <PeekCritter lines={LINES.experience} right={RIGHT} w={64} h={68}>
           {(look, talking) => <Ghost look={look} talking={talking} />}
-        </GuideCritter>
+        </PeekCritter>
       )}
       {activeId === "contact" && (
-        <GuideCritter lines={LINES.contact} post={POST} w={72} h={78}>
+        <PeekCritter lines={LINES.contact} right={RIGHT} w={72} h={78}>
           {(look, talking) => <TerminalCat look={look} talking={talking} />}
-        </GuideCritter>
+        </PeekCritter>
       )}
     </>
   );

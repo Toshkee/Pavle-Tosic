@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import SnakeGame from "./SnakeGame";
 
 /* Interactive command line docked at the bottom of the page. Collapsed it's a
    slim prompt; focus it (or press ⌘K / Ctrl+K, or "/") and it expands into a
@@ -74,7 +75,8 @@ function Terminal({
       node: (
         <div className={M}>
           <span className="text-ink">{name}</span> - interactive shell. type{" "}
-          <span className={GI}>help</span> to explore.
+          <span className={GI}>help</span> to explore, or{" "}
+          <span className={GI}>tour</span> for a guided walkthrough.
         </div>
       ),
     },
@@ -109,8 +111,31 @@ function Terminal({
     return true;
   }, []);
 
+  // Guided tour: a timeout chain that flips the deck section by section and
+  // narrates each stop into the scrollback. Any other command, closing the
+  // terminal, or `tour stop` cancels it (the ref holds the pending timer).
+  const tourTimer = useRef<number | null>(null);
+  const stopTour = useCallback(() => {
+    if (tourTimer.current !== null) {
+      window.clearTimeout(tourTimer.current);
+      tourTimer.current = null;
+      return true;
+    }
+    return false;
+  }, []);
+  useEffect(() => {
+    if (!open) stopTour();
+  }, [open, stopTour]);
+  useEffect(
+    () => () => {
+      stopTour();
+    },
+    [stopTour]
+  ); // unmount safety
+
   const COMMANDS = useRef<string[]>([
     "help",
+    "tour",
     "about",
     "stack",
     "projects",
@@ -126,6 +151,7 @@ function Terminal({
     "socials",
     "whoami",
     "neofetch",
+    "snake",
     "crt",
     "theme",
     "clear",
@@ -151,12 +177,90 @@ function Terminal({
       const out = (node: ReactNode) =>
         print(<div className="whitespace-pre-wrap break-words">{node}</div>);
 
+      // A running tour yields to whatever the visitor types next.
+      if (cmd.toLowerCase() !== "tour" && stopTour()) {
+        out(<span className={M}>tour stopped.</span>);
+      }
+
       switch (cmd.toLowerCase()) {
+        case "tour": {
+          if (arg === "stop") {
+            out(
+              <span className={M}>
+                {stopTour() ? "tour stopped." : "no tour running."}
+              </span>
+            );
+            break;
+          }
+          if (stopTour()) {
+            out(<span className={M}>restarting tour…</span>);
+          }
+          // Every claim below is grounded in this repo — keep it that way.
+          const STOPS: [string, string][] = [
+            [
+              "about",
+              "the right half is a section deck: one slide on stage, your wheel flips it at the edges. the rain behind is canvas-2d, pre-blurred glyph sprites.",
+            ],
+            [
+              "stack",
+              "every logo is a devicon svg bundled at build time. no icon CDN, nothing to go down.",
+            ],
+            [
+              "work",
+              "a one-project kiosk: ← and → switch projects. the CryptoFlow case file (arch/notes/code tabs) was mined from the actual repo, and markets.live streams real Binance data over one websocket.",
+            ],
+            [
+              "github",
+              "this card is live: fetched client-side while you watch, aggregated by calendar week so the cadence reads honestly.",
+            ],
+            [
+              "experience",
+              "a git log: every hash is a real FNV-1a of its entry, (HEAD → main) marks the current job.",
+            ],
+            [
+              "contact",
+              "no form, no backend. a mailto, a clipboard button, and a human who answers within a day. that's the tour. try `help` for the rest.",
+            ],
+          ];
+          const STEP_MS = 6000;
+          const step = (i: number) => {
+            const [id, blurb] = STOPS[i];
+            go(id);
+            out(
+              <span className={M}>
+                <span className={GI}>
+                  [{i + 1}/{STOPS.length}] {id}
+                </span>{" "}
+                · {blurb}
+              </span>
+            );
+            if (i + 1 < STOPS.length) {
+              tourTimer.current = window.setTimeout(() => step(i + 1), STEP_MS);
+            } else {
+              tourTimer.current = null;
+              out(
+                <span className={M}>
+                  <span className={GI}>✓</span> tour finished. exit 0
+                </span>
+              );
+            }
+          };
+          out(
+            <span className={M}>
+              starting the guided tour: six stops, ~35s. type anything (or{" "}
+              <span className={GI}>tour stop</span>) to bail out.
+            </span>
+          );
+          step(0);
+          break;
+        }
+
         case "help":
           out(
             <div className={`${M} space-y-0.5`}>
               <div className="text-body">available commands</div>
               {[
+                ["tour", "guided walkthrough of the site"],
                 ["about", "who I am"],
                 ["stack", "languages & tools"],
                 ["projects", "what I've built  (alias: ls)"],
@@ -180,7 +284,8 @@ function Terminal({
                 </div>
               ))}
               <div className={`${M} pt-1`}>
-                tip: ↑/↓ history · Tab completes · ⌘K toggles
+                tip: ↑/↓ history · Tab completes · ⌘K toggles · there may be a
+                snake
               </div>
             </div>
           );
@@ -423,6 +528,19 @@ function Terminal({
           }
           break;
 
+        case "snake": {
+          if (window.matchMedia("(pointer: coarse)").matches) {
+            out(
+              <span className={M}>
+                snake needs a keyboard. come back on a desktop.
+              </span>
+            );
+            break;
+          }
+          out(<SnakeGame />);
+          break;
+        }
+
         case "sudo":
           out(<span className="text-body">nice try. you already have root here 😏</span>);
           break;
@@ -444,7 +562,7 @@ function Terminal({
           );
       }
     },
-    [print, go, name, role, location, social, resume, projects]
+    [print, go, name, role, location, social, resume, projects, stopTour]
   );
 
   // Focus the input whenever the terminal opens.

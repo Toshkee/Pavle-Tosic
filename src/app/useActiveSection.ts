@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 
 // Tracks which section is currently crossing the viewport's centre band.
 // Pass a module-level constant array so the effect doesn't re-run each render.
-export function useActiveSection(ids: string[]) {
+// `resubscribeKey`: pass any value whose change means the section elements
+// were remounted (e.g. the desktop⇄mobile layout flag) — the first client
+// commit renders the desktop deck (SSR snapshot), so a mobile visitor's
+// sections don't exist yet when this effect first runs; without re-observing
+// on the layout flip the observer watches detached nodes forever.
+export function useActiveSection(ids: string[], resubscribeKey?: unknown) {
   const [active, setActive] = useState(ids[0] ?? "");
 
   useEffect(() => {
@@ -48,7 +53,7 @@ export function useActiveSection(ids: string[]) {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
     };
-  }, [ids]);
+  }, [ids, resubscribeKey]);
 
   return active;
 }

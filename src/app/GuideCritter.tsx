@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode, useState } from "react";
 import { useAnimationFrame, useMotionValue } from "framer-motion";
 import type { Look } from "./critterSprites";
 
-/* Stationed tour guides. Each critter holds ONE fixed post on its home
-   section (no roaming) and explains, line by line, how the site is actually
-   built — a speech bubble types the words out while the critter bobs and
-   works its mouth. The whole script is rAF-driven, so it freezes in hidden
-   tabs like every other character, and a click on the critter or the bubble
-   skips ahead (or replays a finished tour).
+/* Peeking tour guides. Each critter lives BEHIND the bottom terminal bar
+   (z 40 < the bar's z 50) and pops up over its top edge to deliver its
+   section's lines — typed into a speech bubble while the critter bobs and
+   works its mouth — then sinks back down, leaving a tiny sliver poking out.
+   Clicking the sliver (or the critter/bubble mid-script) advances or replays.
+   The whole script is rAF-driven, so it freezes in hidden tabs like every
+   other character.
 
    The page gates the cast to desktop + non-reduced-motion, so nothing here
    needs its own reduced-motion branch. */
@@ -180,96 +181,44 @@ export function GuideBubble({
   );
 }
 
-/* Bubble box used for post clearance checks (matches .guide-bubble metrics —
-   a rough height is fine, the check pads by BUBBLE_GAP anyway). */
-const BUBBLE_W = 270;
-const BUBBLE_H = 88;
 const BUBBLE_GAP = 12;
-const MIN_BOTTOM = 130; // stays clear of the Ask AI launcher + terminal bar
+const BAR_TOP = 40; // closed terminal bar height the critter hides behind
+const PEEK_BOTTOM = 52; // risen: feet still tucked behind the bar
+const LURK_PX = 16; // done: head sliver poking over the bar's top edge
 
-/* A critter at its post: fixed position, pupils tracking the cursor, a talk
-   bob + mouth while its line types, and the bubble floating just above. */
-export default function GuideCritter({
+/* A critter peeking from behind the bottom terminal bar: rises to speak,
+   sinks when the script ends, lurks at LURK_PX for a click-to-replay. */
+export default function PeekCritter({
   lines,
-  post,
+  right,
   w,
   h,
   children,
 }: {
   lines: string[];
-  post: { right: number; bottom: number };
+  right: number;
   w: number;
   h: number;
   children: (look: Look, talking: boolean) => ReactNode;
 }) {
   const g = useGuideScript(lines);
-  const [bottom, setBottom] = useState(post.bottom);
-  const bottomRef = useRef(post.bottom);
   const lookX = useMotionValue(0);
   const lookY = useMotionValue(0);
 
-  // Find clear ground: ONE layout scan after the section entrance lands (plus
-  // on resize), never per frame. If the default post (or its bubble) sits on
-  // copy or media, step through nearby heights and settle on the first clear
-  // one; if everything is busy, stay put — the bubble panel is opaque anyway.
-  useEffect(() => {
-    const fit = () => {
-      const rects = Array.from(
-        document.querySelectorAll(
-          "#content h1, #content h2, #content h3, #content p, #content li, #content a, #content button, #content video, #content img, #content pre"
-        ),
-        (el) => el.getBoundingClientRect()
-      ).filter((r) => r.width > 0 && r.height > 0);
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      const PAD = 6;
-      const candidates = [
-        post.bottom,
-        post.bottom - 40,
-        post.bottom - 70,
-        post.bottom + 50,
-        post.bottom + 110,
-        post.bottom + 180,
-      ];
-      let next = post.bottom;
-      for (const b of candidates) {
-        if (b < MIN_BOTTOM || H - b - h - BUBBLE_GAP - BUBBLE_H < 70) continue;
-        const cb = { l: W - post.right - w, r: W - post.right, t: H - b - h, b: H - b };
-        const bb = {
-          l: W - (post.right - 8) - BUBBLE_W,
-          r: W - (post.right - 8),
-          t: cb.t - BUBBLE_GAP - BUBBLE_H,
-          b: cb.t - BUBBLE_GAP,
-        };
-        const hit = rects.some(
-          (r) =>
-            (r.left < cb.r + PAD && r.right > cb.l - PAD && r.top < cb.b + PAD && r.bottom > cb.t - PAD) ||
-            (r.left < bb.r + PAD && r.right > bb.l - PAD && r.top < bb.b + PAD && r.bottom > bb.t - PAD)
-        );
-        if (!hit) {
-          next = b;
-          break;
-        }
-      }
-      bottomRef.current = next;
-      setBottom(next);
-    };
-    // The entrance animation is still translating content for ~600ms — rects
-    // measured mid-flight would be offset. Fit once it lands.
-    const t = window.setTimeout(fit, 700);
-    window.addEventListener("resize", fit);
-    return () => {
-      window.clearTimeout(t);
-      window.removeEventListener("resize", fit);
-    };
-  }, [post.bottom, post.right, w, h]);
+  // wait → fully hidden below the edge · open → risen · done → lurking
+  const started = g.line > 0 || g.shown > 0 || g.open;
+  const y = g.open ? PEEK_BOTTOM : started ? BAR_TOP + LURK_PX - h : -h - 24;
 
   // Pupils aim at the cursor. The post is fixed, so the eye position is pure
   // arithmetic — no layout reads, ever.
+  const yRef = useRef(y);
+  useEffect(() => {
+    yRef.current = y;
+  }, [y]);
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      const cx = window.innerWidth - post.right - w / 2;
-      const cy = window.innerHeight - bottomRef.current - h / 2;
+      const cx = window.innerWidth - right - w / 2;
+      const cy = window.innerHeight - yRef.current - h / 2;
       const dx = e.clientX - cx;
       const dy = e.clientY - cy;
       const d = Math.hypot(dx, dy) || 1;
@@ -278,7 +227,7 @@ export default function GuideCritter({
     };
     window.addEventListener("mousemove", onMove, { passive: true });
     return () => window.removeEventListener("mousemove", onMove);
-  }, [post.right, w, h, lookX, lookY]);
+  }, [right, w, h, lookX, lookY]);
 
   return (
     <>
@@ -289,14 +238,15 @@ export default function GuideCritter({
         className={g.typing ? "cr-talkbob" : undefined}
         style={{
           position: "fixed",
-          right: post.right,
-          bottom,
+          right,
+          bottom: y,
           width: w,
           height: h,
+          // Below the terminal bar (z-50): the bar's opaque panel crops the
+          // critter's lower body so it reads as emerging from behind it.
           zIndex: 40,
           cursor: "pointer",
-          // the "find clear ground" nudge reads as a little hop, not a teleport
-          transition: "bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+          transition: "bottom 0.55s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
         {children({ x: lookX, y: lookY }, g.typing)}
@@ -308,9 +258,9 @@ export default function GuideCritter({
           closing={g.closing}
           tail="down"
           style={{
-            right: post.right - 8,
-            bottom: bottom + h + BUBBLE_GAP,
-            transition: "bottom 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
+            right: right - 8,
+            bottom: PEEK_BOTTOM + h + BUBBLE_GAP,
+            zIndex: 40,
           }}
           onClick={g.advance}
         />

@@ -28,6 +28,7 @@ import BootIntro from "./BootIntro";
 import Terminal from "./Terminal";
 import AskPanel from "./AskPanel";
 import { registerIcons } from "./iconData";
+import { useActiveSection } from "./useActiveSection";
 
 // Defer the always-on canvas and the hero typing panel past hydration — both
 // are client-only and below the critical first paint, so this trims the
@@ -89,6 +90,9 @@ const NAV = [
   { id: "experience", label: "Experience", file: "experience.log" },
   { id: "contact", label: "Contact", file: "contact.sh" },
 ] as const;
+
+// Module-level constant so useActiveSection's effect never re-subscribes.
+const SECTION_IDS: string[] = NAV.map((n) => n.id);
 
 // Programming languages & tools with real logos (Devicon, bundled offline).
 // `tint` icons are recoloured to stay legible / avoid purple brand colours.
@@ -2651,15 +2655,23 @@ let apisWarmed = false;
 
 export default function Home() {
   const [index, setIndex] = useState(0);
-  const activeId = NAV[index].id;
+  const isDesktopLayout = useIsDesktop();
+  // Desktop: the deck's index IS the active section. Mobile: sections stack
+  // into a normal scroll, so the centre-band observer decides — this drives
+  // the nav highlight AND the rain surge on section change, which previously
+  // never fired on mobile (index only changes via the desktop deck).
+  const scrollActive = useActiveSection(SECTION_IDS, isDesktopLayout);
+  const activeId = isDesktopLayout ? NAV[index].id : scrollActive;
+  const activeIndex = isDesktopLayout
+    ? index
+    : Math.max(0, SECTION_IDS.indexOf(scrollActive));
 
   // Playful characters are a desktop-only, non-reduced-motion garnish. The
   // deck has no window scroll, so the droid rappels off active-section progress
   // instead: a MotionValue that steps 0→1 as you advance sections (each jump
   // spikes its velocity → triggers a backflip).
-  const isDesktop = useIsDesktop();
   const reduced = usePrefersReducedMotion();
-  const showChars = isDesktop && !reduced;
+  const showChars = isDesktopLayout && !reduced;
   const deckProgress = useMotionValue(0);
   useEffect(() => {
     deckProgress.set(NAV.length > 1 ? index / (NAV.length - 1) : 0);
@@ -2692,7 +2704,7 @@ export default function Home() {
         Skip to content
       </a>
       <DotGrid />
-      <MatrixRain sectionIndex={index} />
+      <MatrixRain sectionIndex={activeIndex} />
       <NavBar active={activeId} />
 
       {/* Mobile scrolls as a normal document; the fixed 100dvh deck stage is
