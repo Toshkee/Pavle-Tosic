@@ -103,8 +103,17 @@ export default function AmbientCast({
           {(look, talking) => <Daemon look={look} talking={talking} />}
         </PeekCritter>
       )}
+      {/* The experience log runs text to the bottom edge, so there is no
+          clear ground for an auto-opened bubble — the ghost lurks and only
+          speaks when clicked. */}
       {activeId === "experience" && (
-        <PeekCritter lines={LINES.experience} right={RIGHT} w={64} h={68}>
+        <PeekCritter
+          lines={LINES.experience}
+          right={RIGHT}
+          w={64}
+          h={68}
+          autoPlay={false}
+        >
           {(look, talking) => <Ghost look={look} talking={talking} />}
         </PeekCritter>
       )}

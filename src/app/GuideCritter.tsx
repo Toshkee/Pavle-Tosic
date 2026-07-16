@@ -28,6 +28,7 @@ type Phase = "wait" | "typing" | "hold" | "closing" | "done";
 type GuideView = {
   open: boolean;
   closing: boolean;
+  lurk: boolean;
   line: number;
   shown: number;
   typing: boolean;
@@ -35,22 +36,32 @@ type GuideView = {
 
 /* The script engine: walks wait → (typing → hold)×lines → closing → done on
    the shared framer rAF loop. State lives in a ref; React only re-renders on
-   actual character/phase changes. */
-function useGuideScript(lines: string[]) {
+   actual character/phase changes. `autoPlay: false` starts the script already
+   "done" — the critter lurks and only speaks when clicked. Use it on slides
+   whose text runs to the bottom edge, where an auto-opened bubble would sit
+   on top of real copy. */
+function useGuideScript(lines: string[], autoPlay = true) {
   const [view, setView] = useState<GuideView>({
     open: false,
     closing: false,
+    lurk: !autoPlay,
     line: 0,
     shown: 0,
     typing: false,
   });
-  const s = useRef({ phase: "wait" as Phase, t: 0, line: 0, shown: 0 });
+  const s = useRef({
+    phase: (autoPlay ? "wait" : "done") as Phase,
+    t: 0,
+    line: 0,
+    shown: 0,
+  });
 
   const commit = () => {
     const { phase, line, shown } = s.current;
     setView({
       open: phase === "typing" || phase === "hold" || phase === "closing",
       closing: phase === "closing",
+      lurk: phase === "done",
       line,
       shown,
       typing: phase === "typing",
@@ -193,20 +204,22 @@ export default function PeekCritter({
   right,
   w,
   h,
+  autoPlay,
   children,
 }: {
   lines: string[];
   right: number;
   w: number;
   h: number;
+  autoPlay?: boolean;
   children: (look: Look, talking: boolean) => ReactNode;
 }) {
-  const g = useGuideScript(lines);
+  const g = useGuideScript(lines, autoPlay);
   const lookX = useMotionValue(0);
   const lookY = useMotionValue(0);
 
   // wait → fully hidden below the edge · open → risen · done → lurking
-  const started = g.line > 0 || g.shown > 0 || g.open;
+  const started = g.line > 0 || g.shown > 0 || g.open || g.lurk;
   const y = g.open ? PEEK_BOTTOM : started ? BAR_TOP + LURK_PX - h : -h - 24;
 
   // Pupils aim at the cursor. The post is fixed, so the eye position is pure

@@ -30,13 +30,6 @@ import AskPanel from "./AskPanel";
 import { registerIcons } from "./iconData";
 import { useActiveSection } from "./useActiveSection";
 
-// Defer the always-on canvas and the hero typing panel past hydration — both
-// are client-only and below the critical first paint, so this trims the
-// initial JS without affecting layout (canvas is fixed; the panel reserves
-// its height via the loading placeholder).
-const DotGrid = dynamic(() => import("./DotGrid"), {
-  ssr: false,
-});
 // Digital-rain background — reacts to the active section. Client-only (canvas)
 // and purely decorative, so it loads after hydration like the other canvases.
 const MatrixRain = dynamic(() => import("./MatrixRain"), {
@@ -246,12 +239,20 @@ const PROJECTS = [
 ];
 
 // PROJECTS[].live → its backend API, hosted on a free tier that sleeps when
-// idle (CryptoFlow: Render spins down after ~15 min, cold start ~30-60s;
-// Meet2Explore: Heroku eco dyno). Pinged awake on page load (see Home) so a
-// "Live demo" click later hits a warm backend instead of hanging.
+// idle (CryptoFlow: Render spins down after ~15 min, cold start ~30-60s).
+// Pinged awake on page load (see Home) so a "Live demo" click later hits a
+// warm backend instead of hanging. Meet2Explore's Heroku backend is gone
+// (404s), so it is NOT pinged — its state is disclosed via DEMO_NOTES instead.
 const COLD_APIS: Record<string, string> = {
   "https://cryptofloww.netlify.app/": "https://cryptoflow-api-cx07.onrender.com/",
-  "https://meet2explore.netlify.app/": "https://meet2explore-17e5b6e60cab.herokuapp.com/",
+};
+
+// PROJECTS[].live → a one-line honest status shown under the demo links.
+const DEMO_NOTES: Record<string, string> = {
+  "https://cryptofloww.netlify.app/":
+    "demo api runs on a free tier, so the first request may take a moment to wake",
+  "https://meet2explore.netlify.app/":
+    "the demo's backend host has lapsed, so sign-in and live trips are offline. the video shows the full app",
 };
 
 // Engineering "case files", shown as extra tabs on each project's kiosk
@@ -1784,10 +1785,9 @@ function ProjectShowcase({
               </a>
             </span>
           </div>
-          {COLD_APIS[p.live] && (
+          {DEMO_NOTES[p.live] && (
             <p className="mt-2 font-mono text-xs text-faint">
-              demo api runs on a free tier, so the first request may take a
-              moment to wake
+              {DEMO_NOTES[p.live]}
             </p>
           )}
           <p className="mt-3 max-w-[70ch] text-[15px] leading-[1.7] text-body">
@@ -1904,15 +1904,17 @@ const Work = memo(function Work() {
         </Reveal>
       </div>
 
-      {/* Keyed remount per project — same pattern as the deck itself. */}
+      {/* Keyed remount per project — same pattern as the deck itself.
+          Transform/blur only, never opacity: 0 — a stalled animation must
+          leave the project fully readable (same rule as Reveal). */}
       <motion.div
         key={pi}
         initial={
           reduce
             ? false
-            : { opacity: 0, x: pdir * 90, filter: "blur(6px)" }
+            : { x: pdir * 90, filter: "blur(6px)" }
         }
-        animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+        animate={{ x: 0, filter: "blur(0px)" }}
         transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
         className="mt-4"
       >
@@ -2703,7 +2705,6 @@ export default function Home() {
       <a href="#content" className="skip-link">
         Skip to content
       </a>
-      <DotGrid />
       <MatrixRain sectionIndex={activeIndex} />
       <NavBar active={activeId} />
 
