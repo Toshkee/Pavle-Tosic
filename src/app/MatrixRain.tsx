@@ -45,7 +45,7 @@ import { memo, useEffect, useRef } from "react";
    inside the blur and quarters the pixels every blit touches (which is what
    keeps the sprite path cheap even under software rasterization). Redraw
    capped at ~30fps, the loop PAUSES while the tab is hidden, and under
-   prefers-reduced-motion we paint one sparse static frame and never loop. */
+   prefers-reduced-motion we paint one full frozen frame and never loop. */
 
 const HOT = "225, 255, 234"; // white-hot leading glyph (green-tinted white)
 const HEAD = "92, 240, 138"; // --color-accent-ink — word letters
@@ -355,11 +355,29 @@ function MatrixRain({ sectionIndex = 0 }: { sectionIndex?: number }) {
       surgeRef.current = surge < 0.002 ? 0 : surge * 0.94; // ~0.5s decay
     };
 
+    // Reduced motion: one FROZEN frame of the same rain — full trails at the
+    // animated alphas, just never moving. (The old version drew a single dim
+    // glyph per column, which read as "the background is broken" on Windows
+    // desktops where the OS animation toggle flips this media query.)
     const staticFrame = () => {
       ctx.clearRect(0, 0, dw, dh);
-      ctx.globalAlpha = 0.16;
       for (let c = 0; c < cols; c++) {
-        blit(rand(NOISE), ROW_TRAIL, c * STEP, rand(rows) * STEP, tiers[c]);
+        if (Math.random() < 0.25) continue; // leave gaps so the frame breathes
+        const t = tiers[c];
+        const len = LEN_OPTS[lens[c]];
+        const head = len + rand(Math.max(rows - len, 1));
+        for (let k = 0; k < len; k++) {
+          const row = head - k;
+          if (row < 0 || row >= rows) continue;
+          const g = grid[c * rows + row];
+          if (g === HOLE) continue;
+          const fade = 1 - k / len;
+          ctx.globalAlpha =
+            (k === 0 ? 0.85 : fade * fade * 0.55) *
+            BASE_ALPHA *
+            TIER_ALPHA[t];
+          blit(g, k === 0 ? ROW_HEAD : ROW_TRAIL, c * STEP, row * STEP, t);
+        }
       }
       ctx.globalAlpha = 1;
     };

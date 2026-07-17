@@ -14,7 +14,6 @@ export default function ConsoleSignature() {
       "color:#8aa08c;font-family:ui-monospace,monospace;font-size:12px";
     const link =
       "color:#34e070;font-family:ui-monospace,monospace;font-size:12px";
-    // eslint-disable-next-line no-console
     console.log(
       "%c// you opened the console. respect.\n%cPavle Tošić — Software Developer · Montenegro\n%cgithub.com/Toshkee   ·   tosiicsftw@gmail.com   ·   open to roles",
       banner,

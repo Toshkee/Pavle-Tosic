@@ -84,8 +84,16 @@ function charDelay(code: string, i: number): number {
 }
 
 export default function HeroTerminal() {
+  // Loaded via dynamic({ ssr: false }), so window exists at first render and
+  // the reduced-motion answer can live in the initializer (no setState-in-
+  // effect churn).
+  const [reduce] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
   const [snip, setSnip] = useState(0);
-  const [shown, setShown] = useState(0); // chars revealed; Infinity = all (reduced motion)
+  const [shown, setShown] = useState(() =>
+    reduce ? Number.POSITIVE_INFINITY : 0
+  ); // chars revealed; Infinity = all (reduced motion)
   const [onScreen, setOnScreen] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -104,16 +112,19 @@ export default function HeroTerminal() {
     return () => io.disconnect();
   }, []);
 
+  // Restart the reveal when the snippet advances — render-time state adjust,
+  // the sanctioned alternative to a synchronous setState inside the effect.
+  const [prevSnip, setPrevSnip] = useState(snip);
+  if (prevSnip !== snip) {
+    setPrevSnip(snip);
+    setShown(0);
+  }
+
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(Number.POSITIVE_INFINITY);
-      return;
-    }
-    if (!onScreen) return;
+    if (reduce || !onScreen) return;
     const code = SNIPPETS[snip];
     let i = 0;
     let timer: ReturnType<typeof setTimeout>;
-    setShown(0);
     const step = () => {
       i += 1;
       setShown(i);
@@ -125,7 +136,7 @@ export default function HeroTerminal() {
     };
     timer = setTimeout(step, 450);
     return () => clearTimeout(timer);
-  }, [snip, onScreen]);
+  }, [snip, onScreen, reduce]);
 
   const tokens = TOKENS[snip];
   const spans: React.ReactNode[] = [];

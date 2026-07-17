@@ -62,12 +62,6 @@ export default function BootIntro() {
       setPhase("done");
       return;
     }
-    try {
-      sessionStorage.setItem("pt_booted", "1");
-    } catch {
-      /* ignore */
-    }
-
     const root = document.documentElement;
     const prevOverflow = root.style.overflow;
     root.style.overflow = "hidden"; // lock scroll while booting / playing
@@ -87,6 +81,15 @@ export default function BootIntro() {
 
     function startLeave() {
       if (leaveTimer.current) return; // idempotent
+      // Stamp "seen" only now, when the visitor actually reaches the site.
+      // Stamping it on mount broke client-side arrivals (e.g. 404 → home):
+      // the router can mount this component twice during one navigation, and
+      // the second mount read its own flag and skipped the intro entirely.
+      try {
+        sessionStorage.setItem("pt_booted", "1");
+      } catch {
+        /* ignore */
+      }
       window.removeEventListener("keydown", onKey); // safe if already removed
       setPhase("leaving");
       leaveTimer.current = setTimeout(() => setPhase("done"), 520);

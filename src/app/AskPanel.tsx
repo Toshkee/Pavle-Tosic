@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SUGGESTIONS } from "./suggestions";
 
 /* "Ask AI" — a dedicated, grounded chat panel docked bottom-right (above the
@@ -39,6 +39,26 @@ function Dots() {
 }
 
 // Blinking block caret shown at the end of the reply while it streams in.
+// Hydration-safe prefers-reduced-motion. Framer's useReducedMotion returns the
+// CLIENT value during the hydration render, which made this (server-rendered)
+// component's tree diverge from the server HTML under reduced motion — React
+// logged a mismatch on every load. First client render stays false (matching
+// the server), then flips right after hydration.
+function useReduceSafe() {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Client-only media-query state, unknowable during SSR — syncing it here
+    // is the whole point of the hook (see comment above).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReduce(mq.matches);
+    const onChange = () => setReduce(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduce;
+}
+
 function Caret({ reduce }: { reduce: boolean | null }) {
   return (
     <motion.span
@@ -60,7 +80,7 @@ function AskPanel() {
   // Soft-keyboard inset (mobile): how far the visual viewport is shrunk, and its
   // current height, so the panel can sit above the keyboard instead of behind it.
   const [kb, setKb] = useState<{ inset: number; height: number }>({ inset: 0, height: 0 });
-  const reduce = useReducedMotion();
+  const reduce = useReduceSafe();
 
   const fabRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);

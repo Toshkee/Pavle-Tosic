@@ -628,19 +628,26 @@ function getReduceMql() {
   }
   return reduceMql;
 }
-function subscribeReduce(onChange: () => void) {
-  const mq = getReduceMql();
-  if (!mq) return () => {};
-  mq.addEventListener("change", onChange);
-  return () => mq.removeEventListener("change", onChange);
-}
-function getReduceSnapshot() {
-  return getReduceMql()?.matches ?? false;
-}
-
-// Hydration-safe prefers-reduced-motion (server snapshot = false).
+// Hydration-safe prefers-reduced-motion. Deliberately NOT useSyncExternalStore:
+// uSES returns the CLIENT value during the hydration render, so under reduced
+// motion the client tree (static branches) diverged from the server HTML
+// (motion styles) and React logged a hydration mismatch on every load. State +
+// effect keeps the first client render identical to the server (false), then
+// flips right after hydration.
 function usePrefersReducedMotion() {
-  return useSyncExternalStore(subscribeReduce, getReduceSnapshot, () => false);
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    const mq = getReduceMql();
+    if (!mq) return;
+    // Client-only media-query state, unknowable during SSR — syncing it here
+    // is the whole point of the hook (see comment above).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReduce(mq.matches);
+    const onChange = () => setReduce(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduce;
 }
 
 // Desktop (lg+) runs the fixed section deck; below that the page falls back to
@@ -865,7 +872,7 @@ function NavBar({ active }: { active: string }) {
   return (
     <div className="fixed inset-x-0 top-0 z-50 border-b border-line/70 bg-bg/70 backdrop-blur-md lg:hidden">
       <nav
-        className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8"
+        className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 2xl:max-w-7xl"
         aria-label="Primary"
       >
         <a
@@ -2710,7 +2717,7 @@ export default function Home() {
 
       {/* Mobile scrolls as a normal document; the fixed 100dvh deck stage is
           a desktop (lg+) layout — see SectionDeck's mobile branch. */}
-      <div className="mx-auto flex max-w-6xl flex-col px-5 sm:px-8 lg:h-[100dvh] lg:flex-row lg:gap-14 lg:overflow-hidden lg:px-10">
+      <div className="mx-auto flex max-w-6xl flex-col px-5 sm:px-8 lg:h-[100dvh] lg:flex-row lg:gap-14 lg:overflow-hidden lg:px-10 2xl:max-w-7xl 2xl:gap-20">
         <LeftRail active={activeId} />
         <main
           id="content"

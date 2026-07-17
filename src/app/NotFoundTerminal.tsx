@@ -13,10 +13,14 @@ export default function NotFoundTerminal() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // ⏎ takes you home, like accepting the prompt.
+  // ⏎ (or space, same as the boot screen) takes you home, like accepting the
+  // prompt.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter") router.push("/");
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        router.push("/");
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
