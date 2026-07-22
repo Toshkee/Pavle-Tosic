@@ -896,7 +896,7 @@ function NavBar({ active }: { active: string }) {
             className="h-2.5 w-2.5 rounded-full bg-accent transition-transform group-hover:scale-125"
             aria-hidden
           />
-          <span className="font-display font-semibold">
+          <span className="font-display text-sm text-body transition-colors group-hover:text-ink">
             Pavle Tošić
           </span>
         </a>
@@ -1093,7 +1093,7 @@ function LeftRail({ active }: { active: string }) {
                 }
           }
           transition={{ type: "spring", stiffness: 260, damping: 18 }}
-          className="relative mb-6 h-24 w-24 overflow-hidden rounded-2xl border border-line-strong transition-colors hover:border-accent/50"
+          className="relative mb-6 h-24 w-24 overflow-hidden rounded-2xl border border-accent/40 shadow-[0_0_18px_-6px_rgba(34,197,94,0.35)] transition-colors hover:border-accent/60"
         >
           <Image
             src="/images/me-avatar.jpg"
@@ -1126,7 +1126,7 @@ function LeftRail({ active }: { active: string }) {
         </motion.p>
         <motion.div
           variants={ITEM_VARIANTS}
-          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/30 bg-surface px-3 py-1 font-mono text-xs text-accent-ink"
+          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/20 bg-surface px-2.5 py-1 font-mono text-[11px] text-accent-ink/85"
         >
           <span className="relative flex h-2 w-2" aria-hidden>
             <span className="relative inline-flex h-2 w-2 animate-pulse rounded-full bg-accent motion-reduce:animate-none" />
@@ -1278,7 +1278,7 @@ function TechChip({ t }: { t: Tech }) {
   return (
     <motion.span
       variants={reduce ? undefined : ITEM_VARIANTS}
-      whileHover={reduce ? undefined : { y: -3 }}
+      whileHover={reduce ? undefined : { y: -2 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="tonal-hover group inline-flex items-center gap-2 rounded-lg border border-line bg-bg/40 px-3 py-2 hover:border-accent/60"
     >
@@ -1319,22 +1319,23 @@ const Stack = memo(function Stack() {
         </p>
       </Reveal>
 
-      {/* Rows straight on the stage — group label left, logo chips right. */}
-      <div className="mt-12 space-y-10">
+      {/* One TUI-style box per group — the label sits ON the top border like a
+          terminal frame title, so the chips read as grouped, not floating. */}
+      <div className="mt-12 space-y-8">
         {STACK.map((group, gi) => (
           <div
             key={group.group}
-            className="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:gap-8"
+            className="relative rounded-lg border border-line bg-bg/30 px-4 pb-4 pt-6"
           >
             <Reveal
               delay={0.1 + gi * 0.06}
-              className="shrink-0 font-mono text-sm sm:min-w-[10.5rem]"
+              className="absolute -top-2.5 left-3 bg-bg px-1.5 font-mono text-sm"
             >
               <span className="whitespace-nowrap font-semibold text-ink">
                 {group.group}
               </span>
             </Reveal>
-            <StaggerGroup className="flex flex-1 flex-wrap gap-2.5">
+            <StaggerGroup className="flex flex-wrap gap-2.5">
               {group.items.map((t) => (
                 <TechChip key={t.name} t={t} />
               ))}
@@ -1640,7 +1641,7 @@ function ProjectShowcase({
                       className={`whitespace-nowrap rounded px-1 py-0.5 font-mono text-[10px] transition-colors sm:px-1.5 ${
                         tab === t.key
                           ? "bg-accent-soft text-accent-ink"
-                          : "text-muted hover:text-ink"
+                          : "text-faint hover:text-ink"
                       }`}
                     >
                       {t.key === "code" ? caseFile.codeFile : t.file}
@@ -1659,7 +1660,7 @@ function ProjectShowcase({
               )}
             </div>
             <div
-              className={`relative overflow-hidden bg-bg ${
+              className={`relative overflow-hidden bg-bg after:pointer-events-none after:absolute after:inset-0 after:shadow-[inset_0_2px_10px_rgba(0,0,0,0.45)] ${
                 tab === "demo" || tab === "live" || !caseFile
                   ? "aspect-[16/10]"
                   : ""
