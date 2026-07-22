@@ -594,22 +594,19 @@ const EXPERIENCE: Job[] = [
       "Backend fundamentals, APIs, databases & security basics; team-based real-world projects.",
     ],
   },
+];
+
+// Education / side certs, squashed into a compact `git log --oneline` block
+// under the timeline so they don't push the real jobs down the page.
+const BACKGROUND: { label: string; org: string; period?: string }[] = [
   {
-    role: "Ethical Hacking",
-    org: "Z-Security · Udemy",
+    label: "Ethical Hacking",
+    org: "Z-Security · Udemy, six-month hands-on course",
     period: "2023",
-    current: false,
-    points: ["Completed a six-month, hands-on ethical-hacking course."],
   },
   {
-    role: "Secondary Education",
-    org: "Belgrade, RS · Podgorica, ME",
-    period: "",
-    current: false,
-    points: [
-      "Kosta Cukić Private High School, Belgrade (final two years).",
-      "Mirko Vešović Economics High School, Podgorica (first two years).",
-    ],
+    label: "Secondary Education",
+    org: "Kosta Cukić HS, Belgrade · Mirko Vešović Economics HS, Podgorica",
   },
 ];
 
@@ -868,6 +865,21 @@ function Tap({
 function NavBar({ active }: { active: string }) {
   const [open, setOpen] = useState(false);
   const reduce = usePrefersReducedMotion();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Escape dismisses the drawer and hands focus back to the toggle, so
+  // keyboard users aren't left focused inside a menu that no longer exists.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 border-b border-line/70 bg-bg/70 backdrop-blur-md lg:hidden">
@@ -908,6 +920,7 @@ function NavBar({ active }: { active: string }) {
         </ul>
 
         <button
+          ref={toggleRef}
           type="button"
           onClick={() => setOpen((o) => !o)}
           className="rounded-full border border-line-strong px-4 py-1.5 text-sm text-muted md:hidden"
@@ -1186,7 +1199,7 @@ function LeftRail({ active }: { active: string }) {
 function Kicker({ cmd }: { cmd: string }) {
   return (
     <div className="font-mono text-xs text-faint">
-      <span className="text-accent">$</span> {cmd}
+      <span className="text-accent-2">$</span> {cmd}
     </div>
   );
 }
@@ -1279,7 +1292,7 @@ function TechChip({ t }: { t: Tech }) {
       <span className="font-mono text-sm font-medium text-ink">{t.name}</span>
       {t.learning && (
         <span className="rounded border border-line px-1 py-px font-mono text-[9px] uppercase tracking-wide text-faint">
-          learning
+          up next
         </span>
       )}
     </motion.span>
@@ -1297,7 +1310,7 @@ const Stack = memo(function Stack() {
       <RevealHeading
         id="stack-heading"
         text="The stack"
-        className="font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
+        className="font-display text-3xl font-bold leading-[1.06] tracking-tight text-ink sm:text-4xl lg:text-5xl"
       />
       <Reveal delay={0.1}>
         <p className="mt-4 max-w-[60ch] leading-[1.7] text-body">
@@ -1317,7 +1330,7 @@ const Stack = memo(function Stack() {
               delay={0.1 + gi * 0.06}
               className="shrink-0 font-mono text-sm sm:min-w-[10.5rem]"
             >
-              <span className="whitespace-nowrap font-semibold text-accent-ink">
+              <span className="whitespace-nowrap font-semibold text-ink">
                 {group.group}
               </span>
             </Reveal>
@@ -1956,7 +1969,7 @@ const GitHub = memo(function GitHub() {
       <RevealHeading
         id="github-heading"
         text="On GitHub"
-        className="mt-5 mb-4 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
+        className="mt-5 mb-4 font-display text-3xl font-bold leading-[1.06] tracking-tight text-ink sm:text-4xl lg:text-5xl"
       />
       <Reveal>
         <p className="mb-8 max-w-[60ch] leading-[1.7] text-body">
@@ -2000,7 +2013,7 @@ const Experience = memo(function Experience() {
       <RevealHeading
         id="experience-heading"
         text="Where I've been"
-        className="mt-3 mb-6 font-display text-4xl font-bold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-6xl"
+        className="mt-3 mb-6 font-display text-3xl font-bold leading-[1.06] tracking-tight text-ink sm:text-4xl lg:text-5xl"
       />
       <ol className="relative ml-2 pl-0">
         <motion.span
@@ -2022,7 +2035,7 @@ const Experience = memo(function Experience() {
             <Reveal delay={i * 0.05} from="left" y={36}>
               {/* commit line: hash · decoration · date */}
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 font-mono text-[13px]">
-                <span className="text-accent">{commitHash(e.role + e.org)}</span>
+                <span className="text-accent-2">{commitHash(e.role + e.org)}</span>
                 {e.current && (
                   <span className="text-accent-ink">(HEAD → main)</span>
                 )}
@@ -2049,7 +2062,7 @@ const Experience = memo(function Experience() {
                   href={e.link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="link-underline mt-3 inline-block text-sm font-medium text-accent-ink"
+                  className="link-underline mt-3 inline-block text-sm font-medium text-body transition-colors hover:text-accent-ink"
                 >
                   {e.link.label}
                 </a>
@@ -2058,6 +2071,22 @@ const Experience = memo(function Experience() {
           </li>
         ))}
       </ol>
+
+      {/* Squashed history: education + side certs as `--oneline` rows, so the
+          jobs above keep the space. */}
+      <Reveal delay={0.1} className="mt-8 ml-2 pl-8">
+        <Kicker cmd="git log --oneline background" />
+        <ul className="mt-3 space-y-1.5 font-mono text-[13px]">
+          {BACKGROUND.map((b) => (
+            <li key={b.label} className="flex flex-wrap items-baseline gap-x-3">
+              <span className="text-accent-2">{commitHash(b.label + b.org)}</span>
+              <span className="text-ink">{b.label}</span>
+              <span className="text-muted">{b.org}</span>
+              {b.period && <span className="text-faint">{b.period}</span>}
+            </li>
+          ))}
+        </ul>
+      </Reveal>
     </section>
   );
 });
@@ -2125,7 +2154,7 @@ const Contact = memo(function Contact() {
       <RevealHeading
         id="contact-heading"
         text="Let's build something."
-        className="mt-5 font-display text-4xl font-bold leading-[1.04] tracking-tight text-ink sm:text-6xl lg:text-7xl"
+        className="mt-5 font-display text-4xl font-bold leading-[1.04] tracking-tight text-ink sm:text-5xl lg:text-6xl"
       />
       {/* The payoff of the `./contact.sh` kicker: the section reads as the
           script's OUTPUT — one keyed line per channel, straight on the stage.
@@ -2266,7 +2295,7 @@ const Contact = memo(function Contact() {
 
         <Reveal delay={0.4}>
           <div className="mt-5 px-2 font-mono text-xs text-faint sm:px-3">
-            <span className="text-accent">✓</span> exit 0
+            <span className="text-accent-2">✓</span> exit 0
           </div>
         </Reveal>
 

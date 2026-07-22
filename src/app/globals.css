@@ -132,6 +132,15 @@ html.lenis body {
 
 /* ================= HELPERS ================= */
 
+/* Mobile section rhythm: the stacked scroll reads as one long block without a
+   seam, so each new section gets a faint hairline. Desktop (lg+) is the deck —
+   one section on stage at a time — so the border would never be seen there. */
+@media (max-width: 1023.98px) {
+  main section + section {
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+}
+
 /* Tanker ships one heavy weight: kill synthetic bolding (font-bold utilities
    would faux-embolden it) and neutralize tracking-tight — the face is already
    condensed; big caps need air, not negative tracking. Un-layered, so it

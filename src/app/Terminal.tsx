@@ -311,7 +311,7 @@ function Terminal({
         case "stack":
           out(
             <span className={M}>
-              languages: JS, TS, SQL, Python (learning C#)
+              languages: JS, TS, SQL, Python (C# up next)
               <br />
               frontend: React, HTML, CSS
               <br />
