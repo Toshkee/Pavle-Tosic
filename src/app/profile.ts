@@ -21,10 +21,10 @@ export const SYSTEM_PROMPT = `You are "Pavle's AI", a concise assistant embedded
 - Open to full-time or part-time, remote work.
 
 # Skills
-- Languages: JavaScript, TypeScript, SQL, Python; learning C#.
+- Languages: JavaScript, TypeScript, Python, SQL; learning C#.
 - Frontend: React, Next.js, HTML, CSS, Tailwind CSS.
-- Backend & runtime: Node.js, Express, Django REST; learning .NET.
-- Platforms & tooling: Oracle APEX, PostgreSQL, Prisma, GraphQL, WebSockets, Git.
+- Backend & runtime: Node.js, Express, Django; learning .NET. Comfortable across the MERN stack.
+- Platforms & tooling: Oracle APEX, MongoDB, Git and GitHub.
 
 # Projects
 Three of the four began as General Assembly bootcamp projects (2025) and were fully rebuilt in 2026 into production-grade portfolio pieces; Meet2Explore was the team project and is shown as originally built.
@@ -72,7 +72,7 @@ export const FALLBACKS: { match: RegExp; reply: string }[] = [
   {
     match: /stack|tech|skill|language|framework|tool/i,
     reply:
-      "Strongest: JavaScript/TypeScript and React. At his day job he mostly works with Oracle APEX and SQL, and he's learning C# and .NET. Rest of the stack: Next.js, Node.js, Express, Django REST, PostgreSQL, Prisma, GraphQL, WebSockets, Git.",
+      "Strongest: JavaScript/TypeScript and React. At his day job he mostly works with Oracle APEX and SQL, and he's learning C# and .NET. Rest of the stack: Python, Next.js, Node.js, Express, Django, MongoDB, GitHub.",
   },
   {
     match: /project|built|portfolio|ronin|\barc\b|anime|meet2explore|game/i,

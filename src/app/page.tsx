@@ -103,6 +103,7 @@ const STACK: { group: string; items: Tech[] }[] = [
     items: [
       { name: "TypeScript", icon: "devicon:typescript" },
       { name: "JavaScript", icon: "devicon:javascript" },
+      { name: "Python", icon: "devicon:python" },
       { name: "SQL", icon: "tabler:sql", tint: "stroke" },
       { name: "C#", icon: "devicon-plain:csharp", tint: "amber", learning: true },
     ],
@@ -122,10 +123,12 @@ const STACK: { group: string; items: Tech[] }[] = [
     group: "backend & tools",
     items: [
       { name: "Node.js", icon: "devicon:nodejs" },
+      { name: "Express", icon: "devicon:express", tint: "cream" },
+      { name: "Django", icon: "devicon-plain:django", tint: "cream" },
+      { name: "MongoDB", icon: "devicon:mongodb" },
       { name: "Oracle APEX", icon: "devicon:oracle" },
-      { name: "PostgreSQL", icon: "devicon:postgresql" },
       { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber", learning: true },
-      { name: "Git", icon: "devicon:git" },
+      { name: "GitHub", icon: "devicon:github", tint: "cream" },
     ],
   },
 ];
