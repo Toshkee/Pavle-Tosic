@@ -34,15 +34,25 @@ No test suite configured.
 
 ## Deployment
 
-Deployed to **Cloudflare Workers** via `@opennextjs/cloudflare` + `wrangler`. The worker name is `my-portofolio` (note the misspelling — kept intentionally; renaming requires updating Cloudflare config). No deploy script exists in `package.json`. Deploy flow:
+Deployed to **Cloudflare Workers** via `@opennextjs/cloudflare` + `wrangler`. The worker name is `my-portofolio` (note the misspelling — kept intentionally; renaming requires updating Cloudflare config). Deploy flow:
 
 ```bash
-npx opennextjs-cloudflare build   # Build for Cloudflare Workers
-npx wrangler deploy               # Deploy to Cloudflare
-npx wrangler dev                  # Local Cloudflare Workers preview
+npm run deploy    # opennextjs-cloudflare build && opennextjs-cloudflare deploy
+npm run preview   # Same, but into a local Workers dev server
 ```
 
-Config lives in `open-next.config.ts` (uses `defineCloudflareConfig()`) and `wrangler.jsonc`.
+**Never deploy with plain `wrangler deploy`.** Next writes its prerendered pages
+to `.open-next/cache`, and only the adapter's own `deploy`/`preview`/`upload`
+commands run the `populateCache` step that ships them. Skipping it silently
+breaks every prerendered dynamic route (`/work/[slug]` 404s) and makes every
+other page re-render on each request instead of serving a cache HIT.
+
+Requires **Node 22+** (wrangler refuses to run on 20).
+
+Config lives in `open-next.config.ts` and `wrangler.jsonc`. The OpenNext config
+sets `incrementalCache: staticAssetsIncrementalCache`, which serves that
+prerendered output from the `ASSETS` binding under `cdn-cgi/_next_cache`. It is
+read-only by design — nothing on this site revalidates.
 
 ## Stack
 
