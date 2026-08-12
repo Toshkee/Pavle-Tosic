@@ -22,11 +22,8 @@ import {
 import { Icon } from "@iconify/react";
 import { SiGithub, SiGmail } from "react-icons/si";
 import { FaLinkedin } from "react-icons/fa";
-import GitHubGraph from "./GitHubGraph";
 import { pageCtx } from "./characterBus";
 import BootIntro from "./BootIntro";
-import Terminal from "./Terminal";
-import AskPanel from "./AskPanel";
 import { registerIcons } from "./iconData";
 import { useActiveSection } from "./useActiveSection";
 
@@ -53,6 +50,40 @@ const HeroTerminal = dynamic(() => import("./HeroTerminal"), {
 // initial bundle like the canvases above.
 const LiveTicker = dynamic(() => import("./LiveTicker"), { ssr: false });
 
+// The three heaviest interactive pieces. None of them has anything to render
+// on the server (the graph fetches a live feed, the other two are overlays
+// that only exist once the visitor opens them), so keeping them out of the
+// initial bundle is pure win on mobile. The graph's placeholder mirrors its
+// own loading shell so the panel doesn't jump when the chunk lands.
+const GitHubGraph = dynamic(() => import("./GitHubGraph"), {
+  ssr: false,
+  loading: () => (
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+      <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
+        <span className="h-2 w-2 rounded-full bg-faint/70" />
+        <span className="h-2 w-2 rounded-full bg-accent/70" />
+        <span className="h-2 w-2 rounded-full bg-accent-2/70" />
+        <span className="ml-2 font-mono text-[11px] text-muted">
+          contributions.log
+        </span>
+      </div>
+      <div className="p-5 sm:p-7">
+        <p className="text-sm text-body">Loading contributions…</p>
+        {/* strip (h-6) + legend row — matches the component's own pre-data height */}
+        <div className="mt-6 h-[56px]" />
+      </div>
+    </div>
+  ),
+});
+const Terminal = dynamic(() => import("./Terminal"), {
+  ssr: false,
+  loading: () => null,
+});
+const AskPanel = dynamic(() => import("./AskPanel"), {
+  ssr: false,
+  loading: () => null,
+});
+
 // Make the bundled Devicon set available for synchronous SSR rendering.
 registerIcons();
 
@@ -71,6 +102,11 @@ const SOCIAL = {
   github: "https://github.com/Toshkee",
   linkedin: "https://www.linkedin.com/in/tosiicp/",
 };
+
+// Every screenshot in public/images/projects ships as a full-width .webp for
+// the lightbox and a 640px "-thumb.webp" twin. The rail renders into a ~15vw
+// box, so it takes the twin; the lightbox keeps the full file.
+const thumbOf = (src: string) => src.replace(/\.webp$/, "-thumb.webp");
 
 // Downloadable CV (lives in public/).
 const RESUME = "/pavle-tosic-cv.pdf";
@@ -155,13 +191,13 @@ const PROJECTS = [
     stack: ["React 19", "TypeScript", "Django REST", "WebSockets", "PostgreSQL"],
     live: "https://cryptofloww.netlify.app/",
     code: "https://github.com/Toshkee/CryptoFlow",
-    shot: "/images/projects/cryptoflow.jpg",
+    shot: "/images/projects/cryptoflow.webp",
     video: "/video/projects/cryptoflow.mp4" as string | null,
     domain: "cryptofloww.netlify.app",
     gallery: [
-      { src: "/images/projects/cryptoflow-terminal.jpg", label: "Trading terminal" },
-      { src: "/images/projects/cryptoflow-markets.jpg", label: "Live markets" },
-      { src: "/images/projects/cryptoflow-landing.jpg", label: "Landing" },
+      { src: "/images/projects/cryptoflow-terminal.webp", label: "Trading terminal" },
+      { src: "/images/projects/cryptoflow-markets.webp", label: "Live markets" },
+      { src: "/images/projects/cryptoflow-landing.webp", label: "Landing" },
     ] as { src: string; label: string }[],
   },
   {
@@ -180,13 +216,13 @@ const PROJECTS = [
     stack: ["Next.js 16", "TypeScript", "AniList API", "Prisma", "PostgreSQL"],
     live: "https://arc-anime.vercel.app",
     code: "https://github.com/Toshkee/anime-watchlist",
-    shot: "/images/projects/anime-watchlist.jpg",
+    shot: "/images/projects/anime-watchlist.webp",
     video: "/video/projects/anime-watchlist.mp4",
     domain: "arc-anime.vercel.app",
     gallery: [
-      { src: "/images/projects/anime-watchlist-home.jpg", label: "Search & trending" },
-      { src: "/images/projects/anime-watchlist-browse.jpg", label: "Browse catalogue" },
-      { src: "/images/projects/anime-watchlist-detail.jpg", label: "Title detail" },
+      { src: "/images/projects/anime-watchlist-home.webp", label: "Search & trending" },
+      { src: "/images/projects/anime-watchlist-browse.webp", label: "Browse catalogue" },
+      { src: "/images/projects/anime-watchlist-detail.webp", label: "Title detail" },
     ] as { src: string; label: string }[],
   },
   {
@@ -205,13 +241,13 @@ const PROJECTS = [
     stack: ["Phaser 4", "TypeScript", "Vite", "Vitest", "Playwright"],
     live: "https://toshkee.github.io/Ronin-Duel/",
     code: "https://github.com/Toshkee/Ronin-Duel",
-    shot: "/images/projects/ronin-duel.jpg",
+    shot: "/images/projects/ronin-duel.webp",
     video: "/video/projects/ronin-duel.mp4",
     domain: "toshkee.github.io",
     gallery: [
-      { src: "/images/projects/ronin-duel-menu.jpg", label: "Title & mode select" },
-      { src: "/images/projects/ronin-duel-fight.jpg", label: "In-match combat" },
-      { src: "/images/projects/ronin-duel-combo.jpg", label: "Combos & hit effects" },
+      { src: "/images/projects/ronin-duel-menu.webp", label: "Title & mode select" },
+      { src: "/images/projects/ronin-duel-fight.webp", label: "In-match combat" },
+      { src: "/images/projects/ronin-duel-combo.webp", label: "Combos & hit effects" },
     ] as { src: string; label: string }[],
   },
   {
@@ -230,13 +266,13 @@ const PROJECTS = [
     stack: ["React", "Node.js", "Express"],
     live: "https://meet2explore.netlify.app/",
     code: "https://github.com/Toshkee/meet2explore",
-    shot: "/images/projects/meet2explore.jpg",
+    shot: "/images/projects/meet2explore.webp",
     video: "/video/projects/meet2explore.mp4",
     domain: "meet2explore.netlify.app",
     gallery: [
-      { src: "/images/projects/meet2explore-hero.jpg", label: "Discover destinations" },
-      { src: "/images/projects/meet2explore-trips.jpg", label: "Plan group trips" },
-      { src: "/images/projects/meet2explore-meet.jpg", label: "Meet new people" },
+      { src: "/images/projects/meet2explore-hero.webp", label: "Discover destinations" },
+      { src: "/images/projects/meet2explore-trips.webp", label: "Plan group trips" },
+      { src: "/images/projects/meet2explore-meet.webp", label: "Meet new people" },
     ] as { src: string; label: string }[],
   },
 ];
@@ -1129,7 +1165,7 @@ function LeftRail({ active }: { active: string }) {
         </motion.p>
         <motion.div
           variants={ITEM_VARIANTS}
-          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/20 bg-surface px-2.5 py-1 font-mono text-[11px] text-accent-ink/85"
+          className="mt-5 flex w-fit items-center gap-2 rounded-full border border-accent/20 bg-surface px-2.5 py-1 font-mono text-xs text-accent-ink/85 sm:text-[11px]"
         >
           <span className="relative flex h-2 w-2" aria-hidden>
             <span className="relative inline-flex h-2 w-2 animate-pulse rounded-full bg-accent motion-reduce:animate-none" />
@@ -1641,7 +1677,7 @@ function ProjectShowcase({
                       type="button"
                       onClick={() => setTab(t.key)}
                       aria-pressed={tab === t.key}
-                      className={`whitespace-nowrap rounded px-1 py-0.5 font-mono text-[10px] transition-colors sm:px-1.5 ${
+                      className={`whitespace-nowrap rounded px-1 py-0.5 font-mono text-[11px] transition-colors sm:px-1.5 sm:text-[10px] ${
                         tab === t.key
                           ? "bg-accent-soft text-accent-ink"
                           : "text-faint hover:text-ink"
@@ -1674,7 +1710,7 @@ function ProjectShowcase({
               ) : tab !== "demo" && caseFile ? (
                 // Natural height (no aspect lock) so the whole file is
                 // readable without an inner scrollbar.
-                <pre className="overflow-x-auto p-4 font-mono text-[11px] leading-[1.6] text-body">
+                <pre className="overflow-x-auto p-4 font-mono text-xs leading-[1.6] text-body sm:text-[11px]">
                   {tab === "code"
                     ? caseFile.code.split("\n").map((ln, i) => (
                         <div
@@ -1761,7 +1797,7 @@ function ProjectShowcase({
                     className="group/thumb relative block aspect-video w-full overflow-hidden rounded-lg border border-line bg-bg transition-colors hover:border-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
                   >
                     <Image
-                      src={g.src}
+                      src={thumbOf(g.src)}
                       alt={`${p.title} — ${g.label}`}
                       fill
                       sizes="(max-width: 1024px) 32vw, 15vw"

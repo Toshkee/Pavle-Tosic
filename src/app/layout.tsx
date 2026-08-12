@@ -40,6 +40,9 @@ export const metadata: Metadata = {
   title: "Pavle Tošić — Software Developer",
   description: DESCRIPTION,
   metadataBase: new URL("https://pavletosic.com"),
+  // The www host serves the same page (Cloudflare answers both), so without
+  // this the two are duplicate content to a crawler.
+  alternates: { canonical: "https://pavletosic.com" },
   openGraph: {
     title: "Pavle Tošić — Software Developer",
     description: DESCRIPTION,
@@ -62,6 +65,37 @@ export const metadata: Metadata = {
     title: "Pavle Tošić — Software Developer",
     description: DESCRIPTION,
     images: ["/og.png?v=3"],
+  },
+};
+
+// Structured data so search engines tie the domain to the person and to the
+// GitHub/LinkedIn profiles. Kept in sync by hand with the NAME/ROLE/SOCIAL
+// constants in page.tsx — that file is "use client", so importing from it here
+// would drag the whole page module into the server layout.
+const PROFILE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  mainEntity: {
+    "@type": "Person",
+    name: "Pavle Tošić",
+    jobTitle: "Software Developer",
+    url: "https://pavletosic.com",
+    image: "https://pavletosic.com/og.png",
+    email: "mailto:tosiicsftw@gmail.com",
+    address: { "@type": "PostalAddress", addressCountry: "ME" },
+    worksFor: { "@type": "Organization", name: "Infostream" },
+    knowsAbout: [
+      "TypeScript",
+      "React",
+      "Next.js",
+      "Node.js",
+      "Oracle APEX",
+      "SQL",
+    ],
+    sameAs: [
+      "https://github.com/Toshkee",
+      "https://www.linkedin.com/in/tosiicp/",
+    ],
   },
 };
 
@@ -94,6 +128,10 @@ export default function RootLayout({
       className={`${mononoki.variable} ${tanker.variable}`}
     >
       <body className="antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(PROFILE_JSON_LD) }}
+        />
         {/* Render-blocking, runs before the boot overlay paints: returning-
             session visitors (sessionStorage) and reduced-motion users skip the
             intro with no flash. The class hides .boot-overlay via CSS; the

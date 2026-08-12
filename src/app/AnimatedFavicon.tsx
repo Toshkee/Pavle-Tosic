@@ -12,12 +12,18 @@ import { useEffect } from "react";
 export default function AnimatedFavicon() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Phones never show a tab favicon, so the swap loop below is pure cost
+    // there — main-thread work plus a data-URL set held in memory, and every
+    // swap is booked as a favicon "request" by auditing tools.
+    if (window.matchMedia("(pointer: coarse)").matches) return;
 
     const link = document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
     if (!link) return;
     const original = link.href;
 
-    const size = 64;
+    // 32px is the largest size any browser actually paints in a tab; drawing
+    // 64 quadrupled every cached frame's data-URL for no visible gain.
+    const size = 32;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
@@ -31,7 +37,8 @@ export default function AnimatedFavicon() {
     // Pre-render ONE full pulse cycle to cached data-URLs, then just cycle
     // them on a timer. Re-drawing + re-encoding a PNG on a rAF loop for the
     // whole session (the old approach) is steady background main-thread work.
-    const FRAMES = 35; // ≈ the old 90ms/frame cadence over one π-second cycle
+    const FRAMES = 24; // ~130ms/frame over one π-second cycle — the pulse is a
+    // slow glow, so fewer steps read identically and cut the cached set by a third.
     const PERIOD = Math.PI * 1000; // ms — sin(2t) repeats every π seconds
     const frames: string[] = [];
     const draw = (pulse: number) => {
