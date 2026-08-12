@@ -48,60 +48,27 @@ jobs:
         run: |
           npm start &
           npx --yes wait-on http://localhost:3000 --timeout 60000
+          # Don't let the first trace pay for a cold server.
+          curl -sf http://localhost:3000 -o /dev/null
+          curl -sf http://localhost:3000 -o /dev/null
 
-      # A regression tripwire, not a score chase.
+      # A regression tripwire, not a score chase. Three runs because a single
+      # one is noise: see the header of scripts/lighthouse-budget.mjs.
       - name: Run Lighthouse
         run: |
-          npx --yes lighthouse@12 http://localhost:3000 \
-            --output=json --output-path=./lh.json --quiet \
-            --chrome-flags="--headless=new --no-sandbox"
+          for i in 1 2 3; do
+            npx --yes lighthouse@12 http://localhost:3000 \
+              --output=json --output-path=./lh-$i.json --quiet \
+              --chrome-flags="--headless=new --no-sandbox"
+          done
       - name: Assert the budget
-        run: |
-          node -e '
-            const lh = require("./lh.json");
-            const cat = lh.categories;
-            const num = (id) => lh.audits[id].numericValue;
-            let bad = false;
-            const fail = (s) => { console.error("FAIL " + s); bad = true; };
+        run: node scripts/lighthouse-budget.mjs lh-1.json lh-2.json lh-3.json
 
-            // Category floors. Performance is NOT gated: the boot overlay is an
-            // opaque full-screen intro rendered on the server, so LCP is pure
-            // "render delay" until it hands over — Lighthouse never presses
-            // Enter and sits through the whole sequence. That caps the score by
-            // design, and the score also swings with runner hardware (86 on a
-            // dev Mac, 39 here). It is printed below for visibility instead.
-            for (const [k, min] of Object.entries({ accessibility: 0.95, "best-practices": 0.9, seo: 1 })) {
-              const got = cat[k].score;
-              const line = k + ": " + Math.round(got * 100) + " (floor " + Math.round(min * 100) + ")";
-              got < min ? fail(line) : console.log("ok   " + line);
-            }
-
-            // Metric ceilings, which the intro does not distort. FCP and CLS
-            // held tight: both measured dead flat (760ms / 0.018) from 4x to 16x
-            // CPU throttling, so a breach is a real regression, not runner luck.
-            // TBT is deliberately loose — it scales hard with the runner
-            // (100ms -> 617ms -> 881ms over that same range), so a tight
-            // ceiling here would only produce flakes.
-            for (const [id, max, unit] of [
-              ["first-contentful-paint", 2500, "ms"],
-              ["cumulative-layout-shift", 0.1, ""],
-              ["total-blocking-time", 2000, "ms"],
-            ]) {
-              const got = num(id);
-              const line = id + ": " + (unit ? Math.round(got) : got.toFixed(3)) + unit + " (max " + max + unit + ")";
-              got > max ? fail(line) : console.log("ok   " + line);
-            }
-
-            console.log("note performance: " + Math.round(cat.performance.score * 100) +
-              " / LCP " + Math.round(num("largest-contentful-paint")) + "ms (informational — boot intro caps LCP)");
-            process.exit(bad ? 1 : 0);
-          '
-
-      # Keep the raw report so a future failure is diagnosable from the run
+      # Keep the raw reports so a future failure is diagnosable from the run
       # itself, without rebuilding and re-running Lighthouse locally.
-      - name: Upload the Lighthouse report
+      - name: Upload the Lighthouse reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: lighthouse-report
-          path: lh.json
+          path: lh-*.json
