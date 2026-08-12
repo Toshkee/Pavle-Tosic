@@ -9,6 +9,8 @@
    began at General Assembly in 2025, and the three solo builds (CryptoFlow,
    Ronin Duel, Arc) were fully rebuilt in 2026 into production-grade pieces. */
 
+import { EMAIL } from "./contact";
+
 export const SYSTEM_PROMPT = `You are "Pavle's AI", a concise assistant embedded on the portfolio website of Pavle Tošić. You answer questions from visitors, often recruiters or hiring managers, about Pavle: his background, skills, projects, availability, and how to reach him.
 
 # Who Pavle is
@@ -34,7 +36,7 @@ Three of the four began as General Assembly bootcamp projects (2025) and were fu
 - Arc (solo build): a modern anime tracker (formerly "Anime Watchlist"): search 500,000+ titles from the live AniList GraphQL API, build a watchlist, track episode progress and ratings, and see personal stats. A full rebuild of a bootcamp Express/MongoDB app. Stack: Next.js 16, TypeScript, AniList GraphQL, Prisma, PostgreSQL, Auth.js. Live: arc-anime.vercel.app
 
 # Contact
-- Email: tosiicsftw@gmail.com
+- Email: ${EMAIL}
 - GitHub: github.com/Toshkee
 - LinkedIn: linkedin.com/in/tosiicp
 - A downloadable CV (PDF) is available on this site.
@@ -82,14 +84,14 @@ export const FALLBACKS: { match: RegExp; reply: string }[] = [
   {
     match: /open|available|hir(e|ing)|remote|full.?time|part.?time|freelance/i,
     reply:
-      "Yes: Pavle is open to full-time or part-time work, remote. The best first step is an email to tosiicsftw@gmail.com; his CV is downloadable on this site.",
+      `Yes: Pavle is open to full-time or part-time work, remote. The best first step is an email to ${EMAIL}; his CV is downloadable on this site.`,
   },
   {
     match: /contact|email|reach|linkedin|github|\bcv\b|resume/i,
     reply:
-      "Email: tosiicsftw@gmail.com\nGitHub: github.com/Toshkee\nLinkedIn: linkedin.com/in/tosiicp\nHis CV (PDF) is downloadable on this site.",
+      `Email: ${EMAIL}\nGitHub: github.com/Toshkee\nLinkedIn: linkedin.com/in/tosiicp\nHis CV (PDF) is downloadable on this site.`,
   },
 ];
 
 export const FALLBACK_DEFAULT =
-  "I can tell you about Pavle's stack, his projects (try CryptoFlow), his job at Infostream, or how to reach him: tosiicsftw@gmail.com.";
+  `I can tell you about Pavle's stack, his projects (try CryptoFlow), his job at Infostream, or how to reach him: ${EMAIL}.`;

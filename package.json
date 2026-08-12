@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "check:site": "node scripts/check-site.mjs"
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import ConsoleSignature from "./ConsoleSignature";
 import AnimatedFavicon from "./AnimatedFavicon";
+import { EMAIL } from "./contact";
 
 // Mononoki — self-hosted monospace used across the whole site.
 const mononoki = localFont({
@@ -83,7 +84,7 @@ const PROFILE_JSON_LD = {
     jobTitle: "Software Developer",
     url: "https://pavletosic.com",
     image: "https://pavletosic.com/og.png",
-    email: "mailto:tosiicsftw@gmail.com",
+    email: `mailto:${EMAIL}`,
     address: { "@type": "PostalAddress", addressCountry: "ME" },
     worksFor: { "@type": "Organization", name: "Infostream" },
     knowsAbout: [

@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, typecheck, build, smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+      # Serve the production build and assert the things that used to rot
+      # silently: routes, canonicals, JSON-LD, security headers, dead links.
+      - name: Start the production server
+        run: |
+          npm start &
+          npx --yes wait-on http://localhost:3000 --timeout 60000
+      - run: npm run check:site
+
+  lighthouse:
+    name: Lighthouse budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Start the production server
+        run: |
+          npm start &
+          npx --yes wait-on http://localhost:3000 --timeout 60000
+
+      # A regression tripwire, not a score chase. Performance is scored on a
+      # shared CI runner, so its floor is deliberately loose — the categories
+      # that CAN be judged reliably here (a11y, best practices, SEO) are the
+      # ones held to a high bar.
+      - name: Run Lighthouse
+        run: |
+          npx --yes lighthouse@12 http://localhost:3000 \
+            --output=json --output-path=./lh.json --quiet \
+            --chrome-flags="--headless=new --no-sandbox"
+      - name: Assert the budget
+        run: |
+          node -e '
+            const r = require("./lh.json").categories;
+            const floors = { performance: 0.65, accessibility: 0.95, "best-practices": 0.9, seo: 1 };
+            let bad = false;
+            for (const [k, min] of Object.entries(floors)) {
+              const got = r[k].score;
+              const line = k + ": " + Math.round(got * 100) + " (floor " + Math.round(min * 100) + ")";
+              if (got < min) { console.error("FAIL " + line); bad = true; }
+              else console.log("ok   " + line);
+            }
+            process.exit(bad ? 1 : 0);
+          '

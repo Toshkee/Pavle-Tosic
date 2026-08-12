@@ -1,0 +1,56 @@
+name: Live site check
+
+# The build job proves the code is right; this proves the deployed site is.
+# Runs against pavletosic.com, so it also catches things that live outside the
+# repo entirely: a Cloudflare redirect rule being edited away, a managed
+# robots.txt coming back, or a project demo's free host lapsing.
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+jobs:
+  redirects:
+    name: Domain canonicalisation
+    runs-on: ubuntu-latest
+    steps:
+      - name: http:// must 301 to https://
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -I http://pavletosic.com/)
+          loc=$(curl -s -o /dev/null -w '%{redirect_url}' -I http://pavletosic.com/)
+          echo "$code -> $loc"
+          [ "$code" = "301" ] || { echo "FAIL: expected 301, got $code"; exit 1; }
+          case "$loc" in https://pavletosic.com/*) ;; *) echo "FAIL: bad target $loc"; exit 1;; esac
+
+      - name: www must 301 to the apex, preserving the path
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -I https://www.pavletosic.com/work)
+          loc=$(curl -s -o /dev/null -w '%{redirect_url}' -I https://www.pavletosic.com/work)
+          echo "$code -> $loc"
+          [ "$code" = "301" ] || { echo "FAIL: expected 301, got $code"; exit 1; }
+          [ "$loc" = "https://pavletosic.com/work" ] || { echo "FAIL: bad target $loc"; exit 1; }
+
+      - name: robots.txt must stay ours
+        run: |
+          body=$(curl -sf https://pavletosic.com/robots.txt)
+          echo "$body"
+          echo "$body" | grep -qi '^Sitemap: https://pavletosic.com/sitemap.xml' \
+            || { echo "FAIL: sitemap directive missing"; exit 1; }
+          # Cloudflare's managed robots.txt injects Content-Signal directives.
+          # It was turned off deliberately; if it comes back, the SEO score drops.
+          echo "$body" | grep -qi 'Content-Signal' \
+            && { echo "FAIL: a managed robots.txt block is being injected again"; exit 1; }
+          exit 0
+
+  pages:
+    name: Live pages, links and metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # CHECK_EXTERNAL also pings each project's demo and repo. Those live on
+      # other people's free tiers, which is why this only runs here and never
+      # blocks a merge.
+      - run: BASE=https://pavletosic.com CHECK_EXTERNAL=1 node scripts/check-site.mjs

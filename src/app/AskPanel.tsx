@@ -1,8 +1,10 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { SUGGESTIONS } from "./suggestions";
+import { EMAIL } from "./contact";
 
 /* "Ask AI" — a dedicated, grounded chat panel docked bottom-right (above the
    Terminal bar). Talks to POST /api/ask, which proxies Gemini server-side. The
@@ -11,7 +13,6 @@ import { SUGGESTIONS } from "./suggestions";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const EMAIL = "tosiicsftw@gmail.com";
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function Sparkle({ className = "" }: { className?: string }) {
@@ -415,8 +416,18 @@ function AskPanel() {
                   </svg>
                 </button>
               </div>
+              {/* Messages leave the site for Google's Gemini API, so the notice
+                  that says so is one tap away from the input that sends them. */}
               <p className="mt-1.5 font-mono text-[10px] text-faint">
-                AI-generated, may be imprecise. Confirm important details with Pavle.
+                AI-generated, may be imprecise. Confirm important details with
+                Pavle. Messages go to the Gemini API,{" "}
+                <Link
+                  href="/privacy"
+                  className="underline transition-colors hover:text-accent-ink"
+                >
+                  privacy
+                </Link>
+                .
               </p>
             </form>
           </motion.div>

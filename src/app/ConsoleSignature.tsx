@@ -1,4 +1,5 @@
 "use client";
+import { EMAIL } from "./contact";
 
 import { useEffect } from "react";
 
@@ -15,7 +16,7 @@ export default function ConsoleSignature() {
     const link =
       "color:#34e070;font-family:ui-monospace,monospace;font-size:12px";
     console.log(
-      "%c// you opened the console. respect.\n%cPavle Tošić — Software Developer · Montenegro\n%cgithub.com/Toshkee   ·   tosiicsftw@gmail.com   ·   open to roles",
+      `%c// you opened the console. respect.\n%cPavle Tošić — Software Developer · Montenegro\n%cgithub.com/Toshkee   ·   ${EMAIL}   ·   open to roles`,
       banner,
       dim,
       link
