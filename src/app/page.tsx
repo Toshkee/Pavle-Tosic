@@ -1135,7 +1135,7 @@ function LeftRail({ active }: { active: string }) {
           className="relative mb-6 h-24 w-24 overflow-hidden rounded-2xl border border-accent/40 shadow-[0_0_18px_-6px_rgba(34,197,94,0.35)] transition-colors hover:border-accent/60"
         >
           <Image
-            src="/images/me-avatar.jpg"
+            src="/images/me-avatar.webp"
             alt={NAME}
             fill
             sizes="96px"

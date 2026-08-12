@@ -6,11 +6,13 @@ import AnimatedFavicon from "./AnimatedFavicon";
 
 // Mononoki — self-hosted monospace used across the whole site.
 const mononoki = localFont({
-  // 700-italic is intentionally omitted — no bold+italic text exists on the
-  // site, so shipping/preloading that face was pure dead weight.
+  // Only the two faces that carry real text. 700-italic never existed on the
+  // site, and 400-italic earned its 35KB back: every face declared here is
+  // preloaded, and italic is used for exactly two things (terminal comment
+  // lines, code-tab comments) where the browser's synthesised oblique of the
+  // regular face is indistinguishable at mono sizes.
   src: [
     { path: "./fonts/mononoki-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/mononoki-400-italic.woff2", weight: "400", style: "italic" },
     { path: "./fonts/mononoki-700.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-mononoki",
