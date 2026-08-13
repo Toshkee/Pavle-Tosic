@@ -38,7 +38,7 @@ const LINES: Record<string, string[]> = {
   ],
   stack: [
     "every logo on this slide is a devicon svg bundled at build time. no icon CDN, nothing to go down.",
-    "the chips stagger in with framer motion variants. no blur on them, it stacks with backdrop-filter and janks.",
+    "the chips don't animate in on purpose. they just sit there. no blur on them either, it stacks with backdrop-filter and janks.",
   ],
   work: [
     "one project on stage at a time. ← and → switch them, and the tabs in the window bar are a real case file.",

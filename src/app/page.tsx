@@ -361,34 +361,6 @@ const ITEM_VARIANTS = {
 };
 const LCP_ITEM_VARIANTS = ITEM_VARIANTS;
 
-// Container that staggers its <StaggerItem> children in as it enters view.
-function StaggerGroup({
-  children,
-  className = "",
-  amount = 0.2,
-}: {
-  children: ReactNode;
-  className?: string;
-  amount?: number;
-}) {
-  const reduce = usePrefersReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
-  return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount }}
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 // Heading whose words settle up into place with a stagger (smooth, not
 // per-character). Transform only — no mask, no opacity — so the text reads
 // fine even when the reveal never fires.
@@ -922,7 +894,6 @@ function TechChip({ t }: { t: Tech }) {
   const isStroke = t.tint === "stroke";
   return (
     <motion.span
-      variants={reduce ? undefined : ITEM_VARIANTS}
       whileHover={reduce ? undefined : { y: -2 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="tonal-hover group inline-flex items-center gap-2 rounded-lg border border-line bg-bg/40 px-3 py-2 hover:border-accent/60"
@@ -980,11 +951,13 @@ const Stack = memo(function Stack() {
                 {group.group}
               </span>
             </Reveal>
-            <StaggerGroup className="flex flex-wrap gap-2.5">
+            {/* No entrance animation here — the chips read better sitting
+                still than sliding up one by one. */}
+            <div className="flex flex-wrap gap-2.5">
               {group.items.map((t) => (
                 <TechChip key={t.name} t={t} />
               ))}
-            </StaggerGroup>
+            </div>
           </div>
         ))}
       </div>
