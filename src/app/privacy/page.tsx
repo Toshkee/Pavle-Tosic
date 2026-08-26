@@ -2,16 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EMAIL } from "../contact";
 
-/* Privacy notice. Two things on this site touch visitor data: Cloudflare Web
-   Analytics (edge-injected, cookieless) and the Ask AI widget, which forwards
-   the question text to Google's Gemini API. Everything stated here is checkable
-   against the code: src/app/api/ask/route.ts for the assistant, BootIntro.tsx
-   for the one sessionStorage key. Keep it in sync if either changes. */
+/* Privacy notice. Everything stated here is checkable against the code:
+   src/app/api/ask/route.ts for the assistant, GitHubGraph/LiveTicker for public
+   third-party data, and BootIntro.tsx for the one sessionStorage key. */
 
 export const metadata: Metadata = {
   title: "Privacy — Pavle Tošić",
   description:
-    "What this site collects: cookieless analytics, and the questions you type into the Ask AI widget. Nothing else.",
+    "How this site handles analytics, public live data, and questions sent through the Ask AI widget.",
   alternates: { canonical: "https://pavletosic.com/privacy" },
   robots: { index: true, follow: true },
 };
@@ -51,8 +49,8 @@ export default function Privacy() {
       </h1>
       <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
         This is a personal portfolio. There are no accounts, no sign-in, no ads
-        and no advertising or tracking cookies. Two things here touch visitor
-        data, and both are described in full below.
+        and no advertising or tracking cookies. The network services used by
+        the site are described below.
       </p>
 
       <Section title="Analytics">
@@ -63,6 +61,21 @@ export default function Privacy() {
           referrer, coarse device and browser information, country, and page
           load timings. I use it to see which sections people read. It does not
           identify you, and I cannot single out an individual visit from it.
+        </p>
+      </Section>
+
+      <Section title="Public live data">
+        <p>
+          The contribution panel requests public GitHub contribution data from
+          github-contributions-api.jogruber.de when it appears. Like any web
+          server, that provider can receive your IP address, browser information,
+          and this site&apos;s origin. No chat text or other site data is sent.
+        </p>
+        <p>
+          If you open the CryptoFlow live-market tab, your browser connects to
+          Binance&apos;s public REST and WebSocket services for market prices. That
+          connection is only made after you open the live tab. Binance can
+          receive the ordinary network details that accompany the request.
         </p>
       </Section>
 

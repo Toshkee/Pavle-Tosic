@@ -37,7 +37,12 @@ const PAGES = [
 
 const REQUIRED_HEADERS = [
   "strict-transport-security",
+  "content-security-policy",
+  "cross-origin-opener-policy",
+  "cross-origin-resource-policy",
+  "origin-agent-cluster",
   "x-content-type-options",
+  "x-permitted-cross-domain-policies",
   "referrer-policy",
   "permissions-policy",
   "x-frame-options",
@@ -58,9 +63,107 @@ for (const path of PAGES) {
   for (const h of REQUIRED_HEADERS) {
     if (!res.headers.get(h)) fail(`${path} is missing the ${h} header`);
   }
+  const csp = res.headers.get("content-security-policy") ?? "";
+  for (const directive of [
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "script-src-attr 'none'",
+  ]) {
+    if (!csp.includes(directive)) fail(`${path} CSP is missing ${directive}`);
+  }
+  if (res.headers.get("content-security-policy-report-only")) {
+    fail(`${path} still uses a report-only CSP`);
+  }
   if (res.headers.get("x-powered-by")) fail(`${path} still sends x-powered-by`);
   ok(path);
 }
+
+console.log("\nAPI request boundaries");
+const API = `${BASE}/api/ask`;
+const ALLOWED_ORIGIN = "https://pavletosic.com";
+
+async function expectApi(label, init, expectedStatus, expectedError) {
+  const res = await fetch(API, { method: "POST", ...init });
+  let body = {};
+  try {
+    body = await res.json();
+  } catch {
+    /* the assertions below will report the invalid error response */
+  }
+  if (res.status !== expectedStatus) {
+    fail(`${label} returned ${res.status}, expected ${expectedStatus}`);
+  }
+  if (body?.error !== expectedError) {
+    fail(`${label} returned error ${JSON.stringify(body?.error)}, expected ${expectedError}`);
+  }
+  if (!/no-store/i.test(res.headers.get("cache-control") ?? "")) {
+    fail(`${label} response is missing Cache-Control: no-store`);
+  }
+  if (res.headers.get("access-control-allow-origin")) {
+    fail(`${label} unexpectedly enables CORS`);
+  }
+  ok(label);
+}
+
+const validBody = JSON.stringify({
+  messages: [{ role: "user", content: "security smoke test" }],
+});
+await expectApi(
+  "missing Origin is rejected",
+  { headers: { "Content-Type": "application/json" }, body: validBody },
+  403,
+  "forbidden",
+);
+await expectApi(
+  "foreign Origin is rejected",
+  {
+    headers: {
+      Origin: "https://attacker.invalid",
+      "Content-Type": "application/json",
+    },
+    body: validBody,
+  },
+  403,
+  "forbidden",
+);
+await expectApi(
+  "non-JSON content is rejected",
+  {
+    headers: { Origin: ALLOWED_ORIGIN, "Content-Type": "text/plain" },
+    body: "hello",
+  },
+  415,
+  "unsupported_media_type",
+);
+await expectApi(
+  "malformed JSON is rejected",
+  {
+    headers: { Origin: ALLOWED_ORIGIN, "Content-Type": "application/json" },
+    body: "{",
+  },
+  400,
+  "bad_request",
+);
+
+// A stream body has no Content-Length. This proves the route enforces its
+// byte limit while reading, rather than trusting a header an attacker can omit.
+const oversizedBody = new ReadableStream({
+  start(controller) {
+    controller.enqueue(new TextEncoder().encode("x".repeat(64_001)));
+    controller.close();
+  },
+});
+await expectApi(
+  "chunked oversized body is rejected",
+  {
+    headers: { Origin: ALLOWED_ORIGIN, "Content-Type": "application/json" },
+    body: oversizedBody,
+    duplex: "half",
+  },
+  413,
+  "too_large",
+);
 
 console.log("\ncanonical + title");
 for (const [path, html] of pages) {
@@ -126,7 +229,36 @@ console.log("\nsitemap + robots");
   else if (!/Sitemap:\s*https:\/\/pavletosic\.com\/sitemap\.xml/i.test(txt))
     fail("robots.txt does not declare the sitemap");
   else ok("robots.txt declares the sitemap");
+
+  const security = await fetch(`${BASE}/.well-known/security.txt`);
+  const policy = security.ok ? await security.text() : "";
+  if (!security.ok) fail(`security.txt returned ${security.status}`);
+  else if (!/^Contact:\s*mailto:/im.test(policy))
+    fail("security.txt has no email contact");
+  else if (!/^Canonical:\s*https:\/\/pavletosic\.com\/\.well-known\/security\.txt/im.test(policy))
+    fail("security.txt has no canonical URL");
+  else ok("security.txt publishes a private reporting contact");
 }
+
+console.log("\nsensitive-file exposure");
+for (const path of ["/.env", "/.git/config", "/package.json", "/next.config.ts"]) {
+  const res = await fetch(`${BASE}${path}`, { redirect: "manual" });
+  if (res.status !== 404) fail(`${path} returned ${res.status}, expected 404`);
+  else ok(`${path} is not exposed`);
+}
+
+console.log("\nproduction source maps");
+const scriptPaths = new Set();
+for (const html of pages.values()) {
+  for (const match of html.matchAll(/src="(\/_next\/static\/[^"]+\.js)"/g)) {
+    scriptPaths.add(match[1]);
+  }
+}
+for (const script of scriptPaths) {
+  const res = await fetch(`${BASE}${script}.map`, { method: "HEAD" });
+  if (res.status === 200) fail(`${script}.map is publicly exposed`);
+}
+ok(`${scriptPaths.size} JavaScript bundles have no public source maps`);
 
 console.log("\ninternal links");
 {

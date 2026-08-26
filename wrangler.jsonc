@@ -4,6 +4,14 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "pavletosic.com",
+      "custom_domain": true
+    }
+  ],
   "main": ".open-next/worker.js",
   "assets": {
     "directory": ".open-next/assets",

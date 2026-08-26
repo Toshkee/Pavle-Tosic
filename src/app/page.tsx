@@ -30,7 +30,6 @@ import { useActiveSection } from "./useActiveSection";
 import { EMAIL } from "./contact";
 import {
   PROJECTS,
-  COLD_APIS,
   DEMO_NOTES,
   CASES,
   CASE_TABS,
@@ -2338,9 +2337,6 @@ function SectionDeck({
    PAGE
 ───────────────────────────────────────────────────────────── */
 
-// Once per page load, not per Home mount (StrictMode double-invokes effects).
-let apisWarmed = false;
-
 export default function Home() {
   const [index, setIndex] = useState(0);
   const isDesktopLayout = useIsDesktop();
@@ -2372,18 +2368,6 @@ export default function Home() {
   }, [activeId]);
 
   const mainRef = useRef<HTMLElement>(null);
-
-  // Wake the sleeping free-tier demo APIs as soon as anyone lands: by the time
-  // a visitor reaches Work and clicks a live demo, the backend is already up
-  // instead of eating its cold start in front of them. no-cors — the response
-  // is opaque and irrelevant, only the hit matters.
-  useEffect(() => {
-    if (apisWarmed) return;
-    apisWarmed = true;
-    for (const url of Object.values(COLD_APIS)) {
-      fetch(url, { mode: "no-cors", cache: "no-store" }).catch(() => {});
-    }
-  }, []);
 
   return (
     <>

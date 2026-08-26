@@ -3,3 +3,8 @@
 # In production, set it as a Worker secret instead:
 #   npx wrangler secret put GEMINI_API_KEY
 GEMINI_API_KEY=your-gemini-api-key-here
+
+# Optional comma-separated preview/dev origins allowed to call /api/ask.
+# Production https://pavletosic.com is always allowed. Keep this list exact;
+# never use wildcards.
+SITE_ORIGINS=http://localhost:3000

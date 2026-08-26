@@ -184,15 +184,6 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-// PROJECTS[].live → its backend API, hosted on a free tier that sleeps when
-// idle (CryptoFlow: Render spins down after ~15 min, cold start ~30-60s).
-// Pinged awake on page load (see Home) so a "Live demo" click later hits a
-// warm backend instead of hanging. Meet2Explore's Heroku backend is gone
-// (404s), so it is NOT pinged — its state is disclosed via DEMO_NOTES instead.
-export const COLD_APIS: Record<string, string> = {
-  "https://cryptofloww.netlify.app/": "https://cryptoflow-api-cx07.onrender.com/",
-};
-
 // PROJECTS[].live → a one-line honest status shown under the demo links.
 export const DEMO_NOTES: Record<string, string> = {
   "https://cryptofloww.netlify.app/":

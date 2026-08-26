@@ -9,10 +9,14 @@ on:
     - cron: "17 6 * * 1" # Mondays, 06:17 UTC
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   redirects:
     name: Domain canonicalisation
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: http:// must 301 to https://
         run: |
@@ -45,11 +49,14 @@ jobs:
   pages:
     name: Live pages, links and metadata
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          node-version: 20
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
       # CHECK_EXTERNAL also pings each project's demo and repo. Those live on
       # other people's free tiers, which is why this only runs here and never
       # blocks a merge.

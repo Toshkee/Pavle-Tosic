@@ -10,17 +10,25 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Lint, typecheck, build, smoke
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          node-version: 20
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run check:metadata
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
@@ -29,25 +37,28 @@ jobs:
       # silently: routes, canonicals, JSON-LD, security headers, dead links.
       - name: Start the production server
         run: |
-          npm start &
-          npx --yes wait-on http://localhost:3000 --timeout 60000
+          GEMINI_API_KEY=security-smoke-test npm start &
+          npx --no-install wait-on http://localhost:3000 --timeout 60000
       - run: npm run check:site
 
   lighthouse:
     name: Lighthouse budget
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          node-version: 20
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run build
       - name: Start the production server
         run: |
           npm start &
-          npx --yes wait-on http://localhost:3000 --timeout 60000
+          npx --no-install wait-on http://localhost:3000 --timeout 60000
           # Don't let the first trace pay for a cold server.
           curl -sf http://localhost:3000 -o /dev/null
           curl -sf http://localhost:3000 -o /dev/null
@@ -57,7 +68,7 @@ jobs:
       - name: Run Lighthouse
         run: |
           for i in 1 2 3; do
-            npx --yes lighthouse@12 http://localhost:3000 \
+            npx --no-install lighthouse http://localhost:3000 \
               --output=json --output-path=./lh-$i.json --quiet \
               --chrome-flags="--headless=new --no-sandbox"
           done
@@ -68,7 +79,7 @@ jobs:
       # itself, without rebuilding and re-running Lighthouse locally.
       - name: Upload the Lighthouse reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: lighthouse-report
           path: lh-*.json

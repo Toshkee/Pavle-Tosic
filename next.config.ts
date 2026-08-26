@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
-// Report-Only for now: the policy is reported to the console but nothing is
-// blocked, so a missed source can't break the page. Switch the header name to
-// Content-Security-Policy once a few days of real traffic report clean.
+// Enforced allowlist for every browser-controlled resource type. Next's static
+// bootstrap currently requires inline scripts, but inline event-handler
+// attributes remain blocked and third-party script origins stay tightly pinned.
 const CSP = [
   "default-src 'self'",
   // 'unsafe-inline' is unavoidable here: every page is statically prerendered,
@@ -18,14 +18,25 @@ const CSP = [
   "font-src 'self'",
   "media-src 'self'",
   // Binance market stream + REST fallback (LiveTicker), the contributions API
-  // (GitHubGraph), the CryptoFlow backend warm-up ping (COLD_APIS in page.tsx),
-  // and the analytics beacon's own reporting endpoint.
-  "connect-src 'self' wss://stream.binance.com:9443 https://api.binance.com https://data-api.binance.vision https://github-contributions-api.jogruber.de https://cryptoflow-api-cx07.onrender.com https://cloudflareinsights.com",
+  // (GitHubGraph), and the analytics beacon's own reporting endpoint.
+  "connect-src 'self' wss://stream.binance.com:9443 https://api.binance.com https://data-api.binance.vision https://github-contributions-api.jogruber.de https://cloudflareinsights.com",
+  "script-src-attr 'none'",
+  "worker-src 'none'",
+  "frame-src 'none'",
+  "manifest-src 'self'",
   "frame-ancestors 'none'",
-  "base-uri 'self'",
+  "base-uri 'none'",
   "form-action 'self'",
   "object-src 'none'",
 ].join("; ");
+
+// Turbopack's development client needs eval/WebSocket capabilities that the
+// production policy intentionally denies. Keep development report-only while
+// enforcing the exact same policy in builds and deployments.
+const CSP_HEADER =
+  process.env.NODE_ENV === "development"
+    ? "Content-Security-Policy-Report-Only"
+    : "Content-Security-Policy";
 
 const SECURITY_HEADERS = [
   {
@@ -36,11 +47,16 @@ const SECURITY_HEADERS = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    value:
+      "accelerometer=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), publickey-credentials-get=(), usb=()",
   },
   // frame-ancestors above covers modern browsers; this is the legacy twin.
   { key: "X-Frame-Options", value: "DENY" },
-  { key: "Content-Security-Policy-Report-Only", value: CSP },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+  { key: "Origin-Agent-Cluster", value: "?1" },
+  { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
+  { key: CSP_HEADER, value: CSP },
 ];
 
 const nextConfig: NextConfig = {
