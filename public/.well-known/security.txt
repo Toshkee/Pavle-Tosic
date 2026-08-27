@@ -2,4 +2,4 @@ Contact: mailto:tosiicsftw@gmail.com
 Expires: 2027-08-26T00:00:00Z
 Canonical: https://pavletosic.com/.well-known/security.txt
 Preferred-Languages: en
-Policy: https://github.com/Toshkee/my-portfolio/security/policy
+Policy: https://github.com/Toshkee/Pavle-Tosic/security/policy
