@@ -127,6 +127,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // globals.css sets `scroll-behavior: smooth` on <html>. Declaring it here
+      // too tells Next the smooth scroll is deliberate, so route changes jump
+      // to the top instantly instead of animating a long scroll (and landing
+      // scroll restoration in the wrong place) on the way to a new page.
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${mononoki.variable} ${tanker.variable}`}
     >
