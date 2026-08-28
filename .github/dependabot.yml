@@ -12,18 +12,13 @@ updates:
           - minor
           - patch
     ignore:
-      # Node types must track the runtime (engines: >=22, Workers on Node 22).
-      - dependency-name: "@types/node"
-        update-types: ["version-update:semver-major"]
-      # TypeScript majors are breaking; upgrade deliberately, not automatically.
-      - dependency-name: "typescript"
-        update-types: ["version-update:semver-major"]
-      # React/Next majors are framework migrations, not dependency bumps.
-      - dependency-name: "next"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
+      # Every major is a breaking change or a framework migration, so none of
+      # them belong in an automated bump. This was a per-package list, but it
+      # only covered the deps that existed when it was written and kept letting
+      # new majors through (framer-motion 13, eslint 10). A blanket rule needs
+      # no maintenance as dependencies come and go. Majors stay a deliberate,
+      # manual upgrade; minor and patch still arrive grouped every week.
+      - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
