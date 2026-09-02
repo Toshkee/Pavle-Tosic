@@ -28,7 +28,7 @@
     "react-icons": "^5.7.0"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.20.2",
+    "@opennextjs/cloudflare": "^1.20.4",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -39,6 +39,6 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wait-on": "9.1.0",
-    "wrangler": "^4.88.0"
+    "wrangler": "^4.127.1"
   }
 }
