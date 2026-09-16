@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 
 /* The literal `tail -f github.log`: the public events feed, folded into one
-   line per repo (most recently pushed first). Public events only, so private
+   line per repo, busiest first (a one-off push to a side repo shouldn't
+   outrank the project that got twenty). Public events only, so private
    client work never leaks here by accident. Same shape as GitHubGraph — a
    short module-level TTL cache so deck flips don't refetch, a bounded fetch,
    and an honest failure line instead of a dead skeleton. */
@@ -12,6 +13,9 @@ const USER = "Toshkee";
 const PROFILE = "https://github.com/Toshkee";
 const CACHE_TTL = 5 * 60_000;
 const ROWS = 5;
+// A repo has to carry at least this share of the window's pushes to be
+// listed: the point is where the work is going, not every stray push.
+const MIN_SHARE = 0.1;
 
 type Event = {
   type: string;
@@ -32,8 +36,9 @@ let cached: { rows: RepoRow[]; at: number } | null = null;
 const freshCache = () =>
   cached && Date.now() - cached.at < CACHE_TTL ? cached : null;
 
-/* Fold raw events → one row per repo, newest push first. Creates count as
-   activity too (a new public repo is the most "in the open" thing there is). */
+/* Fold raw events → one row per repo, most pushes first, recency as the
+   tie-break. Creates count as activity too (a new public repo is the most
+   "in the open" thing there is). */
 export function foldEvents(events: Event[]): RepoRow[] {
   const map = new Map<string, RepoRow>();
   for (const e of events) {
@@ -56,8 +61,11 @@ export function foldEvents(events: Event[]): RepoRow[] {
       });
     }
   }
-  return [...map.values()]
-    .sort((a, b) => (a.last < b.last ? 1 : -1))
+  const all = [...map.values()];
+  const total = all.reduce((n, r) => n + r.pushes, 0);
+  return all
+    .filter((r) => r.pushes >= Math.max(2, total * MIN_SHARE))
+    .sort((a, b) => b.pushes - a.pushes || (a.last < b.last ? 1 : -1))
     .slice(0, ROWS);
 }
 
@@ -107,14 +115,14 @@ export default function GitHubFeed() {
         <span className="h-2 w-2 rounded-full bg-accent-2/70" />
         <span className="ml-2 font-mono text-[11px] text-muted">activity.log</span>
         <span className="ml-auto font-mono text-[11px] text-faint">
-          public repos · last 60 events
+          public repos · busiest first
         </span>
       </div>
 
       <div className="p-5 font-mono text-sm sm:p-7">
         <p className="text-muted">
-          <span className="text-accent">$</span> git log --all --oneline
-          --date=relative
+          <span className="text-accent">$</span> git shortlog --since=recent
+          --sort=pushes
           {failed && <span className="text-faint"> · connection timed out</span>}
         </p>
 
