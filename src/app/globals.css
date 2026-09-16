@@ -41,6 +41,11 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* The .stage-pool scrims bleed 2.5rem past each section on purpose. body
+     already clips them, but body's overflow does not propagate to the
+     viewport, so on phones the html element still grew a 20px horizontal
+     scroll. Clip here too (clip, not hidden, so nothing becomes a scroller). */
+  overflow-x: clip;
 }
 
 body {
