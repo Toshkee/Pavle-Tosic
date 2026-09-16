@@ -34,9 +34,11 @@ export const CRITTER_KEYFRAMES = `
 @keyframes cPulse{0%,100%{opacity:.4}50%{opacity:1}}
 @keyframes cBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 @keyframes cFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes cDrift{0%,100%{transform:translateX(-3px)}50%{transform:translateX(3px)}}
 .cr-bob{animation:cBob 1.9s ease-in-out infinite;transform-box:fill-box}
 .cr-bob2{animation:cBob2 2.3s ease-in-out infinite;transform-box:fill-box}
 .cr-float{animation:cFloat 2s ease-in-out infinite;transform-box:fill-box}
+.cr-drift{animation:cDrift 3.7s ease-in-out infinite;transform-box:fill-box}
 .cr-glitch{animation:cGlitch 3.4s steps(1,end) infinite;transform-box:fill-box}
 .cr-squash{animation:cSquash 1.5s ease-in-out infinite;transform-box:fill-box}
 .cr-breath{animation:cBreath 2.2s ease-in-out infinite;transform-box:fill-box}
@@ -213,6 +215,7 @@ export function Daemon({ look, talking }: { look?: Look; talking?: boolean }) {
 export function Ghost({ look, talking }: { look?: Look; talking?: boolean }) {
   return (
     <svg width={64} height={68} viewBox="0 0 52 56" fill="none" shapeRendering="crispEdges" style={{ filter: glow, display: "block" }}>
+      <g className="cr-drift">
       <g className="cr-bob2">
         <g className="cr-glitch">
           <path d="M8 30 Q8 10 26 10 Q44 10 44 30 L44 48 L38 42 L32 48 L26 42 L20 48 L14 42 L8 48 Z" fill="rgba(34,197,94,0.9)" />
@@ -228,6 +231,7 @@ export function Ghost({ look, talking }: { look?: Look; talking?: boolean }) {
             <ellipse cx={26} cy={38} rx={3} ry={2.4} fill={D2} />
           </g>
         </g>
+      </g>
       </g>
     </svg>
   );

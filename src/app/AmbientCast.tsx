@@ -47,7 +47,7 @@ const LINES: Record<string, string[]> = {
     "I'm the only bug on this page. the double-spend and the IDOR are pinned in the notes tabs.",
   ],
   github: [
-    "this card is live. fetched client-side while you watch, cached for five minutes between deck flips.",
+    "these cards are live. fetched client-side while you watch, cached for five minutes between deck flips.",
     "weeks, not days: the strip aggregates by calendar week so the cadence reads honestly.",
     "activity.log is the public events feed folded to one line per repo. private client work never shows up there, by design.",
     "I'm a background daemon. I only look like trouble.",
@@ -84,13 +84,27 @@ export default function AmbientCast({
           />
         </>
       )}
+      {/* Stack and Work are the densest slides (chip rows, the kiosk), so
+          their guides lurk and speak only on click, like the ghost. */}
       {activeId === "stack" && (
-        <PeekCritter lines={LINES.stack} right={RIGHT} w={64} h={58}>
+        <PeekCritter
+          lines={LINES.stack}
+          right={RIGHT}
+          w={64}
+          h={58}
+          autoPlay={false}
+        >
           {(look, talking) => <Blob look={look} talking={talking} />}
         </PeekCritter>
       )}
       {activeId === "work" && (
-        <PeekCritter lines={LINES.work} right={RIGHT} w={66} h={56}>
+        <PeekCritter
+          lines={LINES.work}
+          right={RIGHT}
+          w={66}
+          h={56}
+          autoPlay={false}
+        >
           {(_, talking) => (
             // top-down beetle: legs pause while risen, antennae keep sniffing
             <span className={talking ? undefined : "cr-still"}>

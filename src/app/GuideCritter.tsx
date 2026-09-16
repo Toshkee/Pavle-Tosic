@@ -23,6 +23,32 @@ const START_DELAY = 1000; // let the section entrance land before speaking
 const HOLD_MS = 4200; // dwell on a finished line before the next
 const CLOSE_MS = 240; // bubble fade-out (matches guide-out in globals.css)
 
+/* Each guide auto-plays ONCE per browser session. After that it lurks and
+   only speaks on click, so a visitor flipping back and forth through the
+   deck isn't re-narrated on every landing. Keyed by the script's first line
+   (stable, and no prop plumbing). sessionStorage so a reload keeps the
+   promise; the in-memory set covers private windows where storage throws. */
+const played = new Set<string>();
+const SESSION_KEY = "guides-played";
+function hasPlayed(key: string) {
+  if (played.has(key)) return true;
+  try {
+    return (sessionStorage.getItem(SESSION_KEY) ?? "").split("\n").includes(key);
+  } catch {
+    return false;
+  }
+}
+function markPlayed(key: string) {
+  played.add(key);
+  try {
+    const prev = sessionStorage.getItem(SESSION_KEY) ?? "";
+    if (!prev.split("\n").includes(key))
+      sessionStorage.setItem(SESSION_KEY, prev ? prev + "\n" + key : key);
+  } catch {
+    /* private window / storage blocked: the Set still holds it */
+  }
+}
+
 type Phase = "wait" | "typing" | "hold" | "closing" | "done";
 
 type GuideView = {
@@ -40,7 +66,9 @@ type GuideView = {
    "done" — the critter lurks and only speaks when clicked. Use it on slides
    whose text runs to the bottom edge, where an auto-opened bubble would sit
    on top of real copy. */
-function useGuideScript(lines: string[], autoPlay = true) {
+function useGuideScript(lines: string[], autoPlayProp = true) {
+  const key = lines[0] ?? "";
+  const autoPlay = autoPlayProp && !hasPlayed(key);
   const [view, setView] = useState<GuideView>({
     open: false,
     closing: false,
@@ -76,6 +104,7 @@ function useGuideScript(lines: string[], autoPlay = true) {
       if (st.t > START_DELAY) {
         st.phase = "typing";
         st.t = 0;
+        markPlayed(key);
         commit();
       }
     } else if (st.phase === "typing") {
@@ -116,6 +145,7 @@ function useGuideScript(lines: string[], autoPlay = true) {
       st.phase = "typing";
       st.line = 0;
       st.shown = 0;
+      markPlayed(key);
     } else if (st.phase === "typing") {
       st.shown = lines[st.line].length;
       st.phase = "hold";
@@ -148,7 +178,7 @@ function Bubble({
   text: string;
   typing: boolean;
   closing: boolean;
-  tail: "down" | "left";
+  tail: "down" | "left" | "right";
   style: CSSProperties;
   onClick: () => void;
 }) {
@@ -157,9 +187,9 @@ function Bubble({
       aria-hidden
       onClick={onClick}
       style={style}
-      className={`guide-bubble font-mono ${
-        tail === "left" ? "guide-tail-left" : "guide-tail-down"
-      } ${closing ? "guide-bubble-out" : ""}`}
+      className={`guide-bubble font-mono guide-tail-${tail} ${
+        closing ? "guide-bubble-out" : ""
+      }`}
     >
       {text}
       {typing && <span className="guide-caret" />}
@@ -176,7 +206,7 @@ export function GuideBubble({
 }: {
   lines: string[];
   style: CSSProperties;
-  tail?: "down" | "left";
+  tail?: "down" | "left" | "right";
 }) {
   const g = useGuideScript(lines);
   if (!g.open) return null;
@@ -264,15 +294,19 @@ export default function PeekCritter({
       >
         {children({ x: lookX, y: lookY }, g.typing)}
       </div>
+      {/* The bubble sits BESIDE the critter, hugging the bottom edge of the
+          stage, rather than stacked above it. The lower strip of a slide is
+          the least loaded part (kiosk hints, chip rows), so a bubble there
+          covers far less copy than one rising into the middle. */}
       {g.open && (
         <Bubble
           text={lines[g.line].slice(0, g.shown)}
           typing={g.typing}
           closing={g.closing}
-          tail="down"
+          tail="right"
           style={{
-            right: right - 8,
-            bottom: PEEK_BOTTOM + h + BUBBLE_GAP,
+            right: right + w + BUBBLE_GAP,
+            bottom: PEEK_BOTTOM + 2,
             zIndex: 40,
           }}
           onClick={g.advance}

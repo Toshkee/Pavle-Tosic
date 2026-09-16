@@ -28,6 +28,7 @@ import BootIntro from "./BootIntro";
 import { registerIcons } from "./iconData";
 import { useActiveSection } from "./useActiveSection";
 import { EMAIL } from "./contact";
+import { TerminalCat } from "./critterSprites";
 import {
   PROJECTS,
   DEMO_NOTES,
@@ -1979,6 +1980,11 @@ const Contact = memo(function Contact() {
             >
               privacy
             </Link>
+            {/* Phones never mount the animated cast, so the cat sits here
+                as a still: same sprite, no keyframes injected, no motion. */}
+            <span aria-hidden className="ml-auto scale-[0.6] origin-bottom-right">
+              <TerminalCat />
+            </span>
           </p>
         </Reveal>
       </div>

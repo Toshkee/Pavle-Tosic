@@ -323,7 +323,7 @@ html.lenis body {
 .guide-bubble {
   position: fixed;
   z-index: 40;
-  max-width: 280px;
+  max-width: 340px;
   pointer-events: auto;
   cursor: pointer;
   border: 1px solid rgba(34, 197, 94, 0.35);
@@ -373,6 +373,16 @@ html.lenis body {
   right: 24px;
   border-right: 1px solid rgba(34, 197, 94, 0.35);
   border-bottom: 1px solid rgba(34, 197, 94, 0.35);
+  transform: rotate(45deg);
+}
+.guide-tail-right {
+  transform-origin: 100% 100%;
+}
+.guide-tail-right::after {
+  right: -5.5px;
+  bottom: 16px;
+  border-right: 1px solid rgba(34, 197, 94, 0.35);
+  border-top: 1px solid rgba(34, 197, 94, 0.35);
   transform: rotate(45deg);
 }
 .guide-tail-left {
