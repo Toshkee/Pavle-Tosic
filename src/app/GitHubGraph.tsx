@@ -57,13 +57,13 @@ export default function GitHubGraph() {
       .then((j: { total?: Record<string, number>; contributions: Day[] }) => {
         if (!alive) return;
         const all = Array.isArray(j.contributions) ? j.contributions : [];
-        // Trim the empty lead: show from 1 September of the current cycle to
-        // today, so the active stretch reads as full rather than mostly empty.
-        const now = new Date();
-        const startYear =
-          now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-        const cutoff = `${startYear}-09-01`;
-        const list = all.filter((d) => d.date >= cutoff);
+        // A rolling half-year window: enough weeks that the strip reads as a
+        // cadence, and it never collapses to a handful of fat bars right
+        // after a year boundary the way a fixed "since September" cut did.
+        const cutoff = new Date();
+        cutoff.setUTCDate(cutoff.getUTCDate() - 26 * 7);
+        const cutoffIso = cutoff.toISOString().slice(0, 10);
+        const list = all.filter((d) => d.date >= cutoffIso);
         const sum = list.reduce((s, d) => s + (d.count || 0), 0);
         cached = { days: list, total: sum, at: Date.now() };
         setDays(list);
@@ -132,7 +132,7 @@ export default function GitHubGraph() {
         {total != null ? (
           <div className="flex flex-wrap gap-x-10 gap-y-3">
             {[
-              { n: total, label: "contributions since September" },
+              { n: total, label: "contributions, last 26 weeks" },
               { n: activeDays, label: "active days" },
               { n: busiest, label: "on the busiest day" },
             ].map((s) => (
@@ -177,7 +177,7 @@ export default function GitHubGraph() {
               role="img"
               aria-label={
                 total != null
-                  ? `${total} GitHub contributions since September, by week`
+                  ? `${total} GitHub contributions, last 26 weeks, by week`
                   : "GitHub contribution graph"
               }
             >

@@ -7,4 +7,5 @@ export const SUGGESTIONS = [
   "Tell me about CryptoFlow",
   "Is he open to work right now?",
   "What does he do at Infostream?",
+  "Does he take freelance work?",
 ];

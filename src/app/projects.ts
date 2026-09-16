@@ -146,40 +146,80 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    slug: "meet2explore",
-    title: "Meet2Explore",
+    slug: "villa-vucje",
+    title: "Villa Vučje",
     blurb:
-      "Full-stack React travel app to discover destinations and find companions, built collaboratively with a team of four.",
+      "A guest-facing site for a mountain holiday house near Kolašin, built for a client: a fast, bilingual static Astro site that sells the house and hands booking off to the owner's channels.",
     problem:
-      "Help travellers pick a destination and find people to explore it with.",
+      "A family-run villa needed a real web presence that loads instantly on holiday-planning phones, reads naturally in both Montenegrin and English, and drives guests to Booking.com and Airbnb without a booking backend to maintain.",
     highlights: [
-      "Team of four with real git flow: branches, PRs, merged final releases",
-      "Owned a full-stack slice: city discovery, trip join/leave, live chat",
-      "Socket.IO room-per-trip chat persisting history to MongoDB",
+      "Bilingual static Astro site: sr at /, en at /en, hreflang and one canonical host",
+      "Every photo built to AVIF + WebP + JPEG at build time, hero cropped portrait for phones",
+      "Native <dialog> lightbox, sticky booking bar and section reveals: five small scripts, no framework",
     ],
     result: [
-      "Delivered inside a one-week team sprint with real git flow: feature branches, PRs and merge conflicts across two repos, and I merged the final PRs on both.",
-      "My slice worked end to end: browse trips by city, join and leave with idempotent server checks, and a live room-per-trip chat that persists every message.",
-      "The demo's Heroku backend has since lapsed, so sign-in and live trips are offline; the site says so plainly rather than linking a demo that silently fails.",
+      "Live at villavucje.me on a Cloudflare Worker serving static assets, with hashed builds cached for a year and everything else revalidated.",
+      "Phones never download a landscape hero and throw most of it away: the portrait crop is rendered at build time from the same source photo.",
+      "Nothing on the page is unconfirmed. Facts, prices and contact details live in one config file the owner signed off on, and the VacationRental JSON-LD is generated from it.",
     ],
     kpis: [
-      // git shortlog -sn --all across Meet2Explore + Meet2Explore-Frontend
-      { label: "my commits", value: "24 of 69, across both repos" },
-      { label: "team", value: "4 contributors, 2 repos" },
-      { label: "sprint", value: "one week, 18-24 Nov 2025" },
+      // ls src/assets/photos | wc -l
+      { label: "photographs", value: "14, each in AVIF, WebP and JPEG" },
+      // wc -l src/scripts/*.ts
+      { label: "client-side code", value: "5 native scripts, ~370 lines" },
+      { label: "locales", value: "2, with hreflang and a shared config" },
     ],
-    role: "Team of 4, full-stack slice",
-    context: "General Assembly, 2025",
-    stack: ["React", "Node.js", "Express"],
-    live: "https://meet2explore.netlify.app/",
-    code: "https://github.com/Toshkee/meet2explore",
-    shot: "/images/projects/meet2explore.webp",
-    video: "/video/projects/meet2explore.mp4",
-    domain: "meet2explore.netlify.app",
+    role: "Solo build, client work",
+    context: "Freelance, September 2026",
+    stack: ["Astro 7", "TypeScript", "Cloudflare Workers"],
+    live: "https://villavucje.me/en/",
+    code: "https://github.com/Toshkee/VillaVucje",
+    shot: "/images/projects/villavucje-hero.webp",
+    video: null,
+    domain: "villavucje.me",
     gallery: [
-      { src: "/images/projects/meet2explore-hero.webp", label: "Discover destinations" },
-      { src: "/images/projects/meet2explore-trips.webp", label: "Plan group trips" },
-      { src: "/images/projects/meet2explore-meet.webp", label: "Meet new people" },
+      { src: "/images/projects/villavucje-hero.webp", label: "Hero" },
+      { src: "/images/projects/villavucje-gallery.webp", label: "Gallery" },
+      { src: "/images/projects/villavucje-location.webp", label: "Location" },
+    ],
+  },
+  {
+    slug: "mandarina-petrovac",
+    title: "Mandarina, Petrovac",
+    blurb:
+      "A seaside apartment's website, built for a client: a bilingual static Astro site with a typed translation layer and a photo manifest, deployed as a Cloudflare Worker with no database, CMS or analytics.",
+    problem:
+      "An apartment above Petrovac needed a page that feels like the place, works in both languages, and can be updated by swapping a photo or a line of copy without anyone touching components.",
+    highlights: [
+      "Typed i18n: both locales satisfy one Translations interface, so a missing string is a type error",
+      "Photo manifest with localized alt text, captions and focal points for every crop",
+      "Accessible <dialog> lightbox with arrow keys, swipe and focus return; reveals honour reduced motion",
+    ],
+    result: [
+      "Live at mandarinapt.me. Booking is handed to Booking.com and Airbnb, so there is nothing on the site that can break, expire or leak.",
+      "Copy and images are data, not markup: the owner's facts sit in one config, translations in two files and photos in a manifest, each checked by astro check.",
+      "Motion is opt-in by device: the hero video only attaches on wide screens with no data-saver or reduced-motion, and the magnetic links stay still on touch.",
+    ],
+    kpis: [
+      // ls src/assets/photos | wc -l
+      { label: "photographs", value: "10, each with localized alt and caption" },
+      // src/i18n/types.ts
+      { label: "translation keys", value: "one typed interface, 2 locales" },
+      // package.json dependencies
+      { label: "runtime dependencies", value: "5, no framework on the client" },
+    ],
+    role: "Solo build, client work",
+    context: "Freelance, September 2026",
+    stack: ["Astro 7", "TypeScript", "Cloudflare Workers"],
+    live: "https://mandarinapt.me/en/",
+    code: "https://github.com/Toshkee/MandarinaPetrovac",
+    shot: "/images/projects/mandarina-hero.webp",
+    video: null,
+    domain: "mandarinapt.me",
+    gallery: [
+      { src: "/images/projects/mandarina-hero.webp", label: "Hero" },
+      { src: "/images/projects/mandarina-pool.webp", label: "Pool" },
+      { src: "/images/projects/mandarina-gallery.webp", label: "Gallery" },
     ],
   },
 ];
@@ -188,8 +228,6 @@ export const PROJECTS: Project[] = [
 export const DEMO_NOTES: Record<string, string> = {
   "https://cryptofloww.netlify.app/":
     "demo api runs on a free tier, so the first request may take a moment to wake",
-  "https://meet2explore.netlify.app/":
-    "the demo's backend host has lapsed, so sign-in and live trips are offline. the video shows the full app",
 };
 
 // Engineering "case files", shown as extra tabs on each project's kiosk
@@ -398,80 +436,160 @@ updateEntryAction(input: unknown) {
 }`,
 };
 
-// Meet2Explore — grounded in Toshkee/Meet2Explore-{Backend,Frontend}; the
-// team-of-4 split is from git blame, so nothing here claims teammates' work.
-export const M2E_CASE = {
-  codeFile: "trips.js",
-  arch: `netlify ── react 19 SPA (vite)
- │  services/ per-domain axios
- │   clients · bearer JWT per call
- │  sockets/ one io() singleton
- │   dev/prod url switch
+// Villa Vučje and Mandarina — grounded in Toshkee/VillaVucje and
+// Toshkee/MandarinaPetrovac; both are solo client builds.
+export const VILLA_CASE = {
+  codeFile: "responsive.ts",
+  arch: `cloudflare worker ── static assets
+ │  dist/ from astro build
+ │   _astro/* immutable, 1y
+ │   everything else revalidates
  │
- └─ heroku ── express 5 + mongoose
-     ├ auth  bcrypt + jwt (30d)
-     │   protect → req.user
-     ├ trips  join / leave / byCity
-     │   idempotent participants[]
-     ├ messages  history REST
-     └ socket.io  room per trip
-         activity_\${id} · persisted
-         to mongo · system msgs
+ └─ astro 7, strict TS, zero UI lib
+     ├ config/  property · site
+     │   i18n (sr + en) · media
+     ├ lib/     responsive.ts
+     │   avif + webp + jpg per width
+     │   hero.ts portrait crop
+     ├ components/ 15 .astro files
+     │   scoped css, no runtime
+     └ scripts/ 5 native TS files
+         nav · reveal · gallery
+         booking-bar · hero-video`,
+  notes: `## what I made sure of
 
-team of 4 · feature branches + PRs
-my slice: discovery → join → chat`,
-  notes: `## built with a team of four
+- phones were downloading the full
+  landscape hero and cropping most
+  of it away. hero.ts now renders a
+  3:2 portrait set at build time
+  from the same photo, and the
+  layout preloads the right one.
 
-- nine days, real git flow:
-  feature branches, PRs, merge
-  conflicts and all. I merged the
-  final PRs on both repos and
-  wired the prod URLs + heroku
-  Procfile.
+- Cloudflare merges every matching
+  _headers rule, so a /* Cache-
+  Control was being concatenated
+  onto the /_astro/* one and the
+  shortest max-age won. only the
+  hashed path sets it now.
 
-- my vertical slice, client and
-  server: browse trips by city,
-  join/leave with idempotent
-  server checks, and a live
-  room-per-trip chat persisting
-  every message to mongo.
+- one canonical host: www → apex
+  301 at the edge, hreflang for
+  both locales, x-default on sr.
 
-- own-message alignment broke:
-  mongo ObjectId !== string. both
-  tiers now normalize userId with
-  String() before comparing.
+- no unconfirmed facts on the page.
+  the VacationRental JSON-LD is
+  generated from the same config
+  the owner signed off on.`,
+  code: `// lib/responsive.ts — one photo, three formats
+export async function buildResponsiveSet(
+  image: ImageMetadata,
+  widths: readonly number[],
+  quality = QUALITY,
+): Promise<ResponsiveSet> {
+  // never upscale: candidate widths
+  // are clamped to the source width
+  const list = clampWidths(widths, image.width);
+  const [avif, webp, jpg] = await Promise.all([
+    getImage({ src: image, widths: list,
+      format: 'avif', quality: quality.avif }),
+    getImage({ src: image, widths: list,
+      format: 'webp', quality: quality.webp }),
+    getImage({ src: image, widths: list,
+      format: 'jpg', quality: quality.jpg }),
+  ]);
+  // the <img src> fallback is a mid-size
+  // rendition, not the largest one
+  const mid = list[Math.floor(list.length / 2)]
+    ?? image.width;
+  const fallback = await getImage({ src: image,
+    width: mid, format: 'jpg' });
+  return {
+    avif: avif.srcSet.attribute,
+    webp: webp.srcSet.attribute,
+    fallbackSrc: fallback.src,
+    fallbackSrcset: jpg.srcSet.attribute,
+    width: image.width,
+    height: image.height,
+  };
+}`,
+};
 
-- socket listeners leaked across
-  route changes — named handlers
-  + socket.off cleanup in the
-  effect fixed it.`,
-  code: `// tripController.js — join a trip
-export async function joinTrip(req, res) {
-  try {
-    const trip =
-      await Trip.findById(req.params.id);
+export const MANDARINA_CASE = {
+  codeFile: "reveal.ts",
+  arch: `cloudflare worker ── static assets
+ │  dist/ from astro build
+ │
+ └─ astro 7, strict TS
+     ├ config/property.ts
+     │   verified facts only
+     │   null hides a section
+     ├ i18n/  me.ts · en.ts
+     │   both satisfy Translations
+     │   missing key = type error
+     ├ content/media.ts
+     │   photo manifest: alt,
+     │   caption, placement, focal
+     ├ components/ 20 .astro files
+     └ scripts/ 6 native TS files
+         menu · reveal · gallery
+         booking-bar · hero-video
+         magnetic`,
+  notes: `## what I made sure of
 
-    if (!trip) {
-      return res.status(404).json({
-        message: "Trip not found",
-      });
-    }
+- content is data, not markup.
+  the owner's facts, both
+  translations and every photo
+  live in typed files, so a
+  wrong or missing value fails
+  astro check instead of
+  shipping.
 
-    // idempotent: joining twice
-    // doesn't duplicate you
-    if (trip.participants
-        .includes(req.user._id)) {
-      return res.json(
-        { message: "Already joined" });
-    }
+- the lightbox is a native
+  <dialog>: focus trap, Escape
+  and focus restore come free.
+  arrows, swipe and a live
+  counter are the only code.
 
-    trip.participants.push(req.user._id);
-    await trip.save();
+- motion is opt-in by device.
+  the hero video attaches only
+  on wide screens with no
+  data-saver, no slow network
+  and no reduced-motion, and
+  pauses off-screen. magnetic
+  links stay still on touch.
 
-    res.json({ success: true, trip });
-  } catch (err) {
-    res.status(500)
-      .json({ message: err.message });
+- if the IntersectionObserver
+  never fires, a 4s safety net
+  reveals everything anyway.`,
+  code: `// scripts/reveal.ts — never hide content
+const targets =
+  document.querySelectorAll<HTMLElement>('[data-reveal]');
+const reduced = window.matchMedia(
+  '(prefers-reduced-motion: reduce)').matches;
+
+if (targets.length) {
+  if (reduced || !('IntersectionObserver' in window)) {
+    targets.forEach((el) => el.classList.add('is-visible'));
+  } else {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        }
+      },
+      { rootMargin: '0px 0px -6% 0px', threshold: 0.08 },
+    );
+    targets.forEach((el) => observer.observe(el));
+
+    // safety net: never leave content hidden
+    // if an observer callback never fires
+    window.setTimeout(
+      () => targets.forEach((el) => el.classList.add('is-visible')),
+      4000,
+    );
   }
 }`,
 };
@@ -495,7 +613,8 @@ export const CASES: Record<string, CaseFile> = {
   CryptoFlow: CRYPTOFLOW_CASE,
   "Ronin Duel": RONIN_CASE,
   "Arc: Anime Tracker": ARC_CASE,
-  Meet2Explore: M2E_CASE,
+  "Villa Vučje": VILLA_CASE,
+  "Mandarina, Petrovac": MANDARINA_CASE,
 };
 
 // Every screenshot in public/images/projects ships as a full-width .webp for

@@ -108,7 +108,7 @@ const NAME = "Pavle Tošić";
 const ROLE = "Software Developer";
 const LOCATION = "Montenegro";
 const TAGLINE =
-  "I build web apps front to back. TypeScript and React by choice, Oracle APEX and SQL on the job.";
+  "I build web apps front to back. Next.js and React by choice, Angular and Oracle APEX on the job, client sites on the side.";
 
 const SOCIAL = {
   email: EMAIL,
@@ -150,7 +150,7 @@ const STACK: { group: string; items: Tech[] }[] = [
       { name: "JavaScript", icon: "devicon:javascript" },
       { name: "Python", icon: "devicon:python" },
       { name: "SQL", icon: "tabler:sql", tint: "stroke" },
-      { name: "C#", icon: "devicon-plain:csharp", tint: "amber", learning: true },
+      { name: "C#", icon: "devicon-plain:csharp", tint: "amber" },
     ],
   },
   {
@@ -158,9 +158,10 @@ const STACK: { group: string; items: Tech[] }[] = [
     items: [
       { name: "React", icon: "devicon:react" },
       { name: "Next.js", icon: "simple-icons:nextdotjs", tint: "cream" },
+      { name: "Angular", icon: "devicon:angular" },
+      { name: "Astro", icon: "devicon:astro" },
       { name: "Tailwind CSS", icon: "simple-icons:tailwindcss", tint: "cream" },
       { name: "GSAP", icon: "simple-icons:greensock", tint: "cream" },
-      { name: "Three.js", icon: "simple-icons:threedotjs", tint: "cream" },
       { name: "Framer Motion", icon: "simple-icons:framer", tint: "cream" },
     ],
   },
@@ -172,17 +173,19 @@ const STACK: { group: string; items: Tech[] }[] = [
       { name: "Django", icon: "devicon-plain:django", tint: "cream" },
       { name: "MongoDB", icon: "devicon:mongodb" },
       { name: "Oracle APEX", icon: "devicon:oracle" },
-      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber", learning: true },
+      { name: ".NET", icon: "devicon-plain:dotnetcore", tint: "amber" },
       { name: "GitHub", icon: "devicon:github", tint: "cream" },
+      { name: "Claude Code", icon: "simple-icons:claude", tint: "cream" },
+    ],
+  },
+  {
+    group: "games",
+    items: [
+      { name: "Phaser", icon: "tabler:device-gamepad-2", tint: "stroke" },
+      { name: "Godot", icon: "devicon:godot" },
     ],
   },
 ];
-
-const LANGUAGES = [
-  { label: "English", level: "Professional" },
-  { label: "Montenegrin", level: "Native" },
-];
-
 
 type Job = {
   role: string;
@@ -205,10 +208,11 @@ const EXPERIENCE: Job[] = [
     period: "2025..present",
     current: true,
     scope:
-      "Building and maintaining web and enterprise applications for client projects, mostly on Oracle APEX and SQL.",
+      "Public portals and internal registers for Montenegrin institutions: Angular and .NET on the newer systems, Oracle APEX and SQL on the established ones.",
     points: [
-      "NGO Register Portal (Government of Montenegro): produced the official user-guide video tutorials for the e-signature client, document signing, online registration, and registry search.",
-      "Working day to day in Oracle APEX and SQL, and picking up C# and .NET on the job.",
+      "PEL register (Agency for Prevention of Corruption): added AI-assisted search to the internal .NET 10 / Angular 20 app, with local multilingual embeddings (ONNX) and a query interpreter, plus word-order and diacritic-insensitive name search.",
+      "Built a working proof-of-concept public portal and CMS for a tender at the company's request: Next.js, RBAC, append-only audit log, scheduled publishing and full-text search.",
+      "NGO Register Portal (Government of Montenegro): produced the official user-guide video tutorials for e-signature, document signing, online registration and registry search.",
     ],
     link: {
       href: "https://ngo.gov.me/Uputstva/PreuzmiteSoftwareIUputstva",
@@ -224,7 +228,7 @@ const EXPERIENCE: Job[] = [
       "420+ hours of full-time training across the stack, assessed on shipped projects rather than exams.",
     points: [
       "Frontend: JavaScript, React, HTML & CSS. Backend fundamentals, APIs, databases and security basics.",
-      "Four of the projects are in the Work section: three solo builds and one team build, all since rebuilt or shipped live.",
+      "Three of the projects are in the Work section: all solo builds, each rebuilt in 2026 and live.",
     ],
   },
 ];
@@ -841,30 +845,23 @@ const About = memo(function About() {
         <div className="mt-6 max-w-[62ch] space-y-4 text-[15px] leading-[1.75] text-body sm:text-base">
           <p>
             Software developer at{" "}
-            <span className="font-medium text-ink">Infostream</span>, building
-            enterprise software on{" "}
-            <span className="font-medium text-ink">Oracle APEX</span> and{" "}
-            <span className="font-medium text-ink">SQL</span>.{" "}
-            <span className="font-medium text-ink">TypeScript</span> and{" "}
-            <span className="font-medium text-ink">React</span>{" "}
-            are where I&apos;m strongest: every project on this site runs on
-            them, front to back. New stack? I&apos;ll pick it up.
+            <span className="font-medium text-ink">Infostream</span>, working
+            on public portals and registers for Montenegrin institutions in{" "}
+            <span className="font-medium text-ink">Angular</span>,{" "}
+            <span className="font-medium text-ink">.NET</span> and{" "}
+            <span className="font-medium text-ink">Oracle APEX</span>. On my
+            own time I ship client sites and my own products in{" "}
+            <span className="font-medium text-ink">Next.js</span>,{" "}
+            <span className="font-medium text-ink">React</span> and{" "}
+            <span className="font-medium text-ink">Astro</span>.
           </p>
           <p>
-            I build web apps front to back, database and API through to the
-            UI, with{" "}
-            <span className="font-medium text-ink">AI tools</span> and{" "}
+            I build front to back, database and API through to the UI, with{" "}
+            <span className="font-medium text-ink">Claude Code</span> and{" "}
             <span className="font-medium text-ink">MCPs</span>{" "}
-            in my workflow. Open to full-time or part-time, remote.
+            in the loop every day, so a new framework is a week, not a
+            quarter. Open to full-time or part-time, remote.
           </p>
-        </div>
-        <div className="mt-6 flex flex-wrap gap-8">
-          {LANGUAGES.map((l) => (
-            <div key={l.label}>
-              <div className="text-sm font-medium text-ink">{l.label}</div>
-              <div className="text-xs text-muted">{l.level}</div>
-            </div>
-          ))}
         </div>
       </Reveal>
       <Reveal delay={0.18} className="mt-7">
@@ -1261,7 +1258,11 @@ function ProjectShowcase({
                           : "text-faint hover:text-ink"
                       }`}
                     >
-                      {t.key === "code" ? caseFile.codeFile : t.file}
+                      {t.key === "code"
+                        ? caseFile.codeFile
+                        : t.key === "demo" && !p.video
+                          ? "screen.webp"
+                          : t.file}
                     </button>
                   ))}
                 </span>

@@ -22,8 +22,8 @@ const IntroCinematic = dynamic(() => import("./IntroCinematic"), {
 
 const STEPS: { k: string; v: string }[] = [
   { k: "kernel", v: "mononoki · phosphor-green" },
-  { k: "stack", v: "typescript · react · node · oracle apex" },
-  { k: "projects", v: "4 loaded" },
+  { k: "stack", v: "typescript · react · angular · .net · apex" },
+  { k: "projects", v: "5 loaded" },
   { k: "github", v: "@toshkee online" },
   { k: "contact", v: "channels up" },
 ];
