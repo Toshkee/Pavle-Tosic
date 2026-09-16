@@ -88,6 +88,26 @@ const GitHubGraph = dynamic(() => import("./GitHubGraph"), {
     </div>
   ),
 });
+const GitHubFeed = dynamic(() => import("./GitHubFeed"), {
+  ssr: false,
+  loading: () => (
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
+      <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
+        <span className="h-2 w-2 rounded-full bg-faint/70" />
+        <span className="h-2 w-2 rounded-full bg-accent/70" />
+        <span className="h-2 w-2 rounded-full bg-accent-2/70" />
+        <span className="ml-2 font-mono text-[11px] text-muted">
+          contributions.log
+        </span>
+      </div>
+      <div className="p-5 sm:p-7">
+        <p className="text-sm text-body">Loading contributions…</p>
+        {/* strip (h-6) + legend row — matches the component's own pre-data height */}
+        <div className="mt-6 h-[56px]" />
+      </div>
+    </div>
+  ),
+});
 const Terminal = dynamic(() => import("./Terminal"), {
   ssr: false,
   loading: () => null,
@@ -183,6 +203,7 @@ const STACK: { group: string; items: Tech[] }[] = [
     items: [
       { name: "Phaser", icon: "tabler:device-gamepad-2", tint: "stroke" },
       { name: "Godot", icon: "devicon:godot" },
+      { name: "Unity", icon: "devicon:unity", tint: "cream" },
     ],
   },
 ];
@@ -210,7 +231,7 @@ const EXPERIENCE: Job[] = [
     scope:
       "Public portals and internal registers for Montenegrin institutions: Angular and .NET on the newer systems, Oracle APEX and SQL on the established ones.",
     points: [
-      "PEL register (Agency for Prevention of Corruption): added AI-assisted search to the internal .NET 10 / Angular 20 app, with local multilingual embeddings (ONNX) and a query interpreter, plus word-order and diacritic-insensitive name search.",
+      "PEL register (Agency for Prevention of Corruption), .NET 10 / Angular 20: built the public wizard's live PDF panel, a QuestPDF document that re-renders as the applicant types and is downloadable once submitted, and added AI-assisted search to the internal app with local multilingual embeddings (ONNX), a query interpreter, and word-order and diacritic-insensitive name search.",
       "Built a working proof-of-concept public portal and CMS for a tender at the company's request: Next.js, RBAC, append-only audit log, scheduled publishing and full-text search.",
       "NGO Register Portal (Government of Montenegro): produced the official user-guide video tutorials for e-signature, document signing, online registration and registry search.",
     ],
@@ -1604,6 +1625,7 @@ const GitHub = memo(function GitHub() {
           and experiments.
         </p>
         <GitHubGraph />
+        <GitHubFeed />
       </Reveal>
     </section>
   );

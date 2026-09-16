@@ -19,7 +19,7 @@ const CSP = [
   "media-src 'self'",
   // Binance market stream + REST fallback (LiveTicker), the contributions API
   // (GitHubGraph), and the analytics beacon's own reporting endpoint.
-  "connect-src 'self' wss://stream.binance.com:9443 https://api.binance.com https://data-api.binance.vision https://github-contributions-api.jogruber.de https://cloudflareinsights.com",
+  "connect-src 'self' wss://stream.binance.com:9443 https://api.binance.com https://data-api.binance.vision https://github-contributions-api.jogruber.de https://api.github.com https://cloudflareinsights.com",
   "script-src-attr 'none'",
   "worker-src 'none'",
   "frame-src 'none'",

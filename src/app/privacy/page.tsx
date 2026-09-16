@@ -66,10 +66,11 @@ export default function Privacy() {
 
       <Section title="Public live data">
         <p>
-          The contribution panel requests public GitHub contribution data from
-          github-contributions-api.jogruber.de when it appears. Like any web
-          server, that provider can receive your IP address, browser information,
-          and this site&apos;s origin. No chat text or other site data is sent.
+          The GitHub panels request public contribution data from
+          github-contributions-api.jogruber.de and the public events feed from
+          api.github.com when they appear. Like any web server, those providers
+          can receive your IP address, browser information, and this
+          site&apos;s origin. No chat text or other site data is sent.
         </p>
         <p>
           If you open the CryptoFlow live-market tab, your browser connects to

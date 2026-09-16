@@ -49,6 +49,7 @@ const LINES: Record<string, string[]> = {
   github: [
     "this card is live. fetched client-side while you watch, cached for five minutes between deck flips.",
     "weeks, not days: the strip aggregates by calendar week so the cadence reads honestly.",
+    "activity.log is the public events feed folded to one line per repo. private client work never shows up there, by design.",
     "I'm a background daemon. I only look like trouble.",
   ],
   experience: [
