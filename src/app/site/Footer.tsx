@@ -63,9 +63,19 @@ export default function Footer() {
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5 text-[12px] text-faint">
           <span>© 2026 Pavle Tošić</span>
-          <Link href="/privacy" className="hover:text-body">
-            Privacy
-          </Link>
+          <span className="flex gap-5">
+            <a
+              href="https://unsplash.com/photos/kKvQJ6rK6S4"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-body"
+            >
+              Hero photo: Shur Shu, Unsplash
+            </a>
+            <Link href="/privacy" className="hover:text-body">
+              Privacy
+            </Link>
+          </span>
         </div>
       </div>
     </footer>

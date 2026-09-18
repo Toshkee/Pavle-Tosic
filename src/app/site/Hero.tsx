@@ -5,12 +5,17 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 /* Osmo "Parallax Scrolling" (21st.dev/@osmosupply/components/parallax-
-   scrolling), ported as-is: the same three layer images in the same order,
-   the same 120% stage, the same 117.5% / -17.5% layer sizing, the same
-   GSAP ScrollTrigger timeline scrubbed over [data-parallax-layers]
-   (yPercent 70 / 55 / 40 / 10), the same 13-stop fade and radial vignette.
-   Lenis already runs site-wide from SmoothScroll.tsx; ScrollTrigger reads
-   the window scroll it drives. Only the title changed. */
+   scrolling), ported as-is: three depth layers in the same order, the same
+   120% stage, the same 117.5% / -17.5% layer sizing, the same GSAP
+   ScrollTrigger timeline scrubbed over [data-parallax-layers] (yPercent
+   70 / 55 / 40 / 10), the same 13-stop fade and radial vignette. Lenis
+   already runs site-wide from SmoothScroll.tsx; ScrollTrigger reads the
+   window scroll it drives.
+
+   The layers are cut from one photo: "Panoramic photography of mountains",
+   Lake Placid, by Shur Shu on Unsplash (unsplash.com/photos/kKvQJ6rK6S4,
+   Unsplash License). Back = sky and far ridges, mid = the middle ridges,
+   front = the near ridge; night-graded so the name reads. */
 
 const LAYERS = [
   { layer: "1", yPercent: 70 },
@@ -60,20 +65,20 @@ export default function Hero() {
           <div className="parallax__black-line-overflow" />
           <div data-parallax-layers className="parallax__layers">
             <img
-              src="/images/hero/osmo-layer-3.webp"
+              src="/images/hero/layer-back.webp"
               loading="eager"
               fetchPriority="high"
-              width={2000}
-              height={1906}
+              width={2400}
+              height={2280}
               data-parallax-layer="1"
               alt=""
               className="parallax__layer-img"
             />
             <img
-              src="/images/hero/osmo-layer-2.webp"
+              src="/images/hero/layer-mid.webp"
               loading="eager"
-              width={2000}
-              height={1906}
+              width={2400}
+              height={2280}
               data-parallax-layer="2"
               alt=""
               className="parallax__layer-img"
@@ -85,10 +90,10 @@ export default function Hero() {
               </h1>
             </div>
             <img
-              src="/images/hero/osmo-layer-1.webp"
+              src="/images/hero/layer-front.webp"
               loading="eager"
-              width={2000}
-              height={1906}
+              width={2400}
+              height={2280}
               data-parallax-layer="4"
               alt=""
               className="parallax__layer-img"
