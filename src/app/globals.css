@@ -224,6 +224,7 @@ html.lenis body {
 .parallax__layer-img {
   pointer-events: none;
   object-fit: cover;
+  object-position: 48% 50%; /* the moon is at 48% of the frame's width */
   width: 100%;
   max-width: none;
   height: 117.5%;
@@ -231,15 +232,50 @@ html.lenis body {
   top: -17.5%;
   left: 0;
 }
+/* phones crop the 16:9 frame to portrait: lift it so the moon sits mid-screen */
+@media (max-width: 767px) {
+  .parallax__layer-img {
+    top: -25%;
+  }
+}
 .parallax__layer-title {
+  flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 1.1rem;
   width: 100%;
   height: 100svh;
+  padding: 0 1.5rem;
   display: flex;
   position: absolute;
   top: 0;
   left: 0;
+}
+@media (max-width: 767px) {
+  .parallax__layer-title {
+    justify-content: flex-start;
+    padding-top: 17svh;
+    gap: 0.9rem;
+  }
+}
+.parallax__kicker {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(11px, 1vw, 13px);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+}
+.parallax__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.2rem 0 0;
+  padding: 0.55rem 1.1rem;
+  font-size: 13px;
+  color: var(--color-ink);
 }
 .parallax__title {
   pointer-events: auto;
@@ -247,9 +283,9 @@ html.lenis body {
   flex-wrap: wrap;
   justify-content: center;
   column-gap: 0.22em;
-  margin: 0 0.075em 0.1em 0;
+  margin: 0 0.075em 0 0;
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 11vw, 12rem);
+  font-size: clamp(2.8rem, 8vw, 8.5rem);
   font-weight: 700;
   line-height: 1;
   color: #fff;
@@ -275,28 +311,27 @@ html.lenis body {
 }
 .parallax__fade {
   z-index: 30;
+  pointer-events: none;
   width: 100%;
   max-width: none;
-  height: 20%;
+  height: 48svh;
   position: absolute;
   bottom: 0;
   left: 0;
-  --color-dark-rgb: 10, 10, 12;
+  /* a long, evenly eased fade: the scene's bottom is bright (the moon), so
+     the darkening has to start high and reach opaque before the edge */
   background: linear-gradient(
-    to top,
-    rgba(var(--color-dark-rgb), 1) 0%,
-    rgba(var(--color-dark-rgb), 0.738) 19%,
-    rgba(var(--color-dark-rgb), 0.541) 34%,
-    rgba(var(--color-dark-rgb), 0.382) 47%,
-    rgba(var(--color-dark-rgb), 0.278) 56.5%,
-    rgba(var(--color-dark-rgb), 0.194) 65%,
-    rgba(var(--color-dark-rgb), 0.126) 73%,
-    rgba(var(--color-dark-rgb), 0.075) 80.2%,
-    rgba(var(--color-dark-rgb), 0.042) 86.1%,
-    rgba(var(--color-dark-rgb), 0.021) 91%,
-    rgba(var(--color-dark-rgb), 0.008) 95.2%,
-    rgba(var(--color-dark-rgb), 0.002) 98.2%,
-    transparent 100%
+    to bottom,
+    rgb(10 10 12 / 0) 0%,
+    rgb(10 10 12 / 0.03) 12%,
+    rgb(10 10 12 / 0.11) 25%,
+    rgb(10 10 12 / 0.25) 38%,
+    rgb(10 10 12 / 0.44) 51%,
+    rgb(10 10 12 / 0.64) 64%,
+    rgb(10 10 12 / 0.81) 76%,
+    rgb(10 10 12 / 0.93) 87%,
+    rgb(10 10 12 / 0.99) 95%,
+    rgb(10 10 12 / 1) 100%
   );
 }
 .parallax__black-line-overflow {
@@ -308,6 +343,31 @@ html.lenis body {
   bottom: -1px;
   left: 0;
 }
+/* Continues the hero's fade over the top of the photo backdrop so the eye
+   moves video, near-black, photo, with no edge. */
+.hero-seam {
+  position: relative;
+  z-index: 1;
+  height: 30svh;
+  margin-bottom: -30svh;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgb(10 10 12 / 1) 0%,
+    rgb(10 10 12 / 0.738) 19%,
+    rgb(10 10 12 / 0.541) 34%,
+    rgb(10 10 12 / 0.382) 47%,
+    rgb(10 10 12 / 0.278) 56.5%,
+    rgb(10 10 12 / 0.194) 65%,
+    rgb(10 10 12 / 0.126) 73%,
+    rgb(10 10 12 / 0.075) 80.2%,
+    rgb(10 10 12 / 0.042) 86.1%,
+    rgb(10 10 12 / 0.021) 91%,
+    rgb(10 10 12 / 0.008) 95.2%,
+    transparent 100%
+  );
+}
+
 .parallax__radial-gradient {
   z-index: 10;
   background-image: radial-gradient(circle farthest-corner at 50% 50%, transparent, #000);

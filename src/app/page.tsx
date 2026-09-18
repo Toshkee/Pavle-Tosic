@@ -32,6 +32,8 @@ export default function Home() {
       />
       <main id="main" className="relative">
         <Hero />
+        {/* bridges the hero's black fade into the photo backdrop, no hard seam */}
+        <div aria-hidden className="hero-seam" />
         <Spec />
         <Features />
         <Field />

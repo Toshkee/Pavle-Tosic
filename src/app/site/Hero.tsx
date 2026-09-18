@@ -92,16 +92,23 @@ export default function Hero() {
               <source src="/video/hero/night-sky.mp4" type="video/mp4" />
             </video>
             <div data-parallax-layer="3" className="parallax__layer-title">
+              <p className="parallax__kicker">Software developer, Montenegro</p>
               <h1 className="parallax__title" aria-label="Pavle Tošić">
                 <Word text="Pavle" weight="light" />
                 <Word text="Tošić" weight="bold" />
               </h1>
+              <p className="glass glass-pill glass-dark parallax__pill">
+                <span className="dot-live" aria-hidden />
+                Open to remote work
+              </p>
             </div>
           </div>
-          <div className="parallax__fade" />
         </div>
+        {/* vignette under the fade, so the fade's end is exactly the page ground */}
+        <div className="parallax__radial-gradient" />
+        {/* the fade sits on the header, not inside the clipped stage */}
+        <div className="parallax__fade" />
       </section>
-      <div className="parallax__radial-gradient" />
     </div>
   );
 }
