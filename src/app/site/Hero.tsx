@@ -97,10 +97,6 @@ export default function Hero() {
                 <Word text="Pavle" weight="light" />
                 <Word text="Tošić" weight="bold" />
               </h1>
-              <p className="glass glass-pill glass-dark parallax__pill">
-                <span className="dot-live" aria-hidden />
-                Open to remote work
-              </p>
             </div>
           </div>
         </div>
