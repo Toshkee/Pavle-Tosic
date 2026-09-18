@@ -1,33 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import ConsoleSignature from "./ConsoleSignature";
-import AnimatedFavicon from "./AnimatedFavicon";
 import { EMAIL } from "./contact";
 
-// Mononoki — self-hosted monospace used across the whole site.
-const mononoki = localFont({
-  // Only the two faces that carry real text. 700-italic never existed on the
-  // site, and 400-italic earned its 35KB back: every face declared here is
-  // preloaded, and italic is used for exactly two things (terminal comment
-  // lines, code-tab comments) where the browser's synthesised oblique of the
-  // regular face is indistinguishable at mono sizes.
+// Nippo (Fontshare, self-hosted under the ITF Free Font License, see
+// fonts/NIPPO-LICENSE-FFL.txt): the display face for the wordmark, section
+// heads and project titles. Two weights only. Body copy is the system stack,
+// so this is the site's only webfont.
+const nippo = localFont({
   src: [
-    { path: "./fonts/mononoki-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/mononoki-700.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/nippo-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/nippo-700.woff2", weight: "700", style: "normal" },
   ],
-  variable: "--font-mononoki",
-  display: "swap",
-});
-
-// Tanker (Fontshare, self-hosted under the ITF Free Font License — see
-// fonts/TANKER-LICENSE-FFL.txt) — display face for headlines only (name,
-// section headings, project titles). Single heavy weight, caps-forward:
-// stencil/poster energy against the terminal mono. Mono stays everywhere
-// else. Glyph coverage verified for the site title "Pavle Tošić" (š/ć).
-const tanker = localFont({
-  src: [{ path: "./fonts/tanker-400.woff2", weight: "400", style: "normal" }],
-  variable: "--font-tanker",
+  variable: "--font-nippo",
   display: "swap",
 });
 
@@ -55,7 +40,7 @@ export const metadata: Metadata = {
       {
         // ?v=2 busts social scrapers' preview caches (WhatsApp/Telegram/X hold
         // og:images for weeks keyed by URL) — bump it whenever og.png changes.
-        url: "/og.png?v=3",
+        url: "/og.png?v=4",
         width: 1200,
         height: 630,
         alt: "Pavle Tošić — Software Developer",
@@ -67,7 +52,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pavle Tošić — Software Developer",
     description: DESCRIPTION,
-    images: ["/og.png?v=3"],
+    images: ["/og.png?v=4"],
   },
 };
 
@@ -108,7 +93,7 @@ export const viewport: Viewport = {
   // phones fall back to a ~980px layout and render the desktop layout shrunk.
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0a0f0a",
+  themeColor: "#0a0a0c",
   colorScheme: "dark",
 };
 
@@ -117,13 +102,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // suppressHydrationWarning: the inline script below sets `pt-skip-boot` on
-  // <html> before hydration, so the class intentionally differs from the
-  // server HTML. This suppresses the warning for <html>'s attributes only.
-  // Font variables live on <html>, not <body>: Tailwind v4 @theme tokens
-  // (--font-display etc.) are substituted at :root, so var(--font-tanker)
-  // must be defined there — on <body> it silently fails and font-display
-  // falls back to the inherited mono.
+  // Font variables live on <html>: Tailwind v4 @theme tokens are substituted
+  // at :root, so var(--font-nippo) must be defined there.
   return (
     <html
       lang="en"
@@ -132,38 +112,13 @@ export default function RootLayout({
       // to the top instantly instead of animating a long scroll (and landing
       // scroll restoration in the wrong place) on the way to a new page.
       data-scroll-behavior="smooth"
-      suppressHydrationWarning
-      className={`${mononoki.variable} ${tanker.variable}`}
+      className={nippo.variable}
     >
       <body className="antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(PROFILE_JSON_LD) }}
         />
-        {/* Render-blocking, runs before the boot overlay paints: returning-
-            session visitors (sessionStorage) and reduced-motion users skip the
-            intro with no flash. The class hides .boot-overlay via CSS; the
-            React component then unmounts it (already invisible). */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{if(sessionStorage.getItem('pt_booted')==='1'||matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('pt-skip-boot')}}catch(e){}",
-          }}
-        />
-        {/* Progressive enhancement: scroll-reveal animations ship with
-            opacity:0 / transforms inline. If JS never runs, force everything
-            visible so the page is never blank. Only applies with JS disabled. */}
-        <noscript>
-          <style>{`
-            [style*="opacity:0"], [style*="opacity: 0"] { opacity: 1 !important; }
-            [style*="translateY"], [style*="translateX"] { transform: none !important; }
-            [style*="blur"] { filter: none !important; }
-            /* JS can't dismiss the boot overlay, so never show it without JS. */
-            .boot-overlay { display: none !important; }
-          `}</style>
-        </noscript>
-        <ConsoleSignature />
-        <AnimatedFavicon />
         {children}
       </body>
     </html>

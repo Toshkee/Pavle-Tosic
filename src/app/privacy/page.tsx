@@ -3,13 +3,13 @@ import Link from "next/link";
 import { EMAIL } from "../contact";
 
 /* Privacy notice. Everything stated here is checkable against the code:
-   src/app/api/ask/route.ts for the assistant, GitHubGraph/LiveTicker for public
-   third-party data, and BootIntro.tsx for the one sessionStorage key. */
+   src/app/site/MarketStrip.tsx is the only third-party data connection the
+   site makes from the browser, and nothing is written to local storage. */
 
 export const metadata: Metadata = {
   title: "Privacy — Pavle Tošić",
   description:
-    "How this site handles analytics, public live data, and questions sent through the Ask AI widget.",
+    "How this site handles analytics and the one public live-data connection it makes.",
   alternates: { canonical: "https://pavletosic.com/privacy" },
   robots: { index: true, follow: true },
 };
@@ -36,12 +36,12 @@ function Section({
 export default function Privacy() {
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-      <nav className="font-mono text-xs text-faint">
-        <Link href="/" className="transition-colors hover:text-accent-ink">
-          cd ~
+      <nav className="text-[13px] text-faint">
+        <Link href="/" className="transition-colors hover:text-ink">
+          Pavle Tošić
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-muted">privacy</span>
+        <span className="text-muted">Privacy</span>
       </nav>
 
       <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
@@ -66,47 +66,20 @@ export default function Privacy() {
 
       <Section title="Public live data">
         <p>
-          The GitHub panels request public contribution data from
-          github-contributions-api.jogruber.de and the public events feed from
-          api.github.com when they appear. Like any web server, those providers
-          can receive your IP address, browser information, and this
-          site&apos;s origin. No chat text or other site data is sent.
-        </p>
-        <p>
-          If you open the CryptoFlow live-market tab, your browser connects to
-          Binance&apos;s public REST and WebSocket services for market prices. That
-          connection is only made after you open the live tab. Binance can
-          receive the ordinary network details that accompany the request.
-        </p>
-      </Section>
-
-      <Section title="The Ask AI widget">
-        <p>
-          The chat widget answers questions about my background. When you send a
-          message, the text of that message and the earlier turns in the same
-          chat are forwarded to Google&apos;s Gemini API, which generates the
-          reply. Google processes that text under its own terms; treat anything
-          you type there as leaving this site.
-        </p>
-        <p>
-          Conversations are not written to any database and are not stored after
-          the reply is returned. Your IP address is held in memory for up to one
-          minute purely to rate-limit the endpoint, and is never written to disk
-          or logged alongside your messages.
-        </p>
-        <p>
-          Please do not put personal or confidential information into the chat.
-          If you want to reach me privately, email me instead.
+          The CryptoFlow entry in the Work section shows three live Binance
+          spot prices. While that block is on screen, your browser opens a
+          connection to Binance&apos;s public WebSocket service, which can
+          receive the ordinary network details that accompany any request:
+          your IP address, browser information and this site&apos;s origin.
+          The connection closes when you scroll past. Nothing about you is
+          sent, and no other third-party data is loaded by the page.
         </p>
       </Section>
 
       <Section title="Storage on your device">
         <p>
-          The site sets one <code className="font-mono text-sm">sessionStorage</code>{" "}
-          key, <code className="font-mono text-sm">pt_booted</code>, so the
-          intro animation only plays once per browser session. It contains no
-          personal data, never leaves your browser, and is cleared when you
-          close the tab.
+          The site sets no cookies and writes nothing to local or session
+          storage.
         </p>
       </Section>
 
@@ -134,9 +107,9 @@ export default function Privacy() {
         </p>
       </Section>
 
-      <p className="mt-12 border-t border-line pt-6 font-mono text-xs text-faint">
-        <Link href="/" className="transition-colors hover:text-accent-ink">
-          ← back to pavletosic.com
+      <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
+        <Link href="/" className="transition-colors hover:text-ink">
+          Back to the front page
         </Link>
       </p>
     </main>

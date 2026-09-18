@@ -3,8 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { PROJECTS, thumbOf } from "../projects";
 
-/* Index for the case studies. The home page shows these one at a time in the
-   kiosk; this is the flat, linkable list a crawler and a recruiter both want. */
+/* Index for the case studies: the flat, linkable list a crawler and a
+   recruiter both want. Same ruled-index treatment as the client work on the
+   front page. */
 
 export const metadata: Metadata = {
   title: "Work — case studies | Pavle Tošić",
@@ -16,12 +17,12 @@ export const metadata: Metadata = {
 export default function WorkIndex() {
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
-      <nav className="font-mono text-xs text-faint">
-        <Link href="/" className="transition-colors hover:text-accent-ink">
-          cd ~
+      <nav className="text-[13px] text-faint">
+        <Link href="/" className="transition-colors hover:text-ink">
+          Pavle Tošić
         </Link>
         <span aria-hidden> / </span>
-        <span className="text-muted">work</span>
+        <span className="text-muted">Work</span>
       </nav>
 
       <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
@@ -32,26 +33,26 @@ export default function WorkIndex() {
         the decisions behind it, what broke along the way, and what shipped.
       </p>
 
-      <ul className="mt-10 space-y-4">
+      <ul className="mt-10 divide-y divide-line border-y border-line">
         {PROJECTS.map((p) => (
           <li key={p.slug}>
             <Link
               href={`/work/${p.slug}`}
-              className="group flex gap-5 rounded-xl border border-line bg-surface p-4 transition-colors hover:border-accent/60"
+              className="flex gap-6 py-6 text-body transition-colors hover:text-ink"
             >
               <Image
                 src={thumbOf(p.shot)}
                 alt=""
                 width={160}
-                height={90}
-                className="hidden h-[90px] w-[160px] shrink-0 rounded-lg border border-line object-cover object-top sm:block"
+                height={100}
+                className="plate hidden h-[100px] w-[160px] shrink-0 rounded-[6px] object-cover object-top sm:block"
               />
               <div>
-                <h2 className="font-display text-xl font-bold tracking-tight text-ink">
+                <h2 className="font-display text-xl font-medium tracking-tight text-ink">
                   {p.title}
                 </h2>
-                <p className="mt-1 font-mono text-[11px] text-faint">
-                  {p.role} · {p.context}
+                <p className="mt-1 text-[13px] text-faint">
+                  {p.role}, {p.context}
                 </p>
                 <p className="mt-2 max-w-[65ch] text-sm leading-relaxed text-body">
                   {p.blurb}
@@ -62,9 +63,9 @@ export default function WorkIndex() {
         ))}
       </ul>
 
-      <p className="mt-12 border-t border-line pt-6 font-mono text-xs text-faint">
-        <Link href="/" className="transition-colors hover:text-accent-ink">
-          ← back to pavletosic.com
+      <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
+        <Link href="/" className="transition-colors hover:text-ink">
+          Back to the front page
         </Link>
       </p>
     </main>

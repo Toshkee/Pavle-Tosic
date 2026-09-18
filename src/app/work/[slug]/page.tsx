@@ -44,9 +44,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-// A monospace pane, matching the kiosk's arch/notes/code tabs. The source
-// strings are hard-wrapped for a narrow frame, so <pre> is the honest
-// renderer: reflowing them would break the ASCII trees.
+// A monospace pane for the arch trees, notes and code excerpts. The source
+// strings are hard-wrapped, so <pre> is the honest renderer: reflowing them
+// would break the ASCII trees. Plain plate, no window chrome.
 function Pane({
   file,
   children,
@@ -55,14 +55,11 @@ function Pane({
   children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
-      <div className="flex items-center gap-1.5 border-b border-line/70 bg-bg/50 px-4 py-2.5">
-        <span className="h-2 w-2 rounded-full bg-faint/70" />
-        <span className="h-2 w-2 rounded-full bg-accent/70" />
-        <span className="h-2 w-2 rounded-full bg-accent-2/70" />
-        <span className="ml-2 font-mono text-[11px] text-muted">{file}</span>
+    <div className="plate overflow-hidden rounded-[8px]">
+      <div className="border-b border-line px-4 py-2 text-[12px] text-faint">
+        {file}
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-xs leading-[1.6] text-body">
+      <pre className="overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] text-body">
         {children}
       </pre>
     </div>
@@ -80,7 +77,7 @@ function Section({
 }) {
   return (
     <section className="mt-12">
-      <p className="font-mono text-xs text-faint">
+      <p className="text-[12px] uppercase tracking-[0.18em] text-faint">
         <span className="text-accent-ink">$</span> {cmd}
       </p>
       <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink">
@@ -135,21 +132,23 @@ export default async function CaseStudy({ params }: Params) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <nav className="font-mono text-xs text-faint">
-        <Link href="/" className="transition-colors hover:text-accent-ink">
-          cd ~
+      <nav className="text-[13px] text-faint">
+        <Link href="/" className="transition-colors hover:text-ink">
+          Pavle Tošić
         </Link>
         <span aria-hidden> / </span>
-        <span>work</span>
+        <Link href="/work" className="transition-colors hover:text-ink">
+          Work
+        </Link>
         <span aria-hidden> / </span>
-        <span className="text-muted">{p.slug}</span>
+        <span className="text-muted">{p.title}</span>
       </nav>
 
       <header className="mt-6">
         <h1 className="font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
           {p.title}
         </h1>
-        <p className="mt-2 font-mono text-xs text-muted">
+        <p className="mt-2 text-[13px] text-muted">
           {p.role} · {p.context}
         </p>
         <p className="mt-5 max-w-[70ch] text-[15px] leading-[1.7] text-body">
@@ -163,7 +162,7 @@ export default async function CaseStudy({ params }: Params) {
             rel="noopener noreferrer"
             className="link-underline font-medium text-accent-ink"
           >
-            Live demo <span aria-hidden>↗</span>
+            Live demo
           </a>
           <a
             href={p.code}
@@ -171,18 +170,18 @@ export default async function CaseStudy({ params }: Params) {
             rel="noopener noreferrer"
             className="text-muted transition-colors hover:text-ink"
           >
-            Source on GitHub <span aria-hidden>↗</span>
+            Source on GitHub
           </a>
         </div>
         {demoNote && (
-          <p className="mt-2 font-mono text-xs text-faint">{demoNote}</p>
+          <p className="mt-2 text-[13px] text-faint">{demoNote}</p>
         )}
 
-        <ul className="mt-5 flex flex-wrap gap-2">
+        <ul className="mt-5 flex flex-wrap gap-x-1">
           {p.stack.map((s) => (
             <li
               key={s}
-              className="rounded-md border border-line px-2 py-0.5 font-mono text-xs text-muted"
+              className="text-[13px] text-muted after:content-[',_'] last:after:content-none"
             >
               {s}
             </li>
@@ -204,7 +203,7 @@ export default async function CaseStudy({ params }: Params) {
       <dl className="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
         {p.kpis.map((k) => (
           <div key={k.label} className="bg-surface p-4">
-            <dt className="font-mono text-[11px] uppercase tracking-wide text-faint">
+            <dt className="text-[12px] text-faint">
               {k.label}
             </dt>
             <dd className="mt-1 text-sm leading-snug text-ink">{k.value}</dd>
@@ -259,9 +258,9 @@ export default async function CaseStudy({ params }: Params) {
         </ul>
       </Section>
 
-      <p className="mt-12 border-t border-line pt-6 font-mono text-xs text-faint">
-        <Link href="/" className="transition-colors hover:text-accent-ink">
-          ← back to pavletosic.com
+      <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
+        <Link href="/work" className="transition-colors hover:text-ink">
+          Back to all work
         </Link>
       </p>
     </main>
