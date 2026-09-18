@@ -65,12 +65,12 @@ export default function Footer() {
           <span>© 2026 Pavle Tošić</span>
           <span className="flex gap-5">
             <a
-              href="https://unsplash.com/photos/kKvQJ6rK6S4"
+              href="https://motionbgs.com/luffys-resolve-under-the-night-sky"
               target="_blank"
               rel="noreferrer"
               className="hover:text-body"
             >
-              Hero photo: Shur Shu, Unsplash
+              Hero animation: motionbgs.com
             </a>
             <Link href="/privacy" className="hover:text-body">
               Privacy

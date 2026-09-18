@@ -5,36 +5,32 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 /* Osmo "Parallax Scrolling" (21st.dev/@osmosupply/components/parallax-
-   scrolling), ported as-is: three depth layers in the same order, the same
-   120% stage, the same 117.5% / -17.5% layer sizing, the same GSAP
-   ScrollTrigger timeline scrubbed over [data-parallax-layers] (yPercent
-   70 / 55 / 40 / 10), the same 13-stop fade and radial vignette. Lenis
-   already runs site-wide from SmoothScroll.tsx; ScrollTrigger reads the
-   window scroll it drives.
-
-   The layers are cut from one photo: "Panoramic photography of mountains",
-   Lake Placid, by Shur Shu on Unsplash (unsplash.com/photos/kKvQJ6rK6S4,
-   Unsplash License). Back = sky and far ridges, mid = the middle ridges,
-   front = the near ridge; night-graded so the name reads. */
+   scrolling) with a looping video as the back plane: the same 120% stage,
+   the same 117.5% / -17.5% plane sizing, the same GSAP ScrollTrigger
+   timeline scrubbed over [data-parallax-layers], the same 13-stop fade and
+   radial vignette. The video is "Luffy's Resolve Under the Night Sky" from
+   motionbgs.com (fan-made, 1920x1080, 60fps, no audio), served as the
+   original file on desktop and a 720p/30fps re-encode on phones. It plays
+   only while the hero is on screen and the tab is visible. */
 
 const LAYERS = [
-  { layer: "1", yPercent: 70 },
-  { layer: "2", yPercent: 55 },
-  { layer: "3", yPercent: 40 },
-  { layer: "4", yPercent: 10 },
+  { layer: "1", yPercent: 40 }, // the video plane
+  { layer: "3", yPercent: 20 }, // the name
 ];
 
 export default function Hero() {
   const root = useRef<HTMLDivElement>(null);
+  const video = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
     const trigger = root.current?.querySelector<HTMLElement>("[data-parallax-layers]");
-    if (!trigger) return;
+    const v = video.current;
+    if (!trigger || !v) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const ctx = gsap.context(() => {
-      // the name arrives: each letter rises out of its own clip, staggered,
-      // the two words at different weights. Skipped under reduced motion.
-      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      if (!reduced) {
         gsap.from(".parallax__title .letter", {
           yPercent: 115,
           rotate: 4,
@@ -55,7 +51,23 @@ export default function Hero() {
         );
       });
     }, root);
-    return () => ctx.revert();
+
+    // playback only while visible: off screen or hidden tab pauses the decoder
+    let onScreen = true;
+    const sync = () => {
+      if (reduced) return;
+      if (onScreen && !document.hidden) v.play().catch(() => {});
+      else v.pause();
+    };
+    const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; sync(); }, { threshold: 0 });
+    io.observe(trigger);
+    document.addEventListener("visibilitychange", sync);
+    sync();
+    return () => {
+      ctx.revert();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
   }, []);
 
   return (
@@ -64,40 +76,27 @@ export default function Hero() {
         <div className="parallax__visuals">
           <div className="parallax__black-line-overflow" />
           <div data-parallax-layers className="parallax__layers">
-            <img
-              src="/images/hero/layer-back.webp"
-              loading="eager"
-              fetchPriority="high"
-              width={2400}
-              height={2280}
+            <video
+              ref={video}
               data-parallax-layer="1"
-              alt=""
               className="parallax__layer-img"
-            />
-            <img
-              src="/images/hero/layer-mid.webp"
-              loading="eager"
-              width={2400}
-              height={2280}
-              data-parallax-layer="2"
-              alt=""
-              className="parallax__layer-img"
-            />
+              poster="/images/hero/night-sky-poster.webp"
+              muted
+              loop
+              playsInline
+              autoPlay
+              preload="auto"
+              aria-hidden
+            >
+              <source src="/video/hero/night-sky-720.mp4" media="(max-width: 767px)" type="video/mp4" />
+              <source src="/video/hero/night-sky.mp4" type="video/mp4" />
+            </video>
             <div data-parallax-layer="3" className="parallax__layer-title">
               <h1 className="parallax__title" aria-label="Pavle Tošić">
                 <Word text="Pavle" weight="light" />
                 <Word text="Tošić" weight="bold" />
               </h1>
             </div>
-            <img
-              src="/images/hero/layer-front.webp"
-              loading="eager"
-              width={2400}
-              height={2280}
-              data-parallax-layer="4"
-              alt=""
-              className="parallax__layer-img"
-            />
           </div>
           <div className="parallax__fade" />
         </div>
