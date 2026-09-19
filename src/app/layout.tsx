@@ -22,35 +22,35 @@ const DESCRIPTION =
 // Web analytics: Cloudflare Web Analytics is enabled on the zone (dashboard →
 // Analytics & Logs → Web Analytics, site pavletosic.com) and injects its RUM
 // beacon at the edge for real-browser requests. Do NOT also add the manual
-// beacon <script> here — a second beacon would double-count every visit.
+// beacon <script> here: a second beacon would double-count every visit.
 
 export const metadata: Metadata = {
-  title: "Pavle Tošić — Software Developer",
+  title: "Pavle Tošić, Software Developer",
   description: DESCRIPTION,
   metadataBase: new URL("https://pavletosic.com"),
   // The www host serves the same page (Cloudflare answers both), so without
   // this the two are duplicate content to a crawler.
   alternates: { canonical: "https://pavletosic.com" },
   openGraph: {
-    title: "Pavle Tošić — Software Developer",
+    title: "Pavle Tošić, Software Developer",
     description: DESCRIPTION,
     url: "https://pavletosic.com",
     siteName: "Pavle Tošić",
     images: [
       {
         // ?v=2 busts social scrapers' preview caches (WhatsApp/Telegram/X hold
-        // og:images for weeks keyed by URL) — bump it whenever og.png changes.
+        // og:images for weeks keyed by URL): bump it whenever og.png changes.
         url: "/og.png?v=4",
         width: 1200,
         height: 630,
-        alt: "Pavle Tošić — Software Developer",
+        alt: "Pavle Tošić, Software Developer",
       },
     ],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pavle Tošić — Software Developer",
+    title: "Pavle Tošić, Software Developer",
     description: DESCRIPTION,
     images: ["/og.png?v=4"],
   },
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
 
 // Structured data so search engines tie the domain to the person and to the
 // GitHub/LinkedIn profiles. Kept in sync by hand with the NAME/ROLE/SOCIAL
-// constants in page.tsx — that file is "use client", so importing from it here
+// constants in page.tsx: that file is "use client", so importing from it here
 // would drag the whole page module into the server layout.
 const PROFILE_JSON_LD = {
   "@context": "https://schema.org",

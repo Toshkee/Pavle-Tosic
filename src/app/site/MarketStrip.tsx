@@ -7,7 +7,11 @@ import { useEffect, useRef, useState } from "react";
    "live Binance data" is demonstrated rather than described. Connects only
    while on screen and while the tab is visible, and says so plainly when the
    network blocks the stream (US regions do). Direct DOM-free state updates,
-   no rAF: rAF pauses in hidden tabs and would leave stale prices. */
+   no rAF: rAF pauses in hidden tabs and would leave stale prices.
+   Renders at every width (Features no longer hides it below lg): the
+   per-pair cells reflow to a stacked label+percent on phones and go
+   side by side from sm up, so the proof stays visible on the device most
+   visitors actually carry. */
 
 const PAIRS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"] as const;
 const WS =
@@ -86,20 +90,20 @@ export default function MarketStrip() {
         const r = rows[p];
         const pct = r ? ((r.price - r.open) / r.open) * 100 : null;
         return (
-          <div key={p} className="px-4 py-3">
-            <div className="flex items-baseline justify-between gap-2">
+          <div key={p} className="px-2.5 py-2.5 sm:px-4 sm:py-3">
+            <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-2">
               <span className="text-faint">{p.replace("USDT", "")}</span>
               <span className="tabular-nums text-faint">
                 {pct === null ? "" : `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`}
               </span>
             </div>
-            <div className="mt-1 font-display text-[18px] font-medium tabular-nums text-ink">
+            <div className="mt-1 font-display text-[16px] font-medium tabular-nums text-ink sm:text-[18px]">
               {r ? fmt(r.price) : status === "offline" ? "blocked" : "–"}
             </div>
           </div>
         );
       })}
-      <p className="col-span-3 border-t border-line px-4 py-2 text-[12px] text-faint">
+      <p className="col-span-3 border-t border-line px-2.5 py-2 text-[12px] text-faint sm:px-4">
         {status === "live"
           ? "Binance spot, live over WebSocket, the same stream CryptoFlow charts."
           : status === "offline"

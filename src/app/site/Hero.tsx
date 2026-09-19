@@ -8,10 +8,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
    scrolling) with a looping video as the back plane: the same 120% stage,
    the same 117.5% / -17.5% plane sizing, the same GSAP ScrollTrigger
    timeline scrubbed over [data-parallax-layers], the same 13-stop fade and
-   radial vignette. The video is "Luffy's Resolve Under the Night Sky" from
-   motionbgs.com (fan-made, 1920x1080, 60fps, no audio), served as the
-   original file on desktop and a 720p/30fps re-encode on phones. It plays
-   only while the hero is on screen and the tab is visible. */
+   radial vignette. The video is "Stunning Night Timelapse of the Alps" by
+   Ivan Chumak on Pexels (pexels.com/video/35047335, Pexels License), cut
+   into a seamless 8.5 s loop, 1080p24 on desktop and a 720p re-encode on
+   phones. It plays only while the hero is on screen and the tab is visible. */
 
 const LAYERS = [
   { layer: "1", yPercent: 40 }, // the video plane
@@ -80,7 +80,7 @@ export default function Hero() {
               ref={video}
               data-parallax-layer="1"
               className="parallax__layer-img"
-              poster="/images/hero/night-sky-poster.webp"
+              poster="/images/hero/alps-night-poster.webp"
               muted
               loop
               playsInline
@@ -88,8 +88,8 @@ export default function Hero() {
               preload="auto"
               aria-hidden
             >
-              <source src="/video/hero/night-sky-720.mp4" media="(max-width: 767px)" type="video/mp4" />
-              <source src="/video/hero/night-sky.mp4" type="video/mp4" />
+              <source src="/video/hero/alps-night-720.mp4" media="(max-width: 767px)" type="video/mp4" />
+              <source src="/video/hero/alps-night.mp4" type="video/mp4" />
             </video>
             <div data-parallax-layer="3" className="parallax__layer-title">
               <p className="parallax__kicker">Software developer, Montenegro</p>

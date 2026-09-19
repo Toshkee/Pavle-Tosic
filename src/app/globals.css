@@ -20,7 +20,7 @@
   --color-ink: #f2f3f5;
   --color-body: #a5a8b0;
   --color-muted: #8b8f98;
-  --color-faint: #7c8088; /* 4.9:1 on bg */
+  --color-faint: #a3a8b2; /* ~9.2:1 on bg; ~4.6:1 over the brightest glass-dark panels, see the [glass task] note below */
   --color-line: rgba(242, 243, 245, 0.1);
   --color-line-strong: rgba(242, 243, 245, 0.2);
 
@@ -30,6 +30,14 @@
   --color-accent-ink: #e6e8ec;
   --color-accent-2: #8f939c;
   --color-accent-soft: rgba(230, 232, 236, 0.12);
+
+  /* Ember: the site's one colour. Rationed on purpose, see the usage list in
+     the upgrade brief: primary CTA, active nav pill, Log rail, GitHub
+     heatmap ramp. Everything else stays neutral. */
+  --color-ember: #ff7a45; /* 7.2:1 on bg */
+  --color-ember-hover: #ff9466;
+  --color-ember-ink: #1a0c06; /* text on ember */
+  --color-ember-soft: rgba(255, 122, 69, 0.14);
 }
 
 /* ================= BASE ================= */
@@ -121,34 +129,71 @@ html.lenis body {
 
 /* ================= GLASS ================= */
 
-/* iOS-style material: a translucent white fill over the blurred backdrop,
-   a bright top lip, a faint inner edge, a soft tinted drop. Used for the
-   nav, the about / log / contact panels and small controls. Blur is capped
-   at 18px and every surface is paint-contained. */
+/* [glass task] iOS-26 "liquid glass" material, lighter and more translucent
+   than the old smoked-black plate. Recipe (fill + stronger blur/saturate +
+   a crisp top lip + a faint inner edge + a soft drop + a thin sheen) is
+   adapted from the CSS these three 21st.dev components share, read via
+   curl -sL -A "Mozilla/5.0" https://21st.dev/@paceui/components/liquid-glass ,
+   https://21st.dev/@jahed/components/apple-tahoe-liquid-glass-button and
+   https://21st.dev/@cult-ui/components/glass-effect. Their inset recipe
+   (inset 0 1px 1px rgba(255,255,255,.85), inset 0 0 0 1px rgba(0,0,0,.07),
+   inset 0 -6px 10px -6px rgba(0,0,0,.2), two soft outer drops) is what
+   --glass-lip / --glass-edge / the box-shadow below are built from, tuned
+   for our dark theme; cult-ui's actual glass-effect mechanism is an SVG
+   feTurbulence displacement filter, which we deliberately do NOT take
+   (perf-hostile, and this site avoids SVG displacement filters). Used for
+   the nav, the about / log / contact panels and small controls. Blur is
+   capped at 26px and every surface is paint-contained.
+
+   --glass-fill / --glass-fill-strong only ever sit on chips nested INSIDE
+   an already dark-tinted panel (see .glass-btn / .glass-strong usage), so
+   they can run light. --glass-dark-fill is the one surface that sits
+   directly over a raw photo (nav bar, and every panel carrying text-ink/80
+   running text), so it is kept deliberately darker than the rest of the
+   "lighter" pass: rgba(24,24,29,.56) over a bright, 35%-scrimmed sunset
+   still leaves text-ink/80 at roughly 4.8:1 against the panel by the WCAG
+   formula, with --glass-sheen's peak kept low (.06) so it doesn't eat that
+   margin. Don't lighten --glass-dark-fill further without re-checking this. */
 :root {
-  --glass-fill: rgba(255, 255, 255, 0.035);
-  --glass-fill-strong: rgba(255, 255, 255, 0.08);
-  --glass-blur: 14px;
-  --glass-lip: rgba(255, 255, 255, 0.2);
-  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass-fill: rgba(255, 255, 255, 0.14);
+  --glass-fill-strong: rgba(255, 255, 255, 0.16);
+  --glass-dark-fill: rgba(24, 24, 29, 0.56);
+  --glass-dark-deep-fill: rgba(20, 20, 24, 0.72);
+  --glass-blur: 26px;
+  --glass-saturate: 180%;
+  --glass-lip: rgba(255, 255, 255, 0.6);
+  --glass-edge: rgba(255, 255, 255, 0.14);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 42%);
 }
 
 .glass {
-  background: var(--glass-fill);
-  backdrop-filter: blur(var(--glass-blur)) saturate(160%);
+  background: var(--glass-sheen), var(--glass-fill);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow:
     inset 0 1px 0 0 var(--glass-lip),
     inset 0 0 0 1px var(--glass-edge),
-    0 10px 30px rgba(0, 0, 0, 0.35);
+    inset 0 -10px 16px -12px rgba(0, 0, 0, 0.22),
+    0 14px 34px rgba(0, 0, 0, 0.3);
   contain: paint;
+  transition: background-color 0.18s ease;
 }
 .glass-strong {
-  background: var(--glass-fill-strong);
+  background-color: var(--glass-fill-strong);
 }
 /* Dark-tinted glass: for the nav and for panels that carry running text,
-   so they read the same over a night sky and over sunlit hills. */
+   so they read the same over a night sky and over sunlit hills. Kept
+   apart from --glass-fill on purpose, see the contrast note above. */
 .glass-dark {
-  background: rgba(10, 10, 12, 0.5);
+  background-color: var(--glass-dark-fill);
+}
+/* A touch deeper than .glass-dark, for the panels carrying long paragraphs
+   of running text (About, Log, Client work, Contact) rather than a card of
+   short labels: over MorphBackdrop's lighter 20% scrim those panels were
+   reading as a flat grey wash with the photo barely legible through them.
+   Nav, Footer, and the Work/Stack panels stay on the lighter .glass-dark so
+   the photo still shows through their shorter runs of text. */
+.glass-dark-deep {
+  background-color: var(--glass-dark-deep-fill);
 }
 .glass-pill {
   border-radius: 999px;
@@ -161,18 +206,20 @@ html.lenis body {
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 .glass-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+  background-color: rgba(255, 255, 255, 0.2);
 }
 
 @supports not (backdrop-filter: blur(1px)) {
   .glass {
-    background: rgba(22, 22, 27, 0.94);
+    background: rgba(24, 24, 29, 0.96);
   }
 }
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-fill: rgba(22, 22, 27, 0.94);
-    --glass-fill-strong: rgba(28, 28, 34, 0.96);
+    --glass-fill: rgba(24, 24, 29, 0.96);
+    --glass-fill-strong: rgba(30, 30, 36, 0.97);
+    --glass-dark-fill: rgba(18, 18, 22, 0.97);
+    --glass-dark-deep-fill: rgba(16, 16, 19, 0.98);
     --glass-blur: 0px;
   }
 }
@@ -224,7 +271,7 @@ html.lenis body {
 .parallax__layer-img {
   pointer-events: none;
   object-fit: cover;
-  object-position: 48% 50%; /* the moon is at 48% of the frame's width */
+  object-position: 50% 60%; /* keep the ridge and the cloud sea in frame */
   width: 100%;
   max-width: none;
   height: 117.5%;
@@ -232,7 +279,7 @@ html.lenis body {
   top: -17.5%;
   left: 0;
 }
-/* phones crop the 16:9 frame to portrait: lift it so the moon sits mid-screen */
+/* phones crop the 16:9 frame to portrait: lift it so the peaks sit mid-screen */
 @media (max-width: 767px) {
   .parallax__layer-img {
     top: -25%;
@@ -421,12 +468,16 @@ html.lenis body {
   padding-top: 0.1em; /* clear the cut: no cap or accent ever shaved at the top */
 }
 
-/* ================= STACKING CARDS ================= */
+/* ================= STACKING CARDS (Features.tsx) ================= */
 
-/* Sticky offsets: under the floating bar on every size, tighter on phones.
-   .stack-off (set by Features when a card would not fit the viewport) turns
-   the pinning off and the cards become a plain column. */
-.stack-off .stack-card {
+/* The GitLab-style pin-and-scale stack runs at lg and up, where there's
+   room for each card to overlap the last; below that .stack-card is a
+   plain static block (its `top` is simply ignored), so cards read as a
+   normal column and nothing needs measuring at runtime: the breakpoint
+   IS the fit check, replacing the old JS stack-fit logic. The scale-down
+   half of the effect is framer-motion, driven off each card's own scroll
+   progress (see Features.tsx); this file only owns the pin. */
+.stack-card {
   position: static;
 }
 :root {
@@ -434,64 +485,160 @@ html.lenis body {
   --stack-step: 12px;
 }
 @media (min-width: 1024px) {
+  .stack-card {
+    position: sticky;
+  }
   :root {
     --stack-top: 96px;
     --stack-step: 18px;
   }
 }
 
-/* Entrance for each project card, transform only, scrubbed by the card's
-   own position in the viewport (native scroll-driven animation, the way the
-   reference does it). Behind @supports so browsers without it show the
-   cards at rest. Never opacity: content is visible by default. */
+/* ================= INSIDE: STACK ENTRANCE (Inside.tsx, GitHubActivity.tsx) =================
+   Replaces the old looping marquee. A single scroll-linked, one-time fade for
+   the grouped wordmarks and the GitHub heatmap: native scroll-driven
+   animation (same mechanism as .stack-card's card-in), behind @supports so
+   browsers without it just show the content at rest, and gated on
+   prefers-reduced-motion. Nothing loops. */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .stack-card {
-      animation: card-in linear both;
+    .inside-reveal {
+      animation: inside-reveal-in linear both;
       animation-timeline: view();
-      animation-range: entry 0% entry 45%;
+      animation-range: entry 0% entry 60%;
     }
   }
 }
-@keyframes card-in {
+@keyframes inside-reveal-in {
   from {
-    transform: translateY(28px) scale(0.975);
+    opacity: 0;
+    transform: translateY(10px);
   }
   to {
+    opacity: 1;
     transform: none;
   }
 }
 
-/* ================= MARQUEE ================= */
-
-.marquee {
-  --marquee-duration: 38s;
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+/* ================= STACK: ORBIT (Inside.tsx, StackOrbit.tsx) =================
+   Two counter-rotating rings of glass icon chips. The keyframe is Magic
+   UI's OrbitingCircles trick (https://21st.dev/@dillionverma/components/orbiting-circles):
+   rotate the chip around the ring's centre, translate it out by the radius,
+   then rotate it back the same amount, so it stays upright while it sweeps
+   the circle — transform only, nothing else animates. Radius lives on each
+   ring (`--orbit-r`, inherited by its chips); duration and a negative delay
+   per chip are set inline in StackOrbit.tsx, the delay is what staggers the
+   chips evenly around the ring. Reduced motion pauses every chip in place,
+   which (thanks to the negative delay) freezes it at its share of the ring
+   instead of bunched at the start, i.e. exactly the "static ring" asked
+   for, no separate layout needed. Also checked
+   https://21st.dev/@olovajs/components/orbiting-skills and
+   https://21st.dev/@shadcnspace/components/orbiting-circles-02 for ring
+   proportions; the mechanism below is the shared one, not either's markup. */
+.orbit {
+  position: relative;
+  width: clamp(220px, 30vw, 320px);
+  height: clamp(220px, 30vw, 320px);
 }
-.marquee__track {
+.orbit-ring {
+  position: absolute;
+  inset: 0;
+}
+.orbit-ring-inner {
+  --orbit-r: clamp(50px, 12vw, 78px);
+}
+.orbit-ring-outer {
+  --orbit-r: clamp(90px, 20vw, 134px);
+}
+.orbit-chip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: flex;
-  width: max-content;
-  gap: 14px;
-  padding: 2px 7px;
-  animation: marquee var(--marquee-duration) linear infinite;
+  width: 42px;
+  height: 42px;
+  margin: -21px;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink);
+  animation-name: stack-orbit;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
-.marquee--reverse .marquee__track {
+.orbit-chip[data-reverse="true"] {
   animation-direction: reverse;
 }
-.marquee:hover .marquee__track {
-  animation-play-state: paused;
-}
-@keyframes marquee {
+@keyframes stack-orbit {
+  from {
+    transform: rotate(0deg) translateY(calc(var(--orbit-r) * -1)) rotate(0deg);
+  }
   to {
-    transform: translateX(calc(-50% - 7px));
+    transform: rotate(360deg) translateY(calc(var(--orbit-r) * -1)) rotate(-360deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .marquee__track {
-    animation: none;
-    flex-wrap: wrap;
-    width: auto;
+  .orbit-chip {
+    animation-play-state: paused;
   }
+}
+
+/* ================= STACK: MARQUEE (Inside.tsx, StackMarquee.tsx) =================
+   Adapted from the duplicated-track shape of
+   https://21st.dev/@grootstudio/components/logo-marquee (its own runtime
+   drives the track with framer-motion's imperative `animate()`; this site
+   keeps that off the main thread and uses a plain CSS keyframe instead,
+   translating the track by exactly one copy's width, -50%, so the loop
+   seam is invisible). Edges fade with a mask instead of a hard clip, and
+   hover/focus pauses the loop so it can be read. */
+.marquee-mask {
+  overflow: hidden;
+  /* Belt-and-braces alongside min-w-0 on StackMarquee's root: without it the
+     mask box is a grid item whose default min-width is auto, so it stretches
+     to the track's max-content width and the row (and the overflow:hidden
+     above) never actually clips. */
+  min-width: 0;
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  animation-name: marquee-x;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.marquee-track[data-reverse="true"] {
+  animation-direction: reverse;
+}
+.marquee-row:hover .marquee-track,
+.marquee-row:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+}
+
+/* MorphBackdrop's no-WebGL fallback: the same slow drift the shader does. */
+@keyframes morph-drift {
+  0% { transform: scale(1.04) translate(0, 0); }
+  50% { transform: scale(1.1) translate(-1.2%, 0.8%); }
+  100% { transform: scale(1.04) translate(0, 0); }
+}
+.morph-drift {
+  animation: morph-drift 140s ease-in-out infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .morph-drift { animation: none; }
 }

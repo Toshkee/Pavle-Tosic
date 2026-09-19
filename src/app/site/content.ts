@@ -8,6 +8,8 @@ import { EMAIL } from "../contact";
 export const NAME = "Pavle Tošić";
 export const ROLE = "Software developer";
 export const LOCATION = "Montenegro";
+// An in-site page (src/app/cv/page.tsx), not a PDF download: a recruiter who
+// clicks it stays on the site and can still save it as a PDF from there.
 export const RESUME = "/pavle-tosic-cv.pdf";
 
 export const SOCIAL = {
@@ -25,37 +27,53 @@ export const ABOUT = [
 export const STACK_LINE =
   "What I actually build with: a JavaScript/TypeScript core, the frontend I design and animate in, and the backend that ships and stores it.";
 
-/* The spec sheet: checkable facts only. */
+/* The spec sheet: checkable facts only. Role, dates and training live in
+   LOG below, not here, so each fact is stated once. */
 export const SPEC: { label: string; value: string }[] = [
-  { label: "Role", value: "Software Developer, Infostream (2025 to now)" },
   { label: "Based", value: "Montenegro, remote" },
   { label: "By choice", value: "Next.js, React, Astro" },
   { label: "On the job", value: "Angular, .NET, Oracle APEX" },
   { label: "Languages", value: "English (professional), Montenegrin (native)" },
-  { label: "Training", value: "General Assembly, Fullstack Software Engineering, 2025" },
   { label: "Availability", value: "Full-time or part-time, remote" },
 ];
 
-/* Brand marks, monochrome. Iconify names from the simple-icons and
-   devicon-plain sets, which are single-colour by design. */
-export const MARKS: { name: string; icon: string }[] = [
-  { name: "TypeScript", icon: "simple-icons:typescript" },
-  { name: "React", icon: "simple-icons:react" },
-  { name: "Next.js", icon: "simple-icons:nextdotjs" },
-  { name: "Angular", icon: "simple-icons:angular" },
-  { name: ".NET", icon: "simple-icons:dotnet" },
-  { name: "Oracle", icon: "simple-icons:oracle" },
-  { name: "PostgreSQL", icon: "simple-icons:postgresql" },
-  { name: "Django", icon: "simple-icons:django" },
-  { name: "Node.js", icon: "simple-icons:nodedotjs" },
-  { name: "Astro", icon: "simple-icons:astro" },
-  { name: "Tailwind CSS", icon: "simple-icons:tailwindcss" },
-  { name: "Cloudflare", icon: "simple-icons:cloudflare" },
-  { name: "Godot", icon: "simple-icons:godotengine" },
-  { name: "Unity", icon: "simple-icons:unity" },
-  { name: "GitHub", icon: "simple-icons:github" },
+/* Brand marks, grouped the way the Spec sheet groups them: tools picked
+   freely, and tools the day job runs on. `icon` is an Iconify id from the
+   coloured "logos" set, rendered by StackOrbit / StackMarquee. */
+export type Mark = { name: string; icon: string };
+export type MarkGroup = { heading: string; marks: Mark[] };
+
+export const MARKS: MarkGroup[] = [
+  {
+    heading: "By choice",
+    marks: [
+      { name: "Next.js", icon: "logos:nextjs-icon" },
+      { name: "React", icon: "logos:react" },
+      { name: "Astro", icon: "logos:astro-icon" },
+      { name: "TypeScript", icon: "logos:typescript-icon" },
+      { name: "Tailwind CSS", icon: "logos:tailwindcss-icon" },
+      { name: "Node.js", icon: "logos:nodejs-icon" },
+      { name: "PostgreSQL", icon: "logos:postgresql" },
+      { name: "Cloudflare", icon: "logos:cloudflare-icon" },
+      { name: "Django", icon: "logos:django-icon" },
+      { name: "GitHub", icon: "logos:github-icon" },
+    ],
+  },
+  {
+    heading: "On the job",
+    marks: [
+      { name: "Angular", icon: "logos:angular-icon" },
+      { name: ".NET", icon: "logos:dotnet" },
+      { name: "Oracle", icon: "logos:oracle" },
+    ],
+  },
 ];
 
+/* Game engines from personal projects: one small line, not a third group. */
+export const MARKS_SIDE: Mark[] = [
+  { name: "Godot", icon: "logos:godot-icon" },
+  { name: "Unity", icon: "logos:unity" },
+];
 
 export type LogEntry = {
   period: string;

@@ -1,40 +1,36 @@
-"use client";
+import { Section, Heading } from "./Section";
+import { MARKS, MARKS_SIDE, STACK_LINE } from "./content";
+import GitHubActivity from "./GitHubActivity";
+import StackOrbit from "./StackOrbit";
+import StackMarquee from "./StackMarquee";
 
-import { Icon } from "@iconify/react";
-import { Section } from "./Section";
-import { MARKS, STACK_LINE } from "./content";
-
-/* The stack as a marquee, after 21st.dev/@grootstudio/components/logo-marquee:
-   an infinite row with mask-faded edges that slows to a crawl on hover.
-   Two rows, opposite directions. Pure CSS animation on transform, so it
-   costs nothing on the main thread; static under reduced motion. */
-const ROW_A = MARKS.slice(0, Math.ceil(MARKS.length / 2));
-const ROW_B = MARKS.slice(Math.ceil(MARKS.length / 2));
-
+/* The stack as an orbit + a pair of marquees, split the way the Spec sheet
+   splits it: tools picked freely (the outer ring, the first row), and
+   tools the day job runs on plus the two engines (the inner ring, the
+   second row). StackOrbit and StackMarquee are the only client leaves
+   (@iconify/react resolves real logos at runtime); this section itself
+   stays a server component so it can compose the GitHub heatmap directly.
+   Sits on the same dark glass panel as Log and Field, since the backdrop
+   photo behind it can run bright. */
 export default function Inside() {
-  return (
-    <Section id="inside" label="Stack" className="!px-0 !py-[8svh] md:!py-[10svh]">
-      <Row items={ROW_A} />
-      <Row items={ROW_B} reverse />
-      <p className="mx-auto mt-10 max-w-[1440px] px-6 text-[15px] leading-relaxed text-ink/80 md:px-[6vw] md:text-[16px]">
-        <span className="block max-w-[56ch]">{STACK_LINE}</span>
-      </p>
-    </Section>
-  );
-}
+  const byChoice = MARKS[0].marks;
+  const onTheJob = [...MARKS[1].marks, ...MARKS_SIDE];
 
-function Row({ items, reverse = false }: { items: typeof MARKS; reverse?: boolean }) {
-  const track = [...items, ...items]; // duplicated so -50% loops seamlessly
   return (
-    <div className={`marquee ${reverse ? "marquee--reverse" : ""} mb-4`} aria-label="Tools">
-      <ul className="marquee__track">
-        {track.map((m, i) => (
-          <li key={`${m.name}-${i}`} aria-hidden={i >= items.length} className="glass glass-pill flex items-center gap-3 px-5 py-2.5 text-[14px] text-ink/85">
-            <Icon icon={m.icon} width={20} height={20} aria-hidden />
-            <span>{m.name}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Section id="inside" label="Stack" className="!py-[8svh] md:!py-[10svh]">
+      <Heading lead={STACK_LINE}>Stack</Heading>
+      <div className="glass glass-panel glass-dark p-6 md:p-10 lg:p-12">
+        <div className="inside-reveal grid gap-10 lg:grid-cols-[minmax(240px,320px)_1fr] lg:items-center lg:gap-14">
+          {/* Below lg the orbit is ~320px of near-empty space for a third of
+              a phone screen; the marquee carries the same logos, so nothing
+              is lost by giving it the full width there instead. */}
+          <div className="hidden lg:block">
+            <StackOrbit inner={onTheJob} outer={byChoice} />
+          </div>
+          <StackMarquee byChoice={byChoice} onTheJob={onTheJob} />
+        </div>
+        <GitHubActivity />
+      </div>
+    </Section>
   );
 }

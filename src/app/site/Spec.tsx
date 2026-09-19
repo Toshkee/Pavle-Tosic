@@ -8,7 +8,7 @@ export default function Spec() {
   return (
     <Section id="spec" label="About">
       <Heading>About</Heading>
-      <div className="glass glass-panel glass-dark grid gap-8 p-6 md:grid-cols-[220px_minmax(0,1fr)] md:gap-12 md:p-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:p-12">
+      <div className="glass glass-panel glass-dark-deep grid gap-8 p-6 md:grid-cols-[220px_minmax(0,1fr)] md:gap-12 md:p-10 lg:grid-cols-[260px_minmax(0,1fr)] lg:p-12">
         <div>
           <img
             src="/images/hero/portrait.webp"

@@ -1,14 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { RESUME } from "./content";
 
 const LINKS = [
-  { href: "#features", label: "Work" },
   { href: "#spec", label: "About" },
+  { href: "#features", label: "Work" },
+  { href: "#field", label: "Client work" },
+  { href: "#inside", label: "Stack" },
   { href: "#log", label: "Log" },
   { href: "#order", label: "Contact" },
 ];
+
+const SECTION_IDS = LINKS.map((l) => l.href.slice(1));
+
+/* Which section id currently owns the horizontal centre line of the
+   viewport. One IntersectionObserver, shared by the desktop pill and the
+   mobile menu's highlight; no scroll listener. */
+function useActiveSection() {
+  const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    const targets = SECTION_IDS.map((id) => document.getElementById(id)).filter(
+      (el): el is HTMLElement => el !== null
+    );
+    if (targets.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: 0 }
+    );
+    targets.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  return active;
+}
 
 /* A floating glass bar, iOS style, dark-tinted so it reads the same over
    every photo. On phones the links live in a glass sheet under the bar,
@@ -17,6 +49,7 @@ const LINKS = [
 export default function Nav() {
   const reduced = useReducedMotion();
   const [open, setOpen] = useState(false);
+  const active = useActiveSection();
   return (
     <motion.header
       initial={reduced ? false : { y: -80 }}
@@ -32,19 +65,40 @@ export default function Nav() {
           Pavle Tošić
         </a>
         <ul className="flex items-center gap-1 text-[13px] text-body">
-          {LINKS.map((l) => (
-            <li key={l.href} className="hidden sm:block">
-              <a href={l.href} className="glass-btn block px-3 py-1.5 text-ink/80 transition-colors hover:text-ink">
-                {l.label}
-              </a>
-            </li>
-          ))}
+          {LINKS.map((l) => {
+            const id = l.href.slice(1);
+            const isActive = active === id;
+            return (
+              <li key={l.href} className="relative hidden md:block">
+                {isActive && (
+                  <motion.span
+                    layoutId="nav-active-pill"
+                    className="absolute inset-0 -z-10 rounded-full bg-ember-soft"
+                    transition={
+                      reduced
+                        ? { duration: 0 }
+                        : { type: "spring", stiffness: 420, damping: 34 }
+                    }
+                  />
+                )}
+                <a
+                  href={l.href}
+                  aria-current={isActive ? "location" : undefined}
+                  className={`glass-btn relative block px-2 py-1.5 whitespace-nowrap transition-colors ${
+                    isActive ? "text-ember" : "text-ink/80 hover:text-ink"
+                  }`}
+                >
+                  {l.label}
+                </a>
+              </li>
+            );
+          })}
           <li>
-            <a href="/pavle-tosic-cv.pdf" className="glass glass-btn glass-strong ml-1 block px-4 py-1.5 text-ink">
+            <a href={RESUME} target="_blank" rel="noreferrer" className="glass glass-btn glass-strong ml-1 block px-4 py-1.5 text-ink">
               CV
             </a>
           </li>
-          <li className="sm:hidden">
+          <li className="md:hidden">
             <button
               type="button"
               aria-expanded={open}
@@ -65,19 +119,25 @@ export default function Nav() {
             animate={{ y: 0, scale: 1 }}
             exit={{ y: -8, scale: 0.98, opacity: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="glass glass-panel glass-dark mt-2 w-full max-w-[880px] p-2 sm:hidden"
+            className="glass glass-panel glass-dark mt-2 w-full max-w-[880px] p-2 md:hidden"
           >
-            {LINKS.map((l) => (
-              <li key={l.href}>
-                <a
-                  href={l.href}
-                  onClick={() => setOpen(false)}
-                  className="glass-btn block px-4 py-3 text-[15px] text-ink"
-                >
-                  {l.label}
-                </a>
-              </li>
-            ))}
+            {LINKS.map((l) => {
+              const isActive = active === l.href.slice(1);
+              return (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={isActive ? "location" : undefined}
+                    className={`glass-btn block px-4 py-3 text-[15px] ${
+                      isActive ? "text-ember" : "text-ink"
+                    }`}
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              );
+            })}
           </motion.ul>
         )}
       </AnimatePresence>

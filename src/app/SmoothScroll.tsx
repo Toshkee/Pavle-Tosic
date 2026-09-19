@@ -2,6 +2,8 @@
 
 import { memo, useEffect } from "react";
 import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 declare global {
   interface Window {
@@ -30,6 +32,13 @@ function SmoothScroll() {
     // and the Terminal's in-page nav; only the wheel-easing is dropped.
     const lenis = new Lenis({ lerp: 0.1, smoothWheel: false });
     window.__lenis = lenis;
+
+    // One scroll source: Lenis virtualizes the scroll, so gsap's
+    // ScrollTrigger (used by Hero's parallax and Features' pinning) has to
+    // be told to recompute on Lenis's own scroll event instead of the
+    // native window one it listens to by default.
+    gsap.registerPlugin(ScrollTrigger);
+    lenis.on("scroll", ScrollTrigger.update);
 
     let raf = 0;
     const loop = (time: number) => {
