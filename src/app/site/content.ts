@@ -8,8 +8,8 @@ import { EMAIL } from "../contact";
 export const NAME = "Pavle Tošić";
 export const ROLE = "Software developer";
 export const LOCATION = "Montenegro";
-// An in-site page (src/app/cv/page.tsx), not a PDF download: a recruiter who
-// clicks it stays on the site and can still save it as a PDF from there.
+// The one-page CV as a PDF in public/, opened in a new tab by the nav "CV"
+// button and the contact list.
 export const RESUME = "/pavle-tosic-cv.pdf";
 
 export const SOCIAL = {

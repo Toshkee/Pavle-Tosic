@@ -51,7 +51,7 @@ export default function Field() {
   const shown = CLIENT[active] ?? CLIENT[0];
 
   return (
-    <Section id="field" label="Client work">
+    <Section id="clients" label="Client work">
       <Heading lead="Paid freelance sites, both bilingual, both static, both on Cloudflare. Shipped September 2026.">
         Client work
       </Heading>

@@ -98,7 +98,7 @@ export default function Features() {
   }, []);
 
   return (
-    <Section id="features" label="Work">
+    <Section id="work" label="Work">
       <Heading lead="Three solo builds, each rebuilt from scratch in 2026 and live at a real URL. The videos are the actual apps.">
         Work
       </Heading>

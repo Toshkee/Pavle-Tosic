@@ -17,7 +17,7 @@ export default function Inside() {
   const onTheJob = [...MARKS[1].marks, ...MARKS_SIDE];
 
   return (
-    <Section id="inside" label="Stack" className="!py-[8svh] md:!py-[10svh]">
+    <Section id="stack" label="Stack" className="!py-[8svh] md:!py-[10svh]">
       <Heading lead={STACK_LINE}>Stack</Heading>
       <div className="glass glass-panel glass-dark p-6 md:p-10 lg:p-12">
         <div className="inside-reveal grid gap-10 lg:grid-cols-[minmax(240px,320px)_1fr] lg:items-center lg:gap-14">

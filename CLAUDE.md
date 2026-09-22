@@ -24,17 +24,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev      # Start dev server (Next.js, localhost:3000)
-npm run build    # Production build
-npm start        # Serve the production build locally
-npm run lint     # ESLint (flat config via eslint-config-next)
+npm run dev          # Start dev server (Next.js, localhost:3000)
+npm run build        # Production build
+npm start            # Serve the production build locally
+npm run lint         # ESLint (flat config via eslint-config-next)
+npm run typecheck    # tsc --noEmit
+npm run check:site   # Post-build smoke check against a running server (routes, canonicals, JSON-LD, security headers, internal links)
+npm run check:metadata  # Fails if any image in public/ still carries EXIF/XMP metadata
 ```
 
-No test suite configured.
+No test suite configured. CI (`.github/workflows/ci.yml`) runs audit, metadata check, lint, typecheck, build, the smoke check against `next start`, and a three-run Lighthouse budget (`scripts/lighthouse-budget.mjs`: accessibility, best-practices and SEO floors plus FCP/CLS/TBT ceilings; the performance score is printed, not gated).
 
 ## Deployment
 
-Deployed to **Cloudflare Workers** via `@opennextjs/cloudflare` + `wrangler`. The worker name is `my-portofolio` (note the misspelling — kept intentionally; renaming requires updating Cloudflare config). Deploy flow:
+Deployed to **Cloudflare Workers** via `@opennextjs/cloudflare` + `wrangler`. The worker name is `my-portofolio` (note the misspelling: kept intentionally; renaming requires updating Cloudflare config). Deploy flow:
 
 ```bash
 npm run deploy    # opennextjs-cloudflare build && opennextjs-cloudflare deploy
@@ -52,47 +55,57 @@ Requires **Node 22+** (wrangler refuses to run on 20).
 Config lives in `open-next.config.ts` and `wrangler.jsonc`. The OpenNext config
 sets `incrementalCache: staticAssetsIncrementalCache`, which serves that
 prerendered output from the `ASSETS` binding under `cdn-cgi/_next_cache`. It is
-read-only by design — nothing on this site revalidates.
+read-only by design: nothing on this site revalidates. Everything under
+`public/` ships as a static asset, so keep it to files the site references.
 
 ## Stack
 
-- **Next.js 16** + **React 19** (App Router) with TypeScript
-- **Tailwind CSS v4** — configured via `postcss.config.mjs`, no `tailwind.config.*` needed
-- **Framer Motion** — primary animation library
-- **GSAP** — available but currently unused
-- **Lenis** (`@studio-freight/lenis`) — smooth scroll, available but currently unused
-- **react-icons** (Si* icons from `react-icons/si`)
-- **Fonts** — Geist Sans + Geist Mono loaded via `next/font/google` in `layout.tsx`
+- **Next.js 16** + **React 19** (App Router) with TypeScript. Server components by default; only leaves that need the browser are `"use client"`.
+- **Tailwind CSS v4** via `postcss.config.mjs`; design tokens live in the `@theme` block of `src/app/globals.css`, no `tailwind.config.*`.
+- **framer-motion**: the one animation runtime (nav pill, hero parallax scrub, Work card scale, Log rail). GSAP and Lenis were removed; scroll is native with `scroll-behavior: smooth` and `section { scroll-margin-top }`.
+- **@iconify/react** + **@iconify-json/logos** for the real brand marks in the Stack section (`src/app/site/icons.ts` registers the bundled set).
+- **@number-flow/react** for the counting KPI numbers on the Work cards.
+- **Fonts**: Nippo (display, self-hosted under the ITF Free Font License in `src/app/fonts/`, weights 500 and 700) via `next/font/local` in `layout.tsx`; body copy is the system font stack. The site's only webfont.
+- `next.config.ts` sets the security headers and CSP (allowlisted origins for the Binance stream, the contributions API and Cloudflare analytics) and `images.unoptimized: true` (no image optimizer on Workers, so plain `<img>` is deliberate).
 
 ## Architecture
 
-This is a single-page portfolio. All content lives in `src/app/page.tsx` as one large `"use client"` file — data arrays (`TECH`, `PROJECTS`, `VOYAGE`) are defined at the top, followed by small component functions, then the default export assembles them into sections.
+`src/app/page.tsx` is a thin server shell that composes the home page from `src/app/site/`, top to bottom:
 
-**Sections (rendered top to bottom)** — each is identified by a DOM `id` used for nav and `useActiveSection`:
-1. `#wanted` — hero with One Piece wanted-poster aesthetic, cinematic sky/dawn animation
-2. `#journey-transition` — transition scene leading into the journey
-3. `#journey` — "first island" / About section with parchment poster and tech stack grid
-4. `#voyage` — experience timeline (uses the `VOYAGE` data array)
-5. `#crew` — projects/tech showcase (includes inline gameplay videos: `cs2.mp4`, `gaming.mp4`)
-6. `#contact` — contact section
+| Section id | Component | Notes |
+|---|---|---|
+| `top` | `Hero.tsx` | Osmo parallax port: 120% stage, looping night-sky video (1080p desktop, 720p phones, picked in JS), name rising letter by letter via a CSS keyframe. Video plays only while on screen. |
+| `about` | `Spec.tsx` | Portrait, the live site's copy, a checkable spec sheet. |
+| `work` | `Features.tsx` | Three solo builds as GitLab-style sticky stacking cards (pin + scale at `lg` only); one demo `<video>` decodes at a time; `MarketStrip.tsx` streams three Binance spot pairs on the CryptoFlow card. |
+| `clients` | `Field.tsx` | Client sites as a ruled index with a hover-driven screenshot plate. |
+| `stack` | `Inside.tsx` | `StackOrbit.tsx` (two counter-rotating CSS rings), `StackMarquee.tsx` (CSS keyframe marquee), `GitHubActivity.tsx` (contribution heatmap fetched once at build time, with a plain profile link as fallback). |
+| `log` | `Log.tsx` | Experience, with a scroll-linked ember progress rail. |
+| `contact` | `Order.tsx` | Email CTA plus GitHub / LinkedIn / CV links. |
+| | `Footer.tsx`, `Nav.tsx` | Floating glass nav with an IntersectionObserver active pill and a phone menu. |
+| | `MorphBackdrop.tsx` | Fixed full-viewport WebGL backdrop: one Montenegro photo per section, a noise burn-through morph on section change, a still between morphs. `<img>` cross-fade fallback mounts only if WebGL fails. Keyed by the section ids above. |
 
-`page.tsx` is ~3000 lines and contains many inline SVG scenes (gradients, patterns, island/mountain shapes). When editing visuals, expect dense SVG markup mixed with Framer Motion animations.
+`Section.tsx` is the shared section frame and heading (`HeadingReveal.tsx` does the word-level mask reveal). Section ids are referenced by `Nav.tsx`, `Footer.tsx` and the `slides` list in `page.tsx`; keep all three in sync when adding or renaming a section.
 
-**Supporting files:**
-- `src/app/layout.tsx` — root layout; sets `<html lang="en">`, metadata (OG, Twitter cards, `metadataBase: pavletosic.com`), font CSS variables
-- `src/app/useActiveSection.ts` — `IntersectionObserver`-based hook to track which section is currently in view (used for nav highlighting)
-- `src/app/globals.css` — global styles including custom CSS classes like `.poster-parchment`, `.spotlight`, `.particles` used heavily in `page.tsx`
-- `public/images/` — One Piece character images (luffy.jpg, zoro.jpg, etc.) and profile photos referenced by name in `page.tsx`
+**Data:**
+- `src/app/projects.ts`: the five projects, case-study text, KPIs and gallery. Single source of truth for the Work and Client work sections and for the crawlable case studies under `/work` and `/work/[slug]` (server components, prerendered via `generateStaticParams`).
+- `src/app/site/content.ts`: name, role, links, About copy, spec sheet, stack marks and the experience log. Honesty rules are written into the comments there (a contribution is called a contribution, a prototype a prototype).
+- `src/app/contact.ts`: the email address, shared with the JSON-LD in `layout.tsx`.
 
-## Design Theme
+**Other routes:** `/privacy`, `robots.ts`, `sitemap.ts` (generated from `PROJECTS`), `not-found.tsx`. The old terminal, Ask AI API route and lab route no longer exist.
 
-One Piece anime aesthetic throughout — sections are framed as "arcs" and "ports", the hero is a "wanted poster", experience entries use `VOYAGE` arc naming. All visual styling uses warm parchment/amber tones for the poster and deep ocean/night gradients for backgrounds.
+## Design
+
+Near-black glass over photography. Tokens in `globals.css`: near-black surfaces, white type, silver tonal accents and a single colour, ember (`--color-ember`), rationed to the primary CTA, the active nav pill, the Log rail and the GitHub heatmap ramp. Glass is `.glass` (material, no filter) plus `.glass-blur` (the real `backdrop-filter`), and `.glass-blur` is only on the nav and the About panel; everything else is unblurred glass on a deeper fill, because the backdrop is a live canvas under sticky cards.
+
+`docs/slop.md` is the anti-slop design law this concept was built against, and `docs/research/new-concept-research.md` is the research brief behind it. 21st.dev components (Osmo parallax, Morph Gallery, Magic UI orbiting circles, logo marquee, text-reveal mask, liquid-glass recipe, footer-16) were ported by hand and are credited by URL in each component's top comment; nothing is installed from the registry.
+
+Motion rules that every component follows: content is visible by default (no entrance gated on JS, no `opacity: 0` starts), transforms and opacity only, and every animation is gated on `prefers-reduced-motion`.
 
 ## Notes
 
-- `section` elements get `scroll-margin-top: 110px` globally (in `globals.css`) to account for sticky nav offset
-- Section IDs are used by `useActiveSection` — keep them in sync if adding nav items
-- This is a `"use client"` page; if you split components out, be deliberate about the client/server boundary (Next.js 16 App Router defaults to server)
+- `section` elements get `scroll-margin-top: 88px` globally to clear the floating nav.
+- Playful measurements live in the components' comments (bytes, contrast ratios, why a threshold is what it is). Update the comment when you change the number.
+- `scripts/check-site.mjs` runs against a live server; point it at production with `BASE=https://pavletosic.com node scripts/check-site.mjs`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

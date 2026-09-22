@@ -4,8 +4,8 @@ import Link from "next/link";
    wordmark, one row of site links, a rule, then legal and copyright. No
    contact links here, those live in Order, one scroll up. */
 const SITE_LINKS = [
-  { href: "#spec", label: "About" },
-  { href: "#features", label: "Work" },
+  { href: "#about", label: "About" },
+  { href: "#work", label: "Work" },
   { href: "#log", label: "Log" },
   { href: "/work", label: "Case studies" },
 ];

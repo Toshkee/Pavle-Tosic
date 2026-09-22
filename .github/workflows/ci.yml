@@ -37,7 +37,7 @@ jobs:
       # silently: routes, canonicals, JSON-LD, security headers, dead links.
       - name: Start the production server
         run: |
-          GEMINI_API_KEY=security-smoke-test npm start &
+          npm start &
           npx --no-install wait-on http://localhost:3000 --timeout 60000
       - run: npm run check:site
 

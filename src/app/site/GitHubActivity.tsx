@@ -32,7 +32,24 @@ const LEVEL_MIX: Record<number, number> = { 1: 28, 2: 52, 3: 76, 4: 100 };
 
 export default async function GitHubActivity() {
   const data = await getContributions();
-  if (!data) return null;
+  // The heatmap is a build-time nicety; the profile link is the fact. If the
+  // contributions API was unreachable when this build ran, keep the link so
+  // the section never silently loses its GitHub line.
+  if (!data) {
+    return (
+      <p className="inside-reveal mt-10 text-[13px] text-faint">
+        Commits, games and experiments in the open on{" "}
+        <a
+          href={`https://github.com/${GITHUB_USER}`}
+          target="_blank"
+          rel="noreferrer"
+          className="link-underline text-body hover:text-ink"
+        >
+          github.com/{GITHUB_USER}
+        </a>
+      </p>
+    );
+  }
 
   const { contributions, total } = data;
   const totalLastYear = total.lastYear ?? Object.values(total)[0] ?? 0;

@@ -5,12 +5,12 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { RESUME } from "./content";
 
 const LINKS = [
-  { href: "#spec", label: "About" },
-  { href: "#features", label: "Work" },
-  { href: "#field", label: "Client work" },
-  { href: "#inside", label: "Stack" },
+  { href: "#about", label: "About" },
+  { href: "#work", label: "Work" },
+  { href: "#clients", label: "Client work" },
+  { href: "#stack", label: "Stack" },
   { href: "#log", label: "Log" },
-  { href: "#order", label: "Contact" },
+  { href: "#contact", label: "Contact" },
 ];
 
 const SECTION_IDS = LINKS.map((l) => l.href.slice(1));
@@ -59,9 +59,9 @@ export default function Nav() {
     >
       <nav
         aria-label="Primary"
-        className="glass glass-pill glass-dark flex h-12 w-full max-w-[880px] items-center justify-between pl-5 pr-2"
+        className="glass glass-blur glass-pill glass-dark flex h-12 w-full max-w-[880px] items-center justify-between pl-5 pr-2"
       >
-        <a href="#reveal" className="font-display text-[15px] font-medium tracking-[0.02em] text-ink" onClick={() => setOpen(false)}>
+        <a href="#top" className="font-display text-[15px] font-medium tracking-[0.02em] text-ink" onClick={() => setOpen(false)}>
           Pavle Tošić
         </a>
         <ul className="flex items-center gap-1 text-[13px] text-body">
@@ -119,7 +119,7 @@ export default function Nav() {
             animate={{ y: 0, scale: 1 }}
             exit={{ y: -8, scale: 0.98, opacity: 0 }}
             transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="glass glass-panel glass-dark mt-2 w-full max-w-[880px] p-2 md:hidden"
+            className="glass glass-blur glass-panel glass-dark mt-2 w-full max-w-[880px] p-2 md:hidden"
           >
             {LINKS.map((l) => {
               const isActive = active === l.href.slice(1);

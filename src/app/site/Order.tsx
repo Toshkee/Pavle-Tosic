@@ -11,7 +11,7 @@ const LINKS = [
 export default function Order() {
   return (
     <section
-      id="order"
+      id="contact"
       aria-label="Contact"
       className="relative z-[1] overflow-hidden"
     >

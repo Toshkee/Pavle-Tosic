@@ -1,4 +1,3 @@
-import SmoothScroll from "./SmoothScroll";
 import Nav from "./site/Nav";
 import Hero from "./site/Hero";
 import Spec from "./site/Spec";
@@ -19,18 +18,17 @@ export default function Home() {
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <SmoothScroll />
       <Nav />
       {/* Montenegro, dusk to night, one photo per section. Unsplash License
           (free for commercial use): Vadym Merzlikin, Gunnar Kaplick,
           Sebastien Devocelle, Eirik Skarstein, Sergio. */}
       <MorphBackdrop
         slides={[
-          { src: "/images/morph/kotor-night.webp", small: "/images/morph/kotor-night-sm.webp", sectionId: "spec" },
-          { src: "/images/morph/bay-haze.webp", small: "/images/morph/bay-haze-sm.webp", sectionId: "features" },
-          { src: "/images/morph/perast-dusk.webp", small: "/images/morph/perast-dusk-sm.webp", sectionId: "field" },
+          { src: "/images/morph/kotor-night.webp", small: "/images/morph/kotor-night-sm.webp", sectionId: "about" },
+          { src: "/images/morph/bay-haze.webp", small: "/images/morph/bay-haze-sm.webp", sectionId: "work" },
+          { src: "/images/morph/perast-dusk.webp", small: "/images/morph/perast-dusk-sm.webp", sectionId: "clients" },
           { src: "/images/morph/bay-sunrise.webp", small: "/images/morph/bay-sunrise-sm.webp", sectionId: "log" },
-          { src: "/images/morph/bay-sunset.webp", small: "/images/morph/bay-sunset-sm.webp", sectionId: "order" },
+          { src: "/images/morph/bay-sunset.webp", small: "/images/morph/bay-sunset-sm.webp", sectionId: "contact" },
         ]}
       />
       <main id="main" className="relative">

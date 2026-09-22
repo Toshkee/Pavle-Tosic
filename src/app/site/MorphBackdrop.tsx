@@ -1,18 +1,25 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* The "Morph Gallery" (21st.dev/@kedhareswer/components/morph-gallery)
    turned into a page backdrop: the same WebGL noise burn-through between
    photos, the same easing, aspect-cover and edge mirroring, with no arrows,
-   thumbnails, autoplay or swipe. On top of that each photo drifts: a slow
-   zoom and pan (about 6% over a minute) so the backdrop is never a still.
-   Which photo shows is decided by one IntersectionObserver per section (the
-   section owning the middle of the viewport wins); scrolling into the next
-   section runs the morph. It draws at 30 fps only while a section is on
-   screen and the tab is visible, never while the hero covers the viewport,
-   and falls back to cross-fading <img>s with a CSS drift without WebGL.
-   Under reduced motion there is no drift and the swap is a cut.
+   thumbnails, autoplay or swipe. Which photo shows is decided by one
+   IntersectionObserver per section (the section owning the middle of the
+   viewport wins); scrolling into the next section runs the morph.
+
+   The canvas only draws DURING a morph (1.5 s per section change) and then
+   stops: at rest it is a still, so the glass panels above it are not
+   re-blurred every frame. (An earlier cut drifted the photo at 30 fps; over
+   a dozen backdrop-filter surfaces that meant a full-screen blur pass 30
+   times a second, the exact cost 21st.dev's own "what the effect costs"
+   note warns about.) Each photo keeps a fixed per-slide framing (a slight
+   zoom and offset) so two adjacent slides never sit identically. Never
+   draws while the hero covers the viewport or the tab is hidden. Without
+   WebGL it falls back to cross-fading <img>s, which are only mounted once
+   WebGL has actually failed so they never preload on the happy path. Under
+   reduced motion the swap is a cut.
 
    The photos are Unsplash-licensed shots of Montenegro, credited in
    page.tsx. Phones get the 1200 px cut so the five textures stay small. */
@@ -69,23 +76,14 @@ void main() {
 `;
 
 const DURATION = 1500, NOISE_SCALE = 3.5, EDGE = 0.15, DRIFT = 0.5;
-const FPS = 30;
 const ease = (t: number) => (t < 0.5 ? 16 * t ** 5 : 1 - (-2 * t + 2) ** 5 / 2);
 
-/* Slow, never-repeating drift for slide i at time t (seconds): zoom between
-   1.0 and 1.12, pan within a few percent. Each slide has its own phase so
-   two photos never move in step. These are five still photos, not the
-   moving footage originally briefed (see MorphBackdrop's top comment); at
-   the smaller amplitude this read as a static photo at rest (two frames 5s
-   apart differed by ~1.4/255 on average). Raised so the drift is plainly
-   visible without turning into a Ken Burns effect. */
-function driftAt(i: number, t: number): [number, number, number] {
+/* Fixed framing for slide i: zoom between 1.0 and 1.12 and an offset of a
+   few percent, phased per slide so no two photos share a crop. Constant on
+   purpose (no time term): the backdrop is a still between morphs. */
+function framingOf(i: number): [number, number, number] {
   const p = i * 1.7;
-  return [
-    1.06 + 0.06 * Math.sin(t * 0.09 + p),
-    0.04 * Math.sin(t * 0.031 + p * 2.1),
-    0.04 * Math.cos(t * 0.027 + p * 0.7),
-  ];
+  return [1.06 + 0.06 * Math.sin(p), 0.04 * Math.sin(p * 2.1), 0.04 * Math.cos(p * 0.7)];
 }
 
 function compile(gl: WebGLRenderingContext, type: number, src: string) {
@@ -102,14 +100,19 @@ const load = (src: string) =>
 
 export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fallbackRef = useRef<HTMLDivElement>(null);
+  // The <img> fallback exists only once WebGL has failed. Rendering it up
+  // front (even at opacity 0) made React hoist a high-priority preload for
+  // every slide into the document head: 2.5 MB of photos fetched before the
+  // first scroll, under a hero that covers them completely.
+  const [fallbackOn, setFallbackOn] = useState(false);
+  const [fallbackIdx, setFallbackIdx] = useState(0);
 
   useEffect(() => {
-    const canvas = canvasRef.current, fallback = fallbackRef.current;
-    if (!canvas || !fallback || slides.length === 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas || slides.length === 0) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const phone = window.matchMedia("(max-width: 767px)").matches;
-    const hero = document.getElementById("reveal");
+    const hero = document.getElementById("top");
 
     // ---- WebGL
     const gl = (canvas.getContext("webgl", { alpha: false, antialias: false }) ??
@@ -120,13 +123,7 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
     const aspect = slides.map(() => 1);
     const u: Record<string, WebGLUniformLocation | null> = {};
     let wanted = 0, from = 0, to = 0, progress = 1, startedAt = 0, dir = 1, raf = 0, dead = false;
-    let lastDraw = 0;
     let covered = true; // hero over the viewport
-    const t0 = performance.now();
-
-    const showFallback = (i: number) => {
-      Array.from(fallback.children).forEach((c, k) => ((c as HTMLElement).style.opacity = k === i ? "1" : "0"));
-    };
 
     const resize = () => {
       // 1x is plenty for a blurred-by-scrim backdrop and halves the fill cost
@@ -135,20 +132,21 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
       if (w && h && (canvas.width !== w || canvas.height !== h)) { canvas.width = w; canvas.height = h; gl?.viewport(0, 0, w, h); }
     };
 
-    const draw = (now: number) => {
+    const draw = () => {
       if (!gl || !program) return;
       const a = tex[from], b = tex[to];
       if (!a || !b) return;
-      const t = reduced ? 0 : (now - t0) / 1000;
       gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, a); gl.uniform1i(u.from, 0);
       gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, b); gl.uniform1i(u.to, 1);
       gl.uniform1f(u.progress, progress); gl.uniform2f(u.resolution, canvas.width, canvas.height);
       gl.uniform1f(u.fromAspect, aspect[from]); gl.uniform1f(u.toAspect, aspect[to]);
-      gl.uniform3fv(u.fromDrift, driftAt(from, t)); gl.uniform3fv(u.toDrift, driftAt(to, t));
+      gl.uniform3fv(u.fromDrift, framingOf(from)); gl.uniform3fv(u.toDrift, framingOf(to));
       gl.uniform1f(u.scale, NOISE_SCALE); gl.uniform1f(u.direction, dir); gl.uniform1f(u.edge, EDGE); gl.uniform1f(u.drift, DRIFT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
+    // One frame per call while a morph is in flight, then a final still and
+    // silence: nothing re-arms until the next go() / resize / visibility change.
     const frame = (now: number) => {
       raf = 0;
       if (dead || document.hidden || covered) return;
@@ -157,9 +155,8 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
         progress = ease(Math.min(t, 1));
         if (t >= 1) { progress = 1; from = to; }
       }
-      // a morph runs at full rate, the idle drift at FPS, reduced motion draws once
-      if (progress < 1 || now - lastDraw >= 1000 / FPS) { lastDraw = now; draw(now); }
-      if (progress < 1 || !reduced) raf = requestAnimationFrame(frame);
+      draw();
+      if (progress < 1) raf = requestAnimationFrame(frame);
     };
     const kick = () => { if (!raf && !document.hidden && !covered) raf = requestAnimationFrame(frame); };
 
@@ -181,7 +178,9 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
       if (i === wanted) return;
       dir = i > wanted ? 1 : -1;
       wanted = i;
-      if (!useGL) { showFallback(i); return; }
+      if (!useGL) { setFallbackIdx(i); return; }
+      // the wanted slide and the one after it, so the next morph is ready
+      ensure(i); ensure(i + 1);
       const target = nearestReady(i);
       if (reduced || covered) { from = to = target; progress = 1; kick(); return; }
       from = progress < 1 ? from : to; // mid-flight: restart from the current source
@@ -211,6 +210,16 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
         tex[i] = t; aspect[i] = img.naturalWidth / Math.max(img.naturalHeight, 1);
       });
 
+    // Textures load one section ahead of the visitor, not all at once: the
+    // five desktop photos are 2.5 MB, and a visitor who leaves from the hero
+    // should not have paid for the contact section's sunset.
+    const requested = new Set<number>();
+    const ensure = (i: number) => {
+      if (i < 0 || i >= slides.length || requested.has(i)) return;
+      requested.add(i);
+      uploadTexture(i).then(() => { if (!dead) onReady(i); });
+    };
+
     // requestIdleCallback isn't in Safari; setTimeout is an adequate "after
     // the important stuff" stand-in there.
     const whenIdle = (fn: () => void) =>
@@ -233,24 +242,20 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
           gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 
           // Only the first slide (what's on screen at load) blocks first
-          // paint. The other four (2 MB+ of textures) load once the browser
-          // is idle instead of all five racing the initial mount.
+          // paint; the second follows once the browser is idle, and each
+          // later one is requested as the visitor reaches the section before
+          // it (see ensure()).
+          requested.add(0);
           await uploadTexture(0);
           if (dead) return;
           ready.add(0);
           resize(); canvas.style.opacity = "1";
           from = to = wanted; progress = 1; kick();
 
-          whenIdle(() => {
-            if (dead) return;
-            slides.forEach((_, i) => {
-              if (i === 0) return;
-              uploadTexture(i).then(() => { if (!dead) onReady(i); });
-            });
-          });
+          whenIdle(() => { if (!dead) { ensure(wanted); ensure(wanted + 1); } });
         } catch { useGL = false; }
       }
-      if (!useGL) { fallback.style.opacity = "1"; showFallback(wanted); }
+      if (!useGL) { setFallbackIdx(wanted); setFallbackOn(true); }
     })();
 
     // ---- which slide is wanted: the section that owns the middle of the viewport
@@ -288,19 +293,22 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-bg">
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" style={{ opacity: 0, transition: "opacity 400ms ease" }} />
-      <div ref={fallbackRef} className="absolute inset-0" style={{ opacity: 0 }}>
-        {slides.map((s, i) => (
-          <img
-            key={s.src}
-            src={s.src}
-            srcSet={`${s.small} 1200w, ${s.src} 2400w`}
-            sizes="100vw"
-            alt=""
-            className="morph-drift absolute inset-0 h-full w-full object-cover"
-            style={{ opacity: 0, transition: "opacity 700ms ease", maxWidth: "none", animationDelay: `${-i * 13}s` }}
-          />
-        ))}
-      </div>
+      {fallbackOn && (
+        <div className="absolute inset-0">
+          {slides.map((s, i) => (
+            <img
+              key={s.src}
+              src={s.src}
+              srcSet={`${s.small} 1200w, ${s.src} 2400w`}
+              sizes="100vw"
+              alt=""
+              loading={i === fallbackIdx ? "eager" : "lazy"}
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ opacity: i === fallbackIdx ? 1 : 0, transition: "opacity 700ms ease", maxWidth: "none" }}
+            />
+          ))}
+        </div>
+      )}
       {/* legibility: the photos sit under a dark scrim, the panels do the rest.
           Kept light (20%, was 35%) so the glass panels read as translucent
           over the photo instead of a flat grey wash; .glass-dark-deep

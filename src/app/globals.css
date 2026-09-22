@@ -111,22 +111,6 @@ section {
   text-decoration-color: currentColor;
 }
 
-/* ================= LENIS SMOOTH SCROLL ================= */
-
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-smooth [data-lenis-prevent] {
-  overscroll-behavior: contain;
-}
-.lenis.lenis-stopped {
-  overflow: hidden;
-}
-
 /* ================= GLASS ================= */
 
 /* [glass task] iOS-26 "liquid glass" material, lighter and more translucent
@@ -142,8 +126,19 @@ html.lenis body {
    for our dark theme; cult-ui's actual glass-effect mechanism is an SVG
    feTurbulence displacement filter, which we deliberately do NOT take
    (perf-hostile, and this site avoids SVG displacement filters). Used for
-   the nav, the about / log / contact panels and small controls. Blur is
-   capped at 26px and every surface is paint-contained.
+   the nav, the about / log / contact panels and small controls, and every
+   surface is paint-contained.
+
+   The real backdrop-filter is rationed: .glass is the material (fill, lip,
+   edge, shadow, sheen) with NO filter, and .glass-blur adds the blur. Only
+   the nav bar (always over the raw photo, small) and the About panel (the
+   first panel, the signature moment) carry .glass-blur. The Work cards,
+   Client work, Stack, Log, Contact, the footer and every chip are unblurred
+   glass on a deeper fill. Reason: the backdrop is a full-viewport WebGL
+   canvas under a stack of sticky cards; a dozen blurred surfaces over it
+   meant a full-screen blur pass on every scrolled frame (the research
+   brief's own rule was ONE blurred surface, never over moving media). Blur
+   radius is 18px: past ~20px nobody can tell, and the cost scales with it.
 
    --glass-fill / --glass-fill-strong only ever sit on chips nested INSIDE
    an already dark-tinted panel (see .glass-btn / .glass-strong usage), so
@@ -157,9 +152,15 @@ html.lenis body {
 :root {
   --glass-fill: rgba(255, 255, 255, 0.14);
   --glass-fill-strong: rgba(255, 255, 255, 0.16);
-  --glass-dark-fill: rgba(24, 24, 29, 0.56);
-  --glass-dark-deep-fill: rgba(20, 20, 24, 0.72);
-  --glass-blur: 26px;
+  /* blurred surfaces can run translucent: the blur does the legibility work */
+  --glass-dark-fill-blur: rgba(24, 24, 29, 0.56);
+  --glass-dark-deep-fill-blur: rgba(20, 20, 24, 0.72);
+  /* unblurred surfaces sit over a crisp photo, so they carry more fill;
+     text-ink/80 stays above 4.5:1 against them by the WCAG formula even
+     over the brightest sunset slide */
+  --glass-dark-fill: rgba(24, 24, 29, 0.84);
+  --glass-dark-deep-fill: rgba(20, 20, 24, 0.9);
+  --glass-blur: 18px;
   --glass-saturate: 180%;
   --glass-lip: rgba(255, 255, 255, 0.6);
   --glass-edge: rgba(255, 255, 255, 0.14);
@@ -168,7 +169,6 @@ html.lenis body {
 
 .glass {
   background: var(--glass-sheen), var(--glass-fill);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow:
     inset 0 1px 0 0 var(--glass-lip),
     inset 0 0 0 1px var(--glass-edge),
@@ -176,6 +176,10 @@ html.lenis body {
     0 14px 34px rgba(0, 0, 0, 0.3);
   contain: paint;
   transition: background-color 0.18s ease;
+}
+/* The one real blur. Nav and the About panel only, see the note above. */
+.glass-blur {
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 .glass-strong {
   background-color: var(--glass-fill-strong);
@@ -186,14 +190,19 @@ html.lenis body {
 .glass-dark {
   background-color: var(--glass-dark-fill);
 }
+.glass-blur.glass-dark {
+  background-color: var(--glass-dark-fill-blur);
+}
 /* A touch deeper than .glass-dark, for the panels carrying long paragraphs
    of running text (About, Log, Client work, Contact) rather than a card of
-   short labels: over MorphBackdrop's lighter 20% scrim those panels were
-   reading as a flat grey wash with the photo barely legible through them.
-   Nav, Footer, and the Work/Stack panels stay on the lighter .glass-dark so
-   the photo still shows through their shorter runs of text. */
+   short labels. Footer and the Work/Stack panels stay on the lighter
+   .glass-dark so a little of the photo still shows through their shorter
+   runs of text. */
 .glass-dark-deep {
   background-color: var(--glass-dark-deep-fill);
+}
+.glass-blur.glass-dark-deep {
+  background-color: var(--glass-dark-deep-fill-blur);
 }
 .glass-pill {
   border-radius: 999px;
@@ -210,7 +219,7 @@ html.lenis body {
 }
 
 @supports not (backdrop-filter: blur(1px)) {
-  .glass {
+  .glass-blur {
     background: rgba(24, 24, 29, 0.96);
   }
 }
@@ -220,6 +229,8 @@ html.lenis body {
     --glass-fill-strong: rgba(30, 30, 36, 0.97);
     --glass-dark-fill: rgba(18, 18, 22, 0.97);
     --glass-dark-deep-fill: rgba(16, 16, 19, 0.98);
+    --glass-dark-fill-blur: rgba(18, 18, 22, 0.97);
+    --glass-dark-deep-fill-blur: rgba(16, 16, 19, 0.98);
     --glass-blur: 0px;
   }
 }
@@ -343,9 +354,27 @@ html.lenis body {
   padding: 0.06em 0.01em 0.02em; /* clear the cut: accents and descenders */
   margin: -0.06em -0.01em -0.02em;
 }
+/* The name rises letter by letter out of each clip: 115% down and 4deg
+   over, expo-out, 45 ms apart, after a 250 ms beat (Osmo's numbers, as a
+   CSS keyframe instead of a GSAP "from" tween so the text is never gated on
+   JS). --i is the letter's index across both words (Hero.tsx). */
 .parallax__title .letter {
   display: inline-block;
-  will-change: transform;
+  animation: letter-rise 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(0.25s + var(--i, 0) * 0.045s);
+}
+@keyframes letter-rise {
+  from {
+    transform: translateY(115%) rotate(4deg);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .parallax__title .letter {
+    animation: none;
+  }
 }
 .parallax__fade {
   z-index: 30;
@@ -597,8 +626,11 @@ html.lenis body {
      to the track's max-content width and the row (and the overflow:hidden
      above) never actually clips. */
   min-width: 0;
-  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  /* 16% fade each side (was 10%): at desktop widths the narrower fade left
+     a half-cut chip readable at the left edge, which read as a bug rather
+     than a loop */
+  mask-image: linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
 }
 .marquee-track {
   display: flex;
@@ -627,18 +659,4 @@ html.lenis body {
   .marquee-track {
     animation: none;
   }
-}
-
-/* MorphBackdrop's no-WebGL fallback: the same slow drift the shader does. */
-@keyframes morph-drift {
-  0% { transform: scale(1.04) translate(0, 0); }
-  50% { transform: scale(1.1) translate(-1.2%, 0.8%); }
-  100% { transform: scale(1.04) translate(0, 0); }
-}
-.morph-drift {
-  animation: morph-drift 140s ease-in-out infinite;
-  will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-  .morph-drift { animation: none; }
 }
