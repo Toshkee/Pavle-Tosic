@@ -9,7 +9,7 @@ import { Section, Heading } from "./Section";
    an honest table instead of being padded out to match the rail above: year,
    name, one line of scope, the live link. On desktop the screenshot of the
    row under the pointer shows in a plate on the right. */
-const CLIENT = PROJECTS.filter((p) => p.video === null);
+const CLIENT = PROJECTS.filter((p) => p.kind === "client");
 
 /* Screenshots ship at 1600x1000 (16:10). A 640w "-thumb.webp" twin already
    exists per project (see thumbOf in projects.ts, also used by /work), reused

@@ -76,9 +76,9 @@ read-only by design: nothing on this site revalidates. Everything under
 |---|---|---|
 | `top` | `Hero.tsx` | Osmo parallax port: 120% stage, looping night-sky video (1080p desktop, 720p phones, picked in JS), name rising letter by letter via a CSS keyframe. Video plays only while on screen. |
 | `about` | `Spec.tsx` | Portrait, the live site's copy, a checkable spec sheet. |
-| `work` | `Features.tsx` | Three solo builds as GitLab-style sticky stacking cards (pin + scale at `lg` only); one demo `<video>` decodes at a time; `MarketStrip.tsx` streams three Binance spot pairs on the CryptoFlow card. |
-| `clients` | `Field.tsx` | Client sites as a ruled index with a hover-driven screenshot plate. |
-| `stack` | `Inside.tsx` | `StackOrbit.tsx` (two counter-rotating CSS rings), `StackMarquee.tsx` (CSS keyframe marquee), `GitHubActivity.tsx` (contribution heatmap fetched once at build time, with a plain profile link as fallback). |
+| `work` | `Features.tsx` | Every `kind: "build"` project as GitLab-style sticky stacking cards (pin + scale + dim at `lg` only; the cards are opaque on purpose, see `.stack-card` in globals.css); one demo `<video>` decodes at a time; `MarketStrip.tsx` streams three Binance spot pairs on the CryptoFlow card. |
+| `clients` | `Field.tsx` | `kind: "client"` projects as a ruled index with a hover-driven screenshot plate. |
+| `stack` | `Inside.tsx` | `StackOrbit.tsx` (two counter-rotating CSS rings), `StackMarquee.tsx` (ONE CSS keyframe marquee for "By choice", then still rows for "On the job" and "Off the clock"; one marquee per page is the rule), `GitHubActivity.tsx` (contribution heatmap fetched once at build time, with a plain profile link as fallback). |
 | `log` | `Log.tsx` | Experience, with a scroll-linked ember progress rail. |
 | `contact` | `Order.tsx` | Email CTA plus GitHub / LinkedIn / CV links. |
 | | `Footer.tsx`, `Nav.tsx` | Floating glass nav with an IntersectionObserver active pill and a phone menu. |
@@ -87,7 +87,7 @@ read-only by design: nothing on this site revalidates. Everything under
 `Section.tsx` is the shared section frame and heading (`HeadingReveal.tsx` does the word-level mask reveal). Section ids are referenced by `Nav.tsx`, `Footer.tsx` and the `slides` list in `page.tsx`; keep all three in sync when adding or renaming a section.
 
 **Data:**
-- `src/app/projects.ts`: the five projects, case-study text, KPIs and gallery. Single source of truth for the Work and Client work sections and for the crawlable case studies under `/work` and `/work/[slug]` (server components, prerendered via `generateStaticParams`).
+- `src/app/projects.ts`: the seven projects, case-study text, KPIs and gallery, each tagged `kind: "build" | "client"` (which home section shows it). Single source of truth for the Work and Client work sections and for the crawlable case studies under `/work` and `/work/[slug]` (server components, prerendered via `generateStaticParams`).
 - `src/app/site/content.ts`: name, role, links, About copy, spec sheet, stack marks and the experience log. Honesty rules are written into the comments there (a contribution is called a contribution, a prototype a prototype).
 - `src/app/contact.ts`: the email address, shared with the JSON-LD in `layout.tsx`.
 

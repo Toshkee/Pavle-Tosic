@@ -6,7 +6,7 @@
    circle in production (CSP is enforced there; only next dev is Report-
    Only). Generated once from @iconify-json/logos (devDependency, not
    imported at runtime) with a small script pulling just the 15 icon ids
-   MARKS/MARKS_SIDE in content.ts reference — not the full @iconify/json
+   MARKS in content.ts reference — not the full @iconify/json
    package, which bundles every icon set at several hundred MB. Re-run the
    same extraction if a new mark is added to content.ts. */
 "use client";

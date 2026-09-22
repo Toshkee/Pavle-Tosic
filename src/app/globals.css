@@ -522,6 +522,29 @@ section {
     --stack-step: 18px;
   }
 }
+/* Opaque on purpose. A stacked card has the previous card behind it, not
+   the photo, and on the .84 glass fill the card underneath's headline and
+   copy read straight through as ghost text. The sheen, lip and edge stay,
+   so it is still the same material as the other panels, just on the
+   solid plate. */
+.stack-card.glass-dark {
+  background-color: var(--color-plate);
+}
+/* The card under the one being read (Features.tsx sets data-covered from
+   its band observer). Only where cards pin and can actually be covered. */
+@media (min-width: 1024px) {
+  .stack-card > article {
+    transition: opacity 0.35s ease;
+  }
+  .stack-card[data-covered="true"] > article {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stack-card > article {
+    transition: none;
+  }
+}
 
 /* ================= INSIDE: STACK ENTRANCE (Inside.tsx, GitHubActivity.tsx) =================
    Replaces the old looping marquee. A single scroll-linked, one-time fade for
@@ -639,9 +662,6 @@ section {
   animation-name: marquee-x;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
-}
-.marquee-track[data-reverse="true"] {
-  animation-direction: reverse;
 }
 .marquee-row:hover .marquee-track,
 .marquee-row:focus-within .marquee-track {

@@ -38,8 +38,9 @@ export const SPEC: { label: string; value: string }[] = [
 ];
 
 /* Brand marks, grouped the way the Spec sheet groups them: tools picked
-   freely, and tools the day job runs on. `icon` is an Iconify id from the
-   coloured "logos" set, rendered by StackOrbit / StackMarquee. */
+   freely, tools the day job runs on, and the two game engines from personal
+   projects, which are neither. `icon` is an Iconify id from the coloured
+   "logos" set, rendered by StackOrbit / StackMarquee. */
 export type Mark = { name: string; icon: string };
 export type MarkGroup = { heading: string; marks: Mark[] };
 
@@ -67,12 +68,13 @@ export const MARKS: MarkGroup[] = [
       { name: "Oracle", icon: "logos:oracle" },
     ],
   },
-];
-
-/* Game engines from personal projects: one small line, not a third group. */
-export const MARKS_SIDE: Mark[] = [
-  { name: "Godot", icon: "logos:godot-icon" },
-  { name: "Unity", icon: "logos:unity" },
+  {
+    heading: "Off the clock",
+    marks: [
+      { name: "Godot", icon: "logos:godot-icon" },
+      { name: "Unity", icon: "logos:unity" },
+    ],
+  },
 ];
 
 export type LogEntry = {
@@ -109,7 +111,7 @@ export const LOG: LogEntry[] = [
       "420+ hours of full-time training across the stack, assessed on shipped projects rather than exams.",
     points: [
       "Frontend: JavaScript, React, HTML & CSS. Backend fundamentals, APIs, databases and security basics.",
-      "Three of the projects are in the Work section: all solo builds, each rebuilt in 2026 and live.",
+      "Four of the projects are in the Work section: three solo builds, each rebuilt in 2026 and live, and the one-week team sprint.",
     ],
   },
   {

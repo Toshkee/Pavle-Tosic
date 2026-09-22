@@ -10,7 +10,7 @@ import { PROJECTS, thumbOf } from "../projects";
 export const metadata: Metadata = {
   title: "Work — case studies | Pavle Tošić",
   description:
-    "Case studies for five projects: what the problem was, what I decided, what broke, and what shipped.",
+    "Case studies for seven projects: what the problem was, what I decided, what broke, and what shipped.",
   alternates: { canonical: "https://pavletosic.com/work" },
 };
 
@@ -29,7 +29,7 @@ export default function WorkIndex() {
         Work
       </h1>
       <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
-        Five projects, each with a case study: the problem it set out to solve,
+        Seven projects, each with a case study: the problem it set out to solve,
         the decisions behind it, what broke along the way, and what shipped.
       </p>
 

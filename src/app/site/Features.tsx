@@ -23,10 +23,10 @@ import NumberFlow from "@number-flow/react";
    video decoding: an IntersectionObserver (not scroll) tracks that, on
    every breakpoint. */
 
-const ORDER = ["cryptoflow", "ronin-duel", "arc-anime-tracker"];
-const FEATURED = ORDER.map((s) => PROJECTS.find((p) => p.slug === s)).filter(
-  (p): p is Project => Boolean(p)
-);
+/* The Work stack is every "build" in projects.ts, in data order: my own
+   studio first, then the bootcamp rebuilds, then the team sprint. Client
+   sites are Field.tsx's. */
+const FEATURED = PROJECTS.filter((p) => p.kind === "build");
 
 /* Whether the pin/scale mechanism is live (matches the lg breakpoint the
    CSS stack-card rule uses). useSyncExternalStore, not an effect + setState,
@@ -99,7 +99,7 @@ export default function Features() {
 
   return (
     <Section id="work" label="Work">
-      <Heading lead="Three solo builds, each rebuilt from scratch in 2026 and live at a real URL. The videos are the actual apps.">
+      <Heading lead="Five builds, all live: my studio's site and back office, three bootcamp projects rebuilt from scratch in 2026, and one team sprint. The videos are the actual apps.">
         Work
       </Heading>
       <div ref={containerRef} className="relative">
@@ -111,6 +111,7 @@ export default function Features() {
             count={FEATURED.length}
             progress={scrollYProgress}
             playing={i === active}
+            covered={active > i}
             cardRef={(el) => {
               cardRefs.current[i] = el;
             }}
@@ -127,6 +128,7 @@ function Card({
   count,
   progress,
   playing,
+  covered,
   cardRef,
 }: {
   project: Project;
@@ -134,6 +136,7 @@ function Card({
   count: number;
   progress: import("framer-motion").MotionValue<number>;
   playing: boolean;
+  covered: boolean;
   cardRef: (el: HTMLElement | null) => void;
 }) {
   const reduced = useReducedMotion();
@@ -153,6 +156,15 @@ function Card({
       ref={cardRef}
       data-index={index}
       className="stack-card glass glass-panel glass-dark mb-6 overflow-hidden lg:mb-10"
+      // Once the band observer has moved on to a later card, this one is
+      // under it: its content dims (globals.css, lg only) so the strip
+      // still showing above the next card reads as "behind", not as a
+      // second live headline. State-driven, not scroll-linked, because the
+      // container-progress slice above is only approximate per card (cards
+      // differ in height) and a card being read must never look dimmed.
+      // Aceternity's StickyScroll dims its inactive items the same way
+      // (21st.dev/@manuarora700/components/sticky-scroll-reveal).
+      data-covered={covered ? "true" : undefined}
       style={{ top: `calc(var(--stack-top) + ${index} * var(--stack-step))` }}
     >
       <motion.article

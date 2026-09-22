@@ -22,6 +22,10 @@ export type Project = {
   kpis: { label: string; value: string }[];
   role: string;
   context: string;
+  /** Which home-page section shows it: "build" is the Work stack (my own
+      products and the bootcamp rebuilds), "client" is the Client work index
+      (paid sites for someone else). The case-study routes take both. */
+  kind: "build" | "client";
   stack: string[];
   live: string;
   code: string;
@@ -32,6 +36,46 @@ export type Project = {
 };
 
 export const PROJECTS: Project[] = [
+  {
+    slug: "vaky",
+    title: "Vaky.me",
+    blurb:
+      "My own web studio's site and back office: a bilingual static Next.js export selling websites to local businesses, and Cloudflare Pages Functions behind it that take an enquiry through lead, project, private onboarding brief and build brief. No payments, no CMS.",
+    problem:
+      "A one-person studio needed a site that sells websites to Montenegrin restaurants, salons and gyms, and a way to take an enquiry through to a signed-off brief without email threads and spreadsheets.",
+    highlights: [
+      "Static Next.js 16 export in two languages, with 15 concept sites under /demo, each a real page",
+      "Pages Functions + D1 + R2: lead form, admin dashboard, single-use onboarding links that carry the package server-side",
+      "Three layers before a stranger's write: edge rate limit, honeypot, Turnstile; strict CSP from public/_headers",
+    ],
+    result: [
+      "Live at vaky.me, and two client sites listed on this page (Villa Vučje, Mandarina) came in through it.",
+      "A lead is stored first and emailed after, off the request: the database is the record and the inbox a courtesy, so a mail outage never loses an enquiry.",
+      "CI runs lint, both tsconfigs (site and Workers), the export, the Functions build, npm audit and an axe pass against the served export.",
+    ],
+    kpis: [
+      // find functions/api -name '*.ts' | wc -l
+      { label: "API endpoints", value: "24 Pages Functions" },
+      // ls src/app/\(me\)/demo | wc -l
+      { label: "concept sites", value: "15, each its own route" },
+      // gh api repos/Toshkee/Vaky.me/commits, created 25 Aug 2026
+      { label: "commits", value: "101 since August 2026" },
+    ],
+    role: "Solo build, own studio",
+    kind: "build",
+    context: "Vaky, since August 2026",
+    stack: ["Next.js 16", "TypeScript", "Cloudflare Pages Functions", "D1", "R2"],
+    live: "https://vaky.me/en/",
+    code: "https://github.com/Toshkee/Vaky.me",
+    shot: "/images/projects/vaky.webp",
+    video: null,
+    domain: "vaky.me",
+    gallery: [
+      { src: "/images/projects/vaky.webp", label: "Home" },
+      { src: "/images/projects/vaky-work.webp", label: "Live sites and concepts" },
+      { src: "/images/projects/vaky-concept.webp", label: "One of the 15 concepts" },
+    ],
+  },
   {
     slug: "cryptoflow",
     title: "CryptoFlow",
@@ -57,6 +101,7 @@ export const PROJECTS: Project[] = [
       { label: "leverage range", value: "1-125×, settled server-side" },
     ],
     role: "Solo build",
+    kind: "build",
     context: "General Assembly, rebuilt 2026",
     stack: ["React 19", "TypeScript", "Django REST", "WebSockets", "PostgreSQL"],
     live: "https://cryptofloww.netlify.app/",
@@ -68,6 +113,44 @@ export const PROJECTS: Project[] = [
       { src: "/images/projects/cryptoflow-terminal.webp", label: "Trading terminal" },
       { src: "/images/projects/cryptoflow-markets.webp", label: "Live markets" },
       { src: "/images/projects/cryptoflow-landing.webp", label: "Landing" },
+    ],
+  },
+  {
+    slug: "ronin-duel",
+    title: "Ronin Duel",
+    blurb:
+      "A juice-driven 2D fighting game in the browser: two dueling ronin, frame-accurate combat and an AI opponent. A vanilla-JS bootcamp prototype rebuilt into a tested, CI-deployed Phaser 4 game.",
+    problem:
+      "Make browser combat actually feel good, with weighty hits, a real AI opponent and game-feel polish, on top of a tested, production-grade codebase.",
+    highlights: [
+      "Hitboxes live only on active frames, backed by a unit-tested damage core",
+      "State-machine AI (Easy / Normal / Hard) or 2-player local",
+      "Hitstop, screen shake, knockback, slow-mo KO and Web Audio sound",
+    ],
+    result: [
+      "Splitting the rules engine out of the renderer made the combat core testable in plain node: hit math, chip damage and round rules run without Phaser or a DOM.",
+      "One swing used to damage on every overlapping frame; hitboxes now live only on the attack's active window, a latch caps each swing at one hit, and victims get 0.35 s of i-frames.",
+      "Every push is gated on lint, tsc, tests and build before it deploys to GitHub Pages, so a red build never reaches the live demo.",
+    ],
+    kpis: [
+      // tests/combat.test.ts: grep -c '^\s*(it|test)\('
+      { label: "unit tests", value: "16 on the pure combat core" },
+      { label: "AI tiers", value: "3, driving the same 5 inputs a player has" },
+      { label: "audio files shipped", value: "0, all Web Audio synthesis" },
+    ],
+    role: "Solo build",
+    kind: "build",
+    context: "General Assembly, rebuilt 2026",
+    stack: ["Phaser 4", "TypeScript", "Vite", "Vitest", "Playwright"],
+    live: "https://toshkee.github.io/Ronin-Duel/",
+    code: "https://github.com/Toshkee/Ronin-Duel",
+    shot: "/images/projects/ronin-duel.webp",
+    video: "/video/projects/ronin-duel.mp4",
+    domain: "toshkee.github.io",
+    gallery: [
+      { src: "/images/projects/ronin-duel-menu.webp", label: "Title & mode select" },
+      { src: "/images/projects/ronin-duel-fight.webp", label: "In-match combat" },
+      { src: "/images/projects/ronin-duel-combo.webp", label: "Combos & hit effects" },
     ],
   },
   {
@@ -95,6 +178,7 @@ export const PROJECTS: Project[] = [
       { label: "data model", value: "6 Prisma models" },
     ],
     role: "Solo build",
+    kind: "build",
     context: "General Assembly, rebuilt 2026",
     stack: ["Next.js 16", "TypeScript", "AniList API", "Prisma", "PostgreSQL"],
     live: "https://arc-anime.vercel.app",
@@ -109,40 +193,44 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    slug: "ronin-duel",
-    title: "Ronin Duel",
+    slug: "meet2explore",
+    title: "Meet2Explore",
     blurb:
-      "A juice-driven 2D fighting game in the browser: two dueling ronin, frame-accurate combat and an AI opponent. A vanilla-JS bootcamp prototype rebuilt into a tested, CI-deployed Phaser 4 game.",
+      "Full-stack React travel app to discover destinations and find companions, built collaboratively with a team of four.",
     problem:
-      "Make browser combat actually feel good, with weighty hits, a real AI opponent and game-feel polish, on top of a tested, production-grade codebase.",
+      "Help travellers pick a destination and find people to explore it with.",
     highlights: [
-      "Hitboxes live only on active frames, backed by a unit-tested damage core",
-      "State-machine AI (Easy / Normal / Hard) or 2-player local",
-      "Hitstop, screen shake, knockback, slow-mo KO and Web Audio sound",
+      "Team of four with real git flow: branches, PRs, merged final releases",
+      "Owned a full-stack slice: city discovery, trip join/leave, live chat",
+      "Socket.IO room-per-trip chat persisting history to MongoDB",
     ],
     result: [
-      "Splitting the rules engine out of the renderer made the combat core testable in plain node: hit math, chip damage and round rules run without Phaser or a DOM.",
-      "One swing used to damage on every overlapping frame; hitboxes now live only on the attack's active window, a latch caps each swing at one hit, and victims get 0.35 s of i-frames.",
-      "Every push is gated on lint, tsc, tests and build before it deploys to GitHub Pages, so a red build never reaches the live demo.",
+      "Delivered inside a one-week team sprint with real git flow: feature branches, PRs and merge conflicts across two repos, and I merged the final PRs on both.",
+      "My slice worked end to end: browse trips by city, join and leave with idempotent server checks, and a live room-per-trip chat that persists every message.",
+      "The demo's Heroku backend has since lapsed, so sign-in and live trips are offline; the site says so plainly rather than linking a demo that silently fails.",
     ],
     kpis: [
-      // tests/combat.test.ts: grep -c '^\s*(it|test)\('
-      { label: "unit tests", value: "16 on the pure combat core" },
-      { label: "AI tiers", value: "3, driving the same 5 inputs a player has" },
-      { label: "audio files shipped", value: "0, all Web Audio synthesis" },
+      // gh api repos/Toshkee/Meet2Explore-{Frontend,Backend}/contributors: 9 + 11 of 35 + 31
+      { label: "my commits", value: "20 of 66, across both repos" },
+      { label: "team", value: "4 contributors, 2 repos" },
+      { label: "sprint", value: "one week, 18-24 Nov 2025" },
     ],
-    role: "Solo build",
-    context: "General Assembly, rebuilt 2026",
-    stack: ["Phaser 4", "TypeScript", "Vite", "Vitest", "Playwright"],
-    live: "https://toshkee.github.io/Ronin-Duel/",
-    code: "https://github.com/Toshkee/Ronin-Duel",
-    shot: "/images/projects/ronin-duel.webp",
-    video: "/video/projects/ronin-duel.mp4",
-    domain: "toshkee.github.io",
+    role: "Team of 4, full-stack slice",
+    kind: "build",
+    context: "General Assembly, 2025",
+    stack: ["React", "Node.js", "Express", "MongoDB", "Socket.IO"],
+    live: "https://meet2explore.netlify.app/",
+    code: "https://github.com/Toshkee/Meet2Explore-Frontend",
+    shot: "/images/projects/meet2explore.webp",
+    // No demo video on purpose: the only recording was a 720x416 screen
+    // capture that spent most of its 15 s on an empty chat box (with a
+    // browser permission popup in frame). The landing still is the card.
+    video: null,
+    domain: "meet2explore.netlify.app",
     gallery: [
-      { src: "/images/projects/ronin-duel-menu.webp", label: "Title & mode select" },
-      { src: "/images/projects/ronin-duel-fight.webp", label: "In-match combat" },
-      { src: "/images/projects/ronin-duel-combo.webp", label: "Combos & hit effects" },
+      { src: "/images/projects/meet2explore-hero.webp", label: "Discover destinations" },
+      { src: "/images/projects/meet2explore-trips.webp", label: "Plan group trips" },
+      { src: "/images/projects/meet2explore-meet.webp", label: "Meet new people" },
     ],
   },
   {
@@ -170,6 +258,7 @@ export const PROJECTS: Project[] = [
       { label: "locales", value: "2, with hreflang and a shared config" },
     ],
     role: "Solo build, client work",
+    kind: "client",
     context: "Freelance, September 2026",
     stack: ["Astro 7", "TypeScript", "Cloudflare Workers"],
     live: "https://villavucje.me/en/",
@@ -209,6 +298,7 @@ export const PROJECTS: Project[] = [
       { label: "runtime dependencies", value: "5, no framework on the client" },
     ],
     role: "Solo build, client work",
+    kind: "client",
     context: "Freelance, September 2026",
     stack: ["Astro 7", "TypeScript", "Cloudflare Workers"],
     live: "https://mandarinapt.me/en/",
@@ -228,12 +318,95 @@ export const PROJECTS: Project[] = [
 export const DEMO_NOTES: Record<string, string> = {
   "https://cryptofloww.netlify.app/":
     "demo api runs on a free tier, so the first request may take a moment to wake",
+  "https://meet2explore.netlify.app/":
+    "the demo's backend host has lapsed, so sign-in and live trips are offline; the landing page still loads",
 };
 
 // Engineering "case files", shown as extra tabs on each project's kiosk
 // frame. Every line is grounded in the actual repos (cloned + mined) — the
 // arch trees, the "what broke" notes and the code excerpts all point at real
 // files. Don't add claims that aren't in the code.
+export const VAKY_CASE = {
+  codeFile: "lead.ts",
+  arch: `cloudflare pages ── next 16 static export
+ │  (me)/ and (en)/ route groups
+ │   15 concept sites under /demo
+ │   public/_headers: strict CSP
+ └─ functions/ pages functions
+     ├ api/lead  the one public write
+     │   honeypot · rate limit · turnstile
+     ├ api/admin/*  cookie session
+     │   leads → projects → briefs
+     ├ api/onboarding/*  private links
+     │   package lives server-side
+     └ start/[token]  single-use
+         D1 (sqlite) · R2 private bucket
+         email off the request`,
+  notes: `## what I decided, and why
+
+- a lead is stored first and the
+  email goes out after, off the
+  request (waitUntil). the database
+  is the record, the inbox is a
+  courtesy: a mail provider's bad
+  minute never turns into "something
+  went wrong" over an enquiry that
+  was in fact saved.
+
+- the package is decided once, when
+  the onboarding link is minted, and
+  lives on the server-side row. no
+  query string or request body can
+  change which package a client's
+  answers are validated against.
+
+- the honeypot answers a bot with a
+  cheerful 200 and stores nothing:
+  telling it it was caught is
+  telling it what to fix.
+
+- turnstile fails open when its
+  verifier is unreachable and the
+  rate limiter holds in that window;
+  refusing a paying client's brief
+  over Cloudflare's bad minute would
+  lose real work. written down in
+  docs/onboarding-setup.md.`,
+  code: `// functions/api/lead.ts — the one public write
+export const onRequestPost = async (
+  { request, env, waitUntil }
+) => {
+  const raw = await readJson(request, 16 * 1024);
+  if (!raw || typeof raw !== "object")
+    return fail("bad-request");
+  const body = raw as Body;
+
+  // honeypot: only software fills it.
+  // a hit gets a cheerful 200 and is
+  // stored nowhere
+  if (textField(body.website, 10))
+    return json({ ok: true });
+
+  const name = textField(body.name, 120);
+  const email = textField(body.email, 160);
+  if (!name || !isValidEmail(email))
+    return fail("bad-request");
+
+  const ip = clientIp(request);
+  const identity = await hashIp(
+    env.ONBOARDING_TOKEN_SECRET, ip);
+  if (!(await withinLimit(
+    env.DB, LIMITS.lead, identity, Date.now()
+  ))) return fail("rate-limit");
+
+  // stored first, emailed after, off
+  // the request
+  await recordLead(env.DB, lead);
+  waitUntil(notifyVaky(lead));
+  return json({ ok: true });
+};`,
+};
+
 export const CRYPTOFLOW_CASE = {
   // Lines are kept ≤ ~42 chars so nothing clips at the kiosk frame width.
   codeFile: "close.py",
@@ -438,6 +611,82 @@ updateEntryAction(input: unknown) {
 
 // Villa Vučje and Mandarina — grounded in Toshkee/VillaVucje and
 // Toshkee/MandarinaPetrovac; both are solo client builds.
+export const M2E_CASE = {
+  codeFile: "trips.js",
+  arch: `netlify ── react 19 SPA (vite)
+ │  services/ per-domain axios
+ │   clients · bearer JWT per call
+ │  sockets/ one io() singleton
+ │   dev/prod url switch
+ │
+ └─ heroku ── express 5 + mongoose
+     ├ auth  bcrypt + jwt (30d)
+     │   protect → req.user
+     ├ trips  join / leave / byCity
+     │   idempotent participants[]
+     ├ messages  history REST
+     └ socket.io  room per trip
+         activity_\${id} · persisted
+         to mongo · system msgs
+
+team of 4 · feature branches + PRs
+my slice: discovery → join → chat`,
+  notes: `## built with a team of four
+
+- nine days, real git flow:
+  feature branches, PRs, merge
+  conflicts and all. I merged the
+  final PRs on both repos and
+  wired the prod URLs + heroku
+  Procfile.
+
+- my vertical slice, client and
+  server: browse trips by city,
+  join/leave with idempotent
+  server checks, and a live
+  room-per-trip chat persisting
+  every message to mongo.
+
+- own-message alignment broke:
+  mongo ObjectId !== string. both
+  tiers now normalize userId with
+  String() before comparing.
+
+- socket listeners leaked across
+  route changes — named handlers
+  + socket.off cleanup in the
+  effect fixed it.`,
+  code: `// tripController.js — join a trip
+export async function joinTrip(req, res) {
+  try {
+    const trip =
+      await Trip.findById(req.params.id);
+
+    if (!trip) {
+      return res.status(404).json({
+        message: "Trip not found",
+      });
+    }
+
+    // idempotent: joining twice
+    // doesn't duplicate you
+    if (trip.participants
+        .includes(req.user._id)) {
+      return res.json(
+        { message: "Already joined" });
+    }
+
+    trip.participants.push(req.user._id);
+    await trip.save();
+
+    res.json({ success: true, trip });
+  } catch (err) {
+    res.status(500)
+      .json({ message: err.message });
+  }
+}`,
+};
+
 export const VILLA_CASE = {
   codeFile: "responsive.ts",
   arch: `cloudflare worker ── static assets
@@ -610,9 +859,11 @@ export const LIVE_TABBED = new Set<string>(["CryptoFlow"]);
 export const LIVE_TAB: { key: CaseTab; file: string } = { key: "live", file: "markets.live" };
 
 export const CASES: Record<string, CaseFile> = {
+  "Vaky.me": VAKY_CASE,
   CryptoFlow: CRYPTOFLOW_CASE,
   "Ronin Duel": RONIN_CASE,
   "Arc: Anime Tracker": ARC_CASE,
+  Meet2Explore: M2E_CASE,
   "Villa Vučje": VILLA_CASE,
   "Mandarina, Petrovac": MANDARINA_CASE,
 };

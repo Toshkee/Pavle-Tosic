@@ -70,7 +70,15 @@ export default function Log() {
                 key={e.org}
                 className="grid gap-4 py-8 md:grid-cols-[11rem_minmax(0,1fr)] md:gap-10 md:py-10"
               >
-                <div className="text-[13px] text-faint md:pt-1.5">{e.period}</div>
+                {/* The period sticks while its entry scrolls, so a long
+                    entry never loses its date off the top. Aceternity's
+                    Timeline does this with its year column
+                    (21st.dev/@manuarora700/components/timeline); self-start
+                    because a stretched grid cell has nowhere to stick to.
+                    top-24 clears the floating nav. */}
+                <div className="text-[13px] text-faint md:sticky md:top-24 md:self-start md:pt-1.5">
+                  {e.period}
+                </div>
                 <div>
                   <h3 className="font-display text-[22px] font-medium leading-tight text-ink md:text-[26px]">
                     {e.org}
