@@ -3,6 +3,7 @@ import { MARKS, STACK_LINE } from "./content";
 import GitHubActivity from "./GitHubActivity";
 import StackOrbit from "./StackOrbit";
 import StackMarquee from "./StackMarquee";
+import Island from "./Island";
 
 /* The stack as an orbit + one marquee + two still rows, split the way the
    Spec sheet splits it: tools picked freely (the outer ring, the moving
@@ -20,10 +21,12 @@ export default function Inside() {
 
   return (
     <Section id="stack" label="Stack" className="!py-[8svh] md:!py-[10svh]">
-      <Heading lead={STACK_LINE}>Stack</Heading>
+      <Heading kicker="Stack" index={4} lead={STACK_LINE} island={<Island name="ores" />}>
+        The tools I reach for.
+      </Heading>
       <div className="glass glass-panel glass-dark p-6 md:p-10 lg:p-12">
-        <div className="inside-reveal grid gap-10 lg:grid-cols-[minmax(240px,320px)_1fr] lg:items-center lg:gap-14">
-          {/* Below lg the orbit is ~320px of near-empty space for a third of
+        <div className="inside-reveal grid gap-10 lg:grid-cols-[minmax(320px,440px)_1fr] lg:items-center lg:gap-14">
+          {/* Below lg the orbit is ~300px of near-empty space for a third of
               a phone screen; the rows carry the same logos, so nothing is
               lost by giving them the full width there instead. */}
           <div className="hidden lg:block">

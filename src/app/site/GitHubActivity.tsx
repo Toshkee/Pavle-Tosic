@@ -81,22 +81,26 @@ export default async function GitHubActivity() {
         aria-label={`GitHub contribution activity over the last year: ${totalLastYear} contributions`}
         className="mt-4 flex w-full gap-[3px] pb-1"
       >
+        {/* Week columns share the panel's full width (flex-1, square cells),
+            so the calendar spans the card instead of stopping at 60% of it.
+            The busiest days (level 4) carry a small ember glow. */}
         {weeks.map((week, wi) => (
           <div
             key={wi}
             aria-hidden
-            className={`${wi < weeks.length - 26 ? "hidden md:flex" : "flex"} flex-col gap-[3px]`}
+            className={`${wi < weeks.length - 26 ? "hidden md:flex" : "flex"} min-w-0 flex-1 flex-col gap-[3px]`}
           >
             {week.map((day, di) => (
               <span
                 key={di}
-                className="h-[9px] w-[9px] shrink-0 rounded-[2px] md:h-[11px] md:w-[11px]"
+                className="aspect-square w-full rounded-[2px]"
                 style={{
                   background: !day
                     ? "transparent"
                     : day.level === 0
-                      ? "var(--color-line-strong)"
+                      ? "var(--color-line)"
                       : `color-mix(in srgb, var(--color-ember) ${LEVEL_MIX[day.level] ?? 100}%, transparent)`,
+                  boxShadow: day?.level === 4 ? "0 0 10px color-mix(in srgb, var(--color-ember) 55%, transparent)" : undefined,
                 }}
               />
             ))}

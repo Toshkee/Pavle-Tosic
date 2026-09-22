@@ -74,17 +74,18 @@ read-only by design: nothing on this site revalidates. Everything under
 
 | Section id | Component | Notes |
 |---|---|---|
-| `top` | `Hero.tsx` | Osmo parallax port: 120% stage, looping night-sky video (1080p desktop, 720p phones, picked in JS), name rising letter by letter via a CSS keyframe. Video plays only while on screen. |
-| `about` | `Spec.tsx` | Portrait, the live site's copy, a checkable spec sheet. |
+| `top` | `Hero.tsx` | Osmo parallax port: 120% stage, three planes (AI-generated anime gorge still, the name + pitch + CTAs, a foreground rock cut-out that rises over the name). Waterfall, mist and spray are CSS loops over `public/images/hero/gorge*.webp`, paused off screen. |
+| `about` | `Spec.tsx` | Full-height portrait, the live site's copy, a checkable spec sheet. |
 | `work` | `Features.tsx` | Every `kind: "build"` project as GitLab-style sticky stacking cards (pin + scale + dim at `lg` only; the cards are opaque on purpose, see `.stack-card` in globals.css); one demo `<video>` decodes at a time; `MarketStrip.tsx` streams three Binance spot pairs on the CryptoFlow card. |
-| `clients` | `Field.tsx` | `kind: "client"` projects as a ruled index with a hover-driven screenshot plate. |
+| `clients` | `Field.tsx` | `kind: "client"` projects as a ruled index; the browser frame auto-scrolls a full-page capture of the live site (`*-full.webp`). |
 | `stack` | `Inside.tsx` | `StackOrbit.tsx` (two counter-rotating CSS rings), `StackMarquee.tsx` (ONE CSS keyframe marquee for "By choice", then still rows for "On the job" and "Off the clock"; one marquee per page is the rule), `GitHubActivity.tsx` (contribution heatmap fetched once at build time, with a plain profile link as fallback). |
 | `log` | `Log.tsx` | Experience, with a scroll-linked ember progress rail. |
-| `contact` | `Order.tsx` | Email CTA plus GitHub / LinkedIn / CV links. |
+| `contact` | `Order.tsx` | Closing scene, no card: poster-size heading over the sunset slide, email CTA, text links; the footer continues its scrim. |
 | | `Footer.tsx`, `Nav.tsx` | Floating glass nav with an IntersectionObserver active pill and a phone menu. |
-| | `MorphBackdrop.tsx` | Fixed full-viewport WebGL backdrop: one Montenegro photo per section, a noise burn-through morph on section change, a still between morphs. `<img>` cross-fade fallback mounts only if WebGL fails. Keyed by the section ids above. |
+| | `MorphBackdrop.tsx` | Fixed full-viewport WebGL backdrop: one AI-generated Minecraft-style voxel scene per section (`public/images/morph/voxel-*.webp`), a noise burn-through morph on section change, a still between morphs, plus a per-scene weather layer (`Ambience.tsx`: square cherry petals, sea spray, fireflies, sunrise motes; CSS only, paused under the hero). `<img>` cross-fade fallback mounts only if WebGL fails. Keyed by the section ids above. |
+| | `Island.tsx`, `VoxelMe.tsx` | A floating voxel island beside each section heading (`public/images/islands/`, chroma-keyed renders; bob, scroll drift, motes; the beacon in Contact draws its beam in CSS). `VoxelMe` is Pavle as a CSS-3D block figure (64x64 skin in `public/images/voxel/`), standing on the About island, waving on hover/focus. |
 
-`Section.tsx` is the shared section frame and heading (`HeadingReveal.tsx` does the word-level mask reveal). Section ids are referenced by `Nav.tsx`, `Footer.tsx` and the `slides` list in `page.tsx`; keep all three in sync when adding or renaming a section.
+`Section.tsx` is the shared section frame and heading (`HeadingReveal.tsx` does the word-level mask reveal); headings are statements, with a numbered kicker (`01 About`) naming the section. Section ids are referenced by `Nav.tsx`, `Footer.tsx` and the `slides` list in `page.tsx`; keep all three in sync when adding or renaming a section.
 
 **Data:**
 - `src/app/projects.ts`: the seven projects, case-study text, KPIs and gallery, each tagged `kind: "build" | "client"` (which home section shows it). Single source of truth for the Work and Client work sections and for the crawlable case studies under `/work` and `/work/[slug]` (server components, prerendered via `generateStaticParams`).
@@ -95,7 +96,7 @@ read-only by design: nothing on this site revalidates. Everything under
 
 ## Design
 
-Near-black glass over photography. Tokens in `globals.css`: near-black surfaces, white type, silver tonal accents and a single colour, ember (`--color-ember`), rationed to the primary CTA, the active nav pill, the Log rail and the GitHub heatmap ramp. Glass is `.glass` (material, no filter) plus `.glass-blur` (the real `backdrop-filter`), and `.glass-blur` is only on the nav and the About panel; everything else is unblurred glass on a deeper fill, because the backdrop is a live canvas under sticky cards.
+Near-black glass over an anime hero painting and Minecraft-style voxel scenes. Tokens in `globals.css`: near-black surfaces, white type, silver tonal accents and a single colour, ember (`--color-ember`), rationed to the primary CTA, the active nav pill, the Log rail and the GitHub heatmap ramp. Glass is `.glass` (material, no filter) plus `.glass-blur` (the real `backdrop-filter`), and `.glass-blur` is only on the nav and the About panel; everything else is unblurred glass on a deeper fill, because the backdrop is a live canvas under sticky cards.
 
 `docs/slop.md` is the anti-slop design law this concept was built against, and `docs/research/new-concept-research.md` is the research brief behind it. 21st.dev components (Osmo parallax, Morph Gallery, Magic UI orbiting circles, logo marquee, text-reveal mask, liquid-glass recipe, footer-16) were ported by hand and are credited by URL in each component's top comment; nothing is installed from the registry.
 

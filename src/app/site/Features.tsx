@@ -5,6 +5,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion
 import { PROJECTS, type Project } from "../projects";
 import { Section, Heading } from "./Section";
 import MarketStrip from "./MarketStrip";
+import Island from "./Island";
 import NumberFlow from "@number-flow/react";
 
 /* GitLab-style stacking cards, ONE mechanism end to end (no JS fit-check,
@@ -27,6 +28,23 @@ import NumberFlow from "@number-flow/react";
    studio first, then the bootcamp rebuilds, then the team sprint. Client
    sites are Field.tsx's. */
 const FEATURED = PROJECTS.filter((p) => p.kind === "build");
+
+/* Each card's ambient glow, after 21st.dev/@unlumen/components/video-ambient
+   (YouTube "ambient mode"). That component samples live video frames onto a
+   blurred canvas; here the colour is sampled once, offline, and drawn as a
+   static radial gradient, because a live blur inside five sticky, scaling
+   cards is the kind of cost globals.css's glass note rules out. The most vivid
+   colour in the project's own screenshot (saturation x value weighted
+   average of the poster, re-lit to 85% value), so every card carries its
+   app's colour without the page picking up a second accent. Ronin's
+   sample (#9798d8) is nudged bluer to keep purple off the page. */
+const GLOW: Record<string, string> = {
+  vaky: "#d83456",
+  cryptoflow: "#40d89b",
+  "ronin-duel": "#7f8fd8",
+  "arc-anime-tracker": "#d86e7e",
+  meet2explore: "#0d84d8",
+};
 
 /* Whether the pin/scale mechanism is live (matches the lg breakpoint the
    CSS stack-card rule uses). useSyncExternalStore, not an effect + setState,
@@ -99,8 +117,13 @@ export default function Features() {
 
   return (
     <Section id="work" label="Work">
-      <Heading lead="Five builds, all live: my studio's site and back office, three bootcamp projects rebuilt from scratch in 2026, and one team sprint. The videos are the actual apps.">
-        Work
+      <Heading
+        kicker="Work"
+        index={2}
+        island={<Island name="workshop" />}
+        lead="My studio's site and back office, three bootcamp projects rebuilt from scratch in 2026, and one team sprint. The videos are the actual apps."
+      >
+        Five builds. All of them live.
       </Heading>
       <div ref={containerRef} className="relative">
         {FEATURED.map((p, i) => (
@@ -165,15 +188,27 @@ function Card({
       // Aceternity's StickyScroll dims its inactive items the same way
       // (21st.dev/@manuarora700/components/sticky-scroll-reveal).
       data-covered={covered ? "true" : undefined}
-      style={{ top: `calc(var(--stack-top) + ${index} * var(--stack-step))` }}
+      style={{ "--i": index } as React.CSSProperties}
     >
+      {/* the glow sits on the card, behind the demo: a static gradient, no filter */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `radial-gradient(60% 70% at 72% 50%, color-mix(in srgb, ${GLOW[project.slug] ?? "#ffffff"} 22%, transparent), transparent 70%)`,
+        }}
+      />
       <motion.article
-        className="p-5 md:p-10 lg:p-12"
+        className="relative p-5 md:p-10 lg:p-12"
         style={{ scale: reduced || !isLg ? 1 : scale }}
       >
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-center lg:gap-14">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)] lg:items-center lg:gap-12">
           <div className="contents lg:block">
             <p className="truncate text-[12px] text-faint lg:text-[13px]">
+              <span className="mr-2 font-display tabular-nums text-ink">
+                {String(index + 1).padStart(2, "0")}
+                <span className="text-faint"> / {String(count).padStart(2, "0")}</span>
+              </span>
               {project.role}, {project.context}
             </p>
             <h3 className="mt-2 font-display text-[clamp(1.6rem,3.4vw,2.8rem)] font-bold leading-[1] text-ink lg:mt-3">
@@ -189,7 +224,7 @@ function Card({
                 </li>
               ))}
             </ul>
-            <dl className="order-2 mt-6 grid max-w-[52ch] grid-cols-1 gap-4 sm:grid-cols-3 lg:order-none lg:gap-6">
+            <dl className="order-2 mt-6 grid max-w-[52ch] grid-cols-1 gap-5 sm:grid-cols-3 lg:order-none lg:gap-6">
               {project.kpis.map((k) => (
                 <Kpi key={k.label} label={k.label} value={k.value} />
               ))}
@@ -200,7 +235,8 @@ function Card({
               </div>
             )}
             <p className="order-3 mt-1 flex flex-wrap gap-2 text-[13px] lg:order-none lg:mt-8">
-              <a href={project.live} target="_blank" rel="noreferrer" className="glass glass-btn glass-strong px-3.5 py-1.5 text-ink lg:px-4 lg:py-2">
+              {/* the primary action: solid ink, not ember (ember is the email CTA's) */}
+              <a href={project.live} target="_blank" rel="noreferrer" className="rounded-full bg-ink px-3.5 py-1.5 font-semibold text-bg transition-colors hover:bg-white lg:px-4 lg:py-2">
                 Live site
               </a>
               <a href={project.code} target="_blank" rel="noreferrer" className="glass glass-btn px-3.5 py-1.5 text-body hover:text-ink lg:px-4 lg:py-2">
@@ -229,22 +265,39 @@ function splitCount(value: string): { n: number; rest: string } | null {
   return n > 0 ? { n, rest: value.slice(m[1].length) } : null;
 }
 
+/* The figure a KPI leads with, and the phrase that qualifies it:
+   "500,000+ live AniList titles" -> "500,000+" / "live AniList titles",
+   "1-125×, settled server-side" -> "1-125×" / "settled server-side",
+   "one week, 18-24 Nov 2025" -> "one week" / "18-24 Nov 2025". */
+function splitFigure(value: string): { figure: string; rest: string } {
+  // commas only count INSIDE a number ("500,000"), never the one after it ("48,")
+  const m = /^(\d(?:[\d,]*\d)?(?:-\d(?:[\d,]*\d)?)?[+×]?)(.*)$/.exec(value);
+  const [figure, rest] = m ? [m[1], m[2]] : [value.split(",")[0], value.slice(value.split(",")[0].length)];
+  return { figure, rest: rest.replace(/^[,\s]+/, "") };
+}
+
 function Kpi({ label, value }: { label: string; value: string }) {
-  const parts = splitCount(value);
+  const count = splitCount(value);
+  const { figure, rest } = splitFigure(value);
   return (
     <div>
       <dt className="text-[12px] text-faint">{label}</dt>
-      <dd className="mt-1 text-[14px] leading-snug text-ink">
-        {parts ? (
-          <>
-            <span className="sr-only">{value}</span>
-            <span aria-hidden>
-              <CountUp to={parts.n} />
-              {parts.rest}
-            </span>
-          </>
-        ) : (
-          value
+      <dd className="mt-1.5">
+        <span className="sr-only">{value}</span>
+        {/* long figures ("500,000+", "one week") step down a size so they
+            never run into the next column at lg's narrow text column */}
+        <span
+          aria-hidden
+          className={`block font-display font-bold leading-none text-ink ${
+            figure.length > 5 ? "text-[clamp(1.2rem,1.55vw,1.5rem)]" : "text-[clamp(1.5rem,2.3vw,2.1rem)]"
+          }`}
+        >
+          {count && figure === String(count.n).replace(/\B(?=(\d{3})+(?!\d))/g, ",") ? <CountUp to={count.n} /> : figure}
+        </span>
+        {rest && (
+          <span aria-hidden className="mt-1.5 block text-[13px] leading-snug text-ink/70">
+            {rest}
+          </span>
         )}
       </dd>
     </div>

@@ -19,16 +19,18 @@ export default function Home() {
         Skip to content
       </a>
       <Nav />
-      {/* Montenegro, dusk to night, one photo per section. Unsplash License
-          (free for commercial use): Vadym Merzlikin, Gunnar Kaplick,
-          Sebastien Devocelle, Eirik Skarstein, Sergio. */}
+      {/* One blocky world, golden hour to dawn, a biome per section:
+          Minecraft-with-shaders voxel scenes (AI-generated, Higgsfield
+          z_image, credited in the footer): cherry-blossom temple, sea cliffs,
+          torii in the sea, minecart canyon, sunrise over the clouds. Each
+          carries its own weather layer (Ambience.tsx). */}
       <MorphBackdrop
         slides={[
-          { src: "/images/morph/kotor-night.webp", small: "/images/morph/kotor-night-sm.webp", sectionId: "about" },
-          { src: "/images/morph/bay-haze.webp", small: "/images/morph/bay-haze-sm.webp", sectionId: "work" },
-          { src: "/images/morph/perast-dusk.webp", small: "/images/morph/perast-dusk-sm.webp", sectionId: "clients" },
-          { src: "/images/morph/bay-sunrise.webp", small: "/images/morph/bay-sunrise-sm.webp", sectionId: "log" },
-          { src: "/images/morph/bay-sunset.webp", small: "/images/morph/bay-sunset-sm.webp", sectionId: "contact" },
+          { src: "/images/morph/voxel-sakura-temple.webp", small: "/images/morph/voxel-sakura-temple-sm.webp", sectionId: "about" },
+          { src: "/images/morph/voxel-sea-cliffs.webp", small: "/images/morph/voxel-sea-cliffs-sm.webp", sectionId: "work" },
+          { src: "/images/morph/voxel-torii-sea.webp", small: "/images/morph/voxel-torii-sea-sm.webp", sectionId: "clients" },
+          { src: "/images/morph/voxel-rail-canyon.webp", small: "/images/morph/voxel-rail-canyon-sm.webp", sectionId: "log" },
+          { src: "/images/morph/voxel-cloud-sunrise.webp", small: "/images/morph/voxel-cloud-sunrise-sm.webp", sectionId: "contact" },
         ]}
       />
       <main id="main" className="relative">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Ambience from "./Ambience";
 
 /* The "Morph Gallery" (21st.dev/@kedhareswer/components/morph-gallery)
    turned into a page backdrop: the same WebGL noise burn-through between
@@ -21,8 +22,8 @@ import { useEffect, useRef, useState } from "react";
    WebGL has actually failed so they never preload on the happy path. Under
    reduced motion the swap is a cut.
 
-   The photos are Unsplash-licensed shots of Montenegro, credited in
-   page.tsx. Phones get the 1200 px cut so the five textures stay small. */
+   The scenes are AI-generated voxel landscapes, credited in page.tsx and
+   the footer. Phones get the 1200 px cut so the five textures stay small. */
 
 export type MorphSlide = { src: string; small: string; sectionId: string };
 
@@ -100,6 +101,7 @@ const load = (src: string) =>
 
 export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ambRef = useRef<HTMLDivElement>(null);
   // The <img> fallback exists only once WebGL has failed. Rendering it up
   // front (even at opacity 0) made React hoist a high-priority preload for
   // every slide into the document head: 2.5 MB of photos fetched before the
@@ -174,10 +176,21 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
       return best;
     };
 
+    // the weather layer (Ambience.tsx) follows the wanted scene and sleeps
+    // while the hero covers the screen or the tab is hidden
+    const amb = ambRef.current;
+    const syncAmb = () => {
+      if (!amb) return;
+      amb.dataset.scene = slides[wanted]?.sectionId ?? "";
+      if (covered || document.hidden) amb.dataset.paused = "true";
+      else delete amb.dataset.paused;
+    };
+
     const go = (i: number) => {
       if (i === wanted) return;
       dir = i > wanted ? 1 : -1;
       wanted = i;
+      syncAmb();
       if (!useGL) { setFallbackIdx(i); return; }
       // the wanted slide and the one after it, so the next morph is ready
       ensure(i); ensure(i + 1);
@@ -277,11 +290,12 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
     const ro = new ResizeObserver(() => { resize(); kick(); });
     ro.observe(canvas);
     const heroIO = hero
-      ? new IntersectionObserver(([e]) => { covered = e.intersectionRatio > 0.98; if (!covered) kick(); }, { threshold: [0.98, 1] })
+      ? new IntersectionObserver(([e]) => { covered = e.intersectionRatio > 0.98; syncAmb(); if (!covered) kick(); }, { threshold: [0.98, 1] })
       : null;
     heroIO?.observe(hero!);
     if (!hero) covered = false;
-    const onVis = () => { if (!document.hidden) kick(); };
+    syncAmb();
+    const onVis = () => { syncAmb(); if (!document.hidden) kick(); };
     document.addEventListener("visibilitychange", onVis);
     return () => {
       dead = true; cancelAnimationFrame(raf); ro.disconnect(); heroIO?.disconnect(); sectionIO.disconnect();
@@ -315,6 +329,9 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
           (globals.css) makes up the difference on the panels carrying long
           runs of body copy. */}
       <div className="absolute inset-0 bg-black/20" />
+      <div ref={ambRef} className="amb-layer" data-paused="true">
+        <Ambience />
+      </div>
     </div>
   );
 }

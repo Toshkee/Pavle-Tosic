@@ -3,6 +3,7 @@
 import { Icon } from "@iconify/react";
 import type { Mark } from "./content";
 import "./icons";
+import CraftingBlock from "./CraftingBlock";
 
 /* Two counter-rotating rings of glass icon chips, the section's one moving
    piece. Mechanism adapted from Magic UI's OrbitingCircles
@@ -13,7 +14,11 @@ import "./icons";
    and the negative-delay stagger). @iconify/react resolves the real logos
    at runtime, which is why this is its own client leaf off the server
    Inside.tsx. The ring is one `role="img"` for screen readers; individual
-   chips are decorative. */
+   chips are decorative, named on hover by a CSS label (data-name), and the
+   whole orbit holds still while hovered so a label can be read. Chips are
+   light "app icon" tiles: several brand marks (Next.js, GitHub) are black
+   and vanished on the old dark glass chips. A spinning crafting table
+   (CraftingBlock.tsx) sits at the core. */
 
 function Ring({
   marks,
@@ -29,15 +34,15 @@ function Ring({
       {marks.map((m, i) => (
         <span
           key={m.name}
-          className="orbit-chip glass glass-pill"
+          className="orbit-chip"
           data-reverse={reverse ? "true" : undefined}
-          title={m.name}
+          data-name={m.name}
           style={{
             animationDuration: `${duration}s`,
             animationDelay: `${-((duration * i) / marks.length)}s`,
           }}
         >
-          <Icon icon={m.icon} width={20} height={20} aria-hidden focusable="false" />
+          <Icon icon={m.icon} width={26} height={26} aria-hidden focusable="false" />
         </span>
       ))}
     </div>
@@ -48,6 +53,9 @@ export default function StackOrbit({ inner, outer }: { inner: Mark[]; outer: Mar
   const all = [...inner, ...outer].map((m) => m.name).join(", ");
   return (
     <div className="orbit mx-auto" role="img" aria-label={`Tools orbiting: ${all}`}>
+      <div className="orbit-core">
+        <CraftingBlock />
+      </div>
       <Ring marks={inner} duration={26} />
       <Ring marks={outer} duration={38} reverse />
     </div>

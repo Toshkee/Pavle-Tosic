@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
-import { PROJECTS, thumbOf } from "../projects";
+import { useEffect, useRef, useState } from "react";
+import { PROJECTS, type Project } from "../projects";
 import { Section, Heading } from "./Section";
+import Island from "./Island";
 
 /* Client work as a ruled index. These sites have no demo video, so they get
    an honest table instead of being padded out to match the rail above: year,
@@ -11,11 +12,48 @@ import { Section, Heading } from "./Section";
    row under the pointer shows in a plate on the right. */
 const CLIENT = PROJECTS.filter((p) => p.kind === "client");
 
-/* Screenshots ship at 1600x1000 (16:10). A 640w "-thumb.webp" twin already
-   exists per project (see thumbOf in projects.ts, also used by /work), reused
-   here as the srcset's small candidate instead of generating a new 720w tier. */
-const SHOT_W = 1600;
-const SHOT_H = 1000;
+/* Whole-page captures of the live sites (Playwright, 1440 wide, every lazy
+   image scrolled in first, resized to 960 wide), so the frame can scroll
+   through the real page rather than show its first screen. Heights are the
+   960-wide files' own. */
+const FULL: Record<string, { src: string; h: number }> = {
+  "villa-vucje": { src: "/images/projects/villa-vucje-full.webp", h: 4116 },
+  "mandarina-petrovac": { src: "/images/projects/mandarina-petrovac-full.webp", h: 5822 },
+};
+
+/* The page inside the frame scrolls top to bottom and back on a loop
+   (globals.css, .scroll-shot), holding at each end. Speed is constant, so a
+   longer page takes longer: ~240 px of capture per second. It runs only
+   while the frame is on screen and holds still under the pointer, so it can
+   be read. Under reduced motion it is the page's first screen, still. */
+function ScrollShot({ project, eager = false }: { project: Project; eager?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [run, setRun] = useState(false);
+  const full = FULL[project.slug];
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setRun(e.isIntersecting), { threshold: 0.3 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="scroll-shot aspect-[16/10]" data-run={run ? "true" : undefined}>
+      <img
+        src={full?.src ?? project.shot}
+        alt={`${project.title}, the full live page`}
+        width={960}
+        height={full?.h ?? 600}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        style={full ? { animationDuration: `${Math.round(full.h / 240)}s` } : undefined}
+        className={full ? "scroll-shot__page" : "h-full w-full object-cover object-top"}
+      />
+    </div>
+  );
+}
 
 /* A thin browser chrome around each screenshot, so it reads as a live site
    rather than a loose image: a bar with three neutral dots (no macOS
@@ -52,10 +90,15 @@ export default function Field() {
 
   return (
     <Section id="clients" label="Client work">
-      <Heading lead="Paid freelance sites, both bilingual, both static, both on Cloudflare. Shipped September 2026.">
-        Client work
+      <Heading
+        kicker="Client work"
+        index={3}
+        island={<Island name="village" />}
+        lead="Paid freelance sites, both bilingual, both static, both on Cloudflare. Shipped September 2026."
+      >
+        Two paid sites, live for real clients.
       </Heading>
-      <div className="glass glass-panel glass-dark-deep grid gap-10 p-6 md:p-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-16 lg:p-12">
+      <div className="glass glass-panel glass-dark-deep grid gap-10 p-6 md:p-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)] lg:items-center lg:gap-14 lg:p-12">
         <ul className="divide-y divide-line">
           {CLIENT.map((p, i) => (
             <li key={p.slug}>
@@ -89,35 +132,15 @@ export default function Field() {
                   domain={p.domain}
                   className="mt-2 sm:col-span-3 lg:hidden"
                 >
-                  <img
-                    src={p.shot}
-                    srcSet={`${thumbOf(p.shot)} 640w, ${p.shot} ${SHOT_W}w`}
-                    sizes="(max-width: 640px) 100vw, 90vw"
-                    alt={`${p.title} screenshot`}
-                    width={SHOT_W}
-                    height={SHOT_H}
-                    loading="lazy"
-                    decoding="async"
-                    className="aspect-[16/10] w-full object-cover object-top"
-                  />
+                  <ScrollShot project={p} />
                 </BrowserFrame>
               </a>
             </li>
           ))}
         </ul>
         <BrowserFrame domain={shown.domain} className="hidden lg:block">
-          <img
-            key={shown.slug}
-            src={shown.shot}
-            srcSet={`${thumbOf(shown.shot)} 640w, ${shown.shot} ${SHOT_W}w`}
-            sizes="(min-width: 1024px) 35vw, 0px"
-            alt={`${shown.title} screenshot`}
-            width={SHOT_W}
-            height={SHOT_H}
-            loading="lazy"
-            decoding="async"
-            className="aspect-[16/10] w-full object-cover object-top"
-          />
+          {/* keyed, so switching rows starts the new page from its top */}
+          <ScrollShot key={shown.slug} project={shown} eager />
         </BrowserFrame>
       </div>
     </Section>
