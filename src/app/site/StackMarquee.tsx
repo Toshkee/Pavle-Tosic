@@ -27,8 +27,8 @@ import "./icons";
 
 function Pill({ mark }: { mark: Mark }) {
   return (
-    <li className="glass glass-pill flex shrink-0 items-center gap-2 px-3 py-1.5">
-      <Icon icon={mark.icon} width={16} height={16} aria-hidden focusable="false" />
+    <li className="glass glass-pill flex shrink-0 items-center gap-2 px-3 py-1.5 text-ink">
+      <Icon icon={mark.icon} color={mark.color} width={16} height={16} aria-hidden focusable="false" />
       <span className="text-[13px] text-body">{mark.name}</span>
     </li>
   );

@@ -288,13 +288,6 @@ section {
   top: -17.5%;
   left: 0;
 }
-/* phones crop the 16:9 frame to portrait: lift it so the fall sits mid-screen */
-@media (max-width: 767px) {
-  .parallax__layer-img {
-    top: -25%;
-  }
-}
-
 /* ---- The gorge (Hero.tsx) ----
    Each plane is a size container holding a 16:9 "scene" sized to cover it
    (max of the width and 16/9 of the height, in container units). Every
@@ -303,8 +296,8 @@ section {
    any viewport. Both planes use identical scene boxes, which is what lines
    the cut-out up with the plate at rest. --focal is the horizontal anchor:
    the scene's point at that percentage sits mid-viewport. Desktop leans a
-   touch right of centre so the fall and the sunset both stay in frame; a
-   phone shows only ~18% of the width, so it centres on the fall. */
+   touch right of centre so the fall and the sunset both stay in frame.
+   Upright screens don't cover (see the portrait rule below). */
 .gorge {
   container-type: size;
   overflow: hidden;
@@ -318,9 +311,60 @@ section {
   aspect-ratio: 16 / 9;
   transform: translate(calc(var(--focal) * -1), -50%);
 }
-@media (max-width: 767px) {
+/* Upright screens (phones, tablets held upright). Covering the plane there
+   showed ~18% of the painting's width: the dark fall alone, no sunset, half
+   the phone black under the buttons. Instead the scene shows 58% of the
+   width (x 16-74%: the sun, the valley and the fall) and sits low in the
+   plane, its bottom 22cqh up from the plane's (~89% down the screen at
+   rest), and the sky runs on above it behind the name. That sky starts at
+   #203d69, the painting's top row (flat from x 15% to 65%), and darkens
+   upward; it reaches down behind the plate's top 14% (13.5cqw of a
+   96.75cqw-tall scene), which fades into it so there is no edge. The rock
+   plane shares .gorge__scene, so it stays pinned to the plate. */
+@media (max-aspect-ratio: 4/5) {
   .gorge__scene {
-    --focal: 60%;
+    --focal: 45%;
+    top: auto;
+    bottom: 22cqh;
+    width: 172cqw;
+    transform: translateX(calc(var(--focal) * -1));
+  }
+  .gorge:not(.gorge--front) .gorge__scene::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 86%;
+    height: 200cqh;
+    background:
+      radial-gradient(1.5px 1.5px at 38% 88%, rgb(255 255 255 / 0.7), transparent),
+      radial-gradient(1px 1px at 52% 80%, rgb(255 255 255 / 0.6), transparent),
+      radial-gradient(1px 1px at 44% 70%, rgb(255 255 255 / 0.5), transparent),
+      radial-gradient(1.5px 1.5px at 61% 76%, rgb(255 255 255 / 0.65), transparent),
+      radial-gradient(1px 1px at 33% 64%, rgb(255 255 255 / 0.45), transparent),
+      radial-gradient(1px 1px at 57% 92%, rgb(255 255 255 / 0.5), transparent),
+      radial-gradient(1px 1px at 68% 85%, rgb(255 255 255 / 0.45), transparent),
+      linear-gradient(to top, #203d69 14cqw, #13243f calc(14cqw + 20cqh), #0b1426 calc(14cqw + 45cqh));
+  }
+  .gorge__plate {
+    mask-image: linear-gradient(to bottom, transparent, #000 14%);
+  }
+  /* The scene no longer runs past the hero's bottom, so the rising rock
+     cut-out would show its bottom edge floating mid-screen. The rock mass
+     carries on below it instead: #141a22 is the cut-out's bottom row. */
+  .gorge--front .gorge__scene::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 99.8%;
+    height: 60cqh;
+    background: linear-gradient(to bottom, #141a22, #0a0a0c 40%);
+  }
+  /* the fall's base sits low on a phone; the full 48svh fade buried it.
+     Two classes: the base 48svh is declared further down. */
+  .parallax__header .parallax__fade {
+    height: 30svh;
   }
 }
 /* The rock plane sits ABOVE the header's long fade (z 30), or the fade
@@ -872,7 +916,7 @@ section {
   }
 }
 
-/* ================= INSIDE: STACK ENTRANCE (Inside.tsx, GitHubActivity.tsx) =================
+/* ================= INSIDE: STACK ENTRANCE (Inside.tsx) =================
    Replaces the old looping marquee. A single scroll-linked, one-time fade for
    the grouped wordmarks and the GitHub heatmap: native scroll-driven
    animation (same mechanism as .stack-card's card-in), behind @supports so
@@ -942,8 +986,8 @@ section {
   border: 1px solid var(--color-line);
   border-radius: 999px;
 }
-/* the core holds the crafting table; no overflow or radius here, either
-   would flatten its preserve-3d */
+/* the core: Pavle's portrait in a circle, set off from the inner ring by a
+   dark gap and a hairline, the same line weight as the ring tracks */
 .orbit-core {
   position: absolute;
   top: 50%;
@@ -951,94 +995,16 @@ section {
   width: 26%;
   aspect-ratio: 1;
   translate: -50% -50%;
-  display: grid;
-  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgb(10 10 12 / 0.6), 0 0 0 5px var(--color-line-strong);
+}
+.orbit-core img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-/* ================= CRAFTING BLOCK (CraftingBlock.tsx) =================
-   A cube of --edge (70% of the orbit core, so it scales with the orbit),
-   faces cut from a 64x16 atlas: top 0, front 16, side 32, bottom 48 (atlas
-   px). Tilted -24deg on X so the top reads; spins on Y once every 14 s.
-   A warm pool of light under it, like it sits on a torch-lit floor. */
-.craft {
-  --edge: 70%;
-  /* translateZ can't take a percentage, so half the edge in px: orbit size
-     (the .orbit clamp) x 26% core x 70% edge / 2 = 0.091 of the orbit */
-  --craft-half: calc(clamp(300px, 31vw, 440px) * 0.091);
-  position: relative;
-  width: var(--edge);
-  aspect-ratio: 1;
-  perspective: 600px;
-}
-.craft::after {
-  content: "";
-  position: absolute;
-  left: -40%;
-  right: -40%;
-  top: 70%;
-  height: 70%;
-  border-radius: 999px;
-  background: radial-gradient(closest-side, rgb(255 196 120 / 0.28), transparent);
-  pointer-events: none;
-}
-.craft__cube {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  transform: rotateX(-24deg) rotateY(-35deg);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .craft__cube {
-    animation: craft-spin 14s linear infinite;
-  }
-  .orbit:hover .craft__cube {
-    animation-play-state: paused;
-  }
-}
-@keyframes craft-spin {
-  from {
-    transform: rotateX(-24deg) rotateY(-35deg);
-  }
-  to {
-    transform: rotateX(-24deg) rotateY(325deg);
-  }
-}
-.craft__face {
-  position: absolute;
-  inset: 0;
-  background-image: url("/images/voxel/crafting-table.png");
-  background-size: 400% 100%;
-  image-rendering: pixelated;
-  backface-visibility: hidden;
-}
-.craft__face--front {
-  background-position: 33.333% 0;
-  transform: translateZ(var(--craft-half));
-}
-.craft__face--back {
-  background-position: 33.333% 0;
-  transform: rotateY(180deg) translateZ(var(--craft-half));
-}
-.craft__face--right {
-  background-position: 66.667% 0;
-  transform: rotateY(90deg) translateZ(var(--craft-half));
-  filter: brightness(0.82);
-}
-.craft__face--left {
-  background-position: 66.667% 0;
-  transform: rotateY(-90deg) translateZ(var(--craft-half));
-  filter: brightness(0.82);
-}
-.craft__face--top {
-  background-position: 0 0;
-  transform: rotateX(90deg) translateZ(var(--craft-half));
-  filter: brightness(1.12);
-}
-.craft__face--bottom {
-  background-position: 100% 0;
-  transform: rotateX(-90deg) translateZ(var(--craft-half));
-  filter: brightness(0.6);
-}
 .orbit-chip {
   position: absolute;
   top: 50%;
@@ -1050,8 +1016,15 @@ section {
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: linear-gradient(180deg, #fbfbfc, #e4e6ea);
-  box-shadow: inset 0 1px 0 #fff, 0 10px 22px rgb(0 0 0 / 0.45);
+  /* the pills' glass (sheen, lip, edge), on a solid fill so the ring's
+     hairline doesn't run through the tile: #34343a is what the pills'
+     14% white fill comes to over this panel */
+  background: var(--glass-sheen), #34343a;
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-lip),
+    inset 0 0 0 1px var(--glass-edge),
+    0 10px 22px rgb(0 0 0 / 0.45);
+  color: var(--color-ink);
   animation-name: stack-orbit;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -1194,199 +1167,81 @@ section {
   }
 }
 
-/* ================= ISLANDS (Island.tsx, Section.tsx's Heading) =================
-   One floating voxel island per section, beside the heading. Height-driven
-   (--island-h): the islands differ in aspect (0.74 workshop to 0.99 ores),
-   so a shared height keeps them the same visual weight. Below lg the island
-   sits in flow above the kicker, right-aligned and small; at lg it moves
-   beside the heading, and the heading block reserves its height so the
-   panel under it never slides beneath the island. */
-:root {
-  --island-h: 150px;
-}
-@media (min-width: 1024px) {
-  :root {
-    --island-h: clamp(270px, 22vw, 340px);
-  }
-}
-.heading__island {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: -1rem;
-}
-@media (min-width: 1024px) {
-  .heading--island {
-    min-height: calc(var(--island-h) - 1.5rem);
-  }
-  .heading__island {
-    position: absolute;
-    top: -2rem;
-    right: 0;
-    margin: 0;
-  }
-}
-.island {
-  position: relative;
-  width: max-content;
-}
-.island__bob {
-  position: relative;
-  animation: island-bob 7s ease-in-out infinite alternate;
-}
-.island__img {
-  position: relative;
-  display: block;
-  width: auto;
-  max-width: none;
-  height: var(--island-h);
-}
-@keyframes island-bob {
-  from {
-    transform: translateY(0) rotate(-0.6deg);
-  }
-  to {
-    transform: translateY(-12px) rotate(0.6deg);
-  }
-}
-/* scroll-linked drift: rises 80px across its pass through the viewport */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .island__drift {
-      animation: island-drift linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
-    }
-  }
-}
-@keyframes island-drift {
-  from {
-    transform: translateY(40px);
-  }
-  to {
-    transform: translateY(-40px);
-  }
-}
-/* warm light pooled under the island, breathing; lantern gold, not ember */
-.island__glow {
+/* ================= MORPH PLANE (MorphBackdrop.tsx) =================
+   The night train, cut from its painting: night-train-cars.webp is the two
+   cars plus their window reflections on the water, 1548x346 cut at x 480,
+   y 806 of the 2048x1152 painting, over the re-plated bridge
+   (night-train.webp, the cars and reflections painted out). The scene box
+   repeats MorphBackdrop's coverUV: cover the viewport (the larger of its
+   width and 16/9 of its height), times the slide's zoom --z, panned by
+   --ox/--oy (y flipped: the texture's v runs bottom up), so at rest the
+   cars sit exactly on their painted pixels. */
+.morph-plane {
   position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 30%;
-  height: 50%;
-  border-radius: 999px;
-  background: radial-gradient(closest-side, rgb(255 196 120 / 0.2), transparent);
-  animation: island-breathe 5s ease-in-out infinite alternate;
-}
-@keyframes island-breathe {
-  from {
-    opacity: 0.5;
-  }
-  to {
-    opacity: 1;
-  }
-}
-/* motes: small warm blocks rising off the top surface, like sparks */
-.island__mote {
-  position: absolute;
-  top: 34%;
-  width: 5px;
-  height: 5px;
-  background: #ffe2ad;
-  box-shadow: 0 0 8px rgb(255 206 130 / 0.85);
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
   opacity: 0;
-  animation: island-mote 7s linear infinite;
+  transition: opacity 1.2s ease;
 }
-@keyframes island-mote {
-  0% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(-110px) rotate(90deg);
-    opacity: 0;
-  }
+.morph-plane[data-on] {
+  opacity: 1;
 }
-.island[data-paused] .island__bob,
-.island[data-paused] .island__glow,
-.island[data-paused] .island__mote,
-.island[data-paused] .island__beam {
+.morph-plane__scene {
+  --w: calc(var(--z) * max(100cqw, 100cqh * 16 / 9));
+  --h: calc(var(--w) * 9 / 16);
+  position: absolute;
+  left: calc(50cqw - (0.5 + var(--ox)) * var(--w));
+  top: calc(50cqh - (0.5 - var(--oy)) * var(--h));
+  width: var(--w);
+  height: var(--h);
+}
+.morph-plane__img {
+  position: absolute;
+  left: 23.4375%;
+  top: 69.9653%;
+  width: 75.5859%;
+  max-width: none;
+  height: 30.0347%;
+  will-change: transform;
+  animation: morph-train 68s linear infinite;
+}
+.morph-plane:not([data-on]) .morph-plane__img,
+.morph-plane[data-paused] .morph-plane__img {
   animation-play-state: paused;
 }
+/* Right to left (the cab faces left) at 0.032 painting-widths a second,
+   ~46 px/s on a 1440 screen: off the left edge by 48.5%, 9 s of empty
+   bridge, back in from the right, home at 100%. Percentages are of the
+   cut-out's own width (75.59% of the painting): -138.9% takes its right
+   edge 6% past the painting's left edge, 109.2% its left edge 6% past the
+   right one. The jump between them happens off screen (step-end). */
+@keyframes morph-train {
+  0% {
+    transform: translateX(0);
+  }
+  48.5% {
+    transform: translateX(-138.9%);
+    animation-timing-function: step-end;
+  }
+  61.8% {
+    transform: translateX(109.2%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
-  .island__bob,
-  .island__glow,
-  .island__beam {
+  .morph-plane__img {
     animation: none;
   }
-  .island__mote {
-    display: none;
-  }
 }
-
-/* The beacon (Contact). The painted glass cube's centre is at 48.92% x
-   9.96% of beacon.webp and its top face at 3.01% (measured off the key's
-   glass mask); the painted glow was keyed out with the pink, so the glow
-   and the beam are drawn here. The beam runs up 140svh and is clipped by
-   the Contact section's overflow: it reads as going on into the sky. */
-.island__beacon-glow {
-  position: absolute;
-  left: 48.92%;
-  top: 9.96%;
-  width: 46%;
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  border-radius: 999px;
-  background: radial-gradient(closest-side, rgb(170 255 248 / 0.42), rgb(170 255 248 / 0.12) 55%, transparent);
-  pointer-events: none;
-}
-.island__beam {
-  position: absolute;
-  left: 48.92%;
-  bottom: 97%;
-  width: 8%;
-  height: 140svh;
-  translate: -50% 0;
-  background: linear-gradient(to top, rgb(200 255 250 / 0.9), rgb(160 245 245 / 0.45) 12%, rgb(160 245 245 / 0.14) 55%, transparent);
-  box-shadow: 0 0 24px 6px rgb(160 245 245 / 0.18);
-  pointer-events: none;
-  animation: beam-pulse 3.2s ease-in-out infinite alternate;
-}
-@keyframes beam-pulse {
-  from {
-    opacity: 0.7;
-  }
-  to {
-    opacity: 1;
-  }
-}
-/* Pavle, in blocks (VoxelMe.tsx), standing in the clearing in front of the
-   cabin: feet at 64% x 44% of cabin.webp. He is ~24% of the island's height,
-   far bigger than true scale (the door is ~4%), because at true scale his
-   glasses would be a single pixel. */
-.island__me {
-  --voxel-px: calc(var(--island-h) * 0.0075);
-  position: absolute;
-  left: 64%;
-  top: 44%;
-  translate: -50% -100%;
-}
-/* Contact's beacon floats in the open sky above the closing heading, which
-   sits at the bottom of the full-height section, so the top right is free. */
-.contact__island {
-  --island-h: clamp(150px, 24vw, 380px);
-  position: absolute;
-  top: 12svh;
-  right: max(1rem, 6vw);
-  pointer-events: none;
-}
-/* ================= END ISLANDS ================= */
 
 /* ================= AMBIENCE (Ambience.tsx, in MorphBackdrop) =================
-   Square particles over the backdrop, one set per scene; only the set for
-   the current [data-scene] is displayed. Each span carries --x/--y (start),
+   Soft round points of light over the backdrop, one set per scene; only the
+   set for the current [data-scene] is displayed. (They were square blocks
+   for the voxel world; over the paintings a square read as a dead pixel.)
+   Each span carries --x/--y (start),
    --s (scale), --dur (a 0.8-1.4 multiplier on the set's base duration),
    --delay (negative, so the sky is already full on arrival) and --sway. */
 .amb-layer {
@@ -1401,8 +1256,9 @@ section {
   position: absolute;
   left: var(--x);
   top: var(--y);
-  width: calc(11px * var(--s));
-  height: calc(11px * var(--s));
+  width: calc(6px * var(--s));
+  height: calc(6px * var(--s));
+  border-radius: 50%;
   animation-delay: var(--delay);
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -1410,41 +1266,23 @@ section {
 .amb-layer[data-paused] .amb span {
   animation-play-state: paused;
 }
-.amb-layer[data-scene="about"] .amb--petals,
-.amb-layer[data-scene="clients"] .amb--petals,
-.amb-layer[data-scene="work"] .amb--spray,
-.amb-layer[data-scene="log"] .amb--fireflies,
-.amb-layer[data-scene="contact"] .amb--motes {
+.amb-layer[data-scene="about"] .amb--fireflies,
+.amb-layer[data-scene="work"] .amb--motes,
+.amb-layer[data-scene="clients"] .amb--motes,
+.amb-layer[data-scene="stack"] .amb--twinkle,
+.amb-layer[data-scene="log"] .amb--spray,
+.amb-layer[data-scene="contact"] .amb--spray {
   display: block;
 }
-/* petals: fall the full height with a sideways sway and a tumble, 16 s base */
-.amb--petals span {
-  top: -4vh;
-  background: #ffc4d8;
-  box-shadow: inset -3px -3px 0 rgb(226 120 160 / 0.55);
-  opacity: 0.85;
-  animation-name: amb-fall;
-  animation-duration: calc(16s * var(--dur));
-}
-.amb--petals span:nth-child(3n) {
-  background: #ffe0ea;
-}
-@keyframes amb-fall {
-  from {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate(var(--sway), 54vh) rotate(200deg);
-  }
-  to {
-    transform: translate(0, 108vh) rotate(400deg);
-  }
-}
-/* spray: lifts off the bottom, drifts, fades, 7 s base */
+/* spray: lifts off the bottom, drifts, fades, 7 s base; smaller and cooler
+   than the fireflies and motes, a fleck of mist, not a light */
 .amb--spray span {
   top: auto;
   bottom: -2vh;
-  background: rgb(235 245 255 / 0.7);
+  width: calc(4px * var(--s));
+  height: calc(4px * var(--s));
+  background: rgb(225 238 255 / 0.75);
+  box-shadow: 0 0 8px 1px rgb(190 215 255 / 0.35);
   opacity: 0;
   animation-name: amb-spray;
   animation-duration: calc(7s * var(--dur));
@@ -1464,8 +1302,6 @@ section {
 }
 /* fireflies: wander a small loop and blink, 9 s base */
 .amb--fireflies span {
-  width: calc(6px * var(--s));
-  height: calc(6px * var(--s));
   background: #e8ff9a;
   box-shadow: 0 0 10px 2px rgb(210 255 120 / 0.55);
   animation-name: amb-wander;
@@ -1493,10 +1329,8 @@ section {
     opacity: 0.1;
   }
 }
-/* motes: warm dust rising slowly through the sunrise, 14 s base */
+/* motes: warm dust rising slowly through the sunset, 14 s base */
 .amb--motes span {
-  width: calc(6px * var(--s));
-  height: calc(6px * var(--s));
   background: #ffd9a0;
   box-shadow: 0 0 8px rgb(255 200 120 / 0.6);
   opacity: 0;
@@ -1516,239 +1350,33 @@ section {
     opacity: 0;
   }
 }
+/* twinkle: stars that swell and fade where they stand, 6 s base; kept in
+   the top 60% of the screen, where the moonlit sky is open */
+.amb--twinkle span {
+  top: calc(var(--y) * 0.6);
+  width: calc(3px * var(--s));
+  height: calc(3px * var(--s));
+  background: #e6eeff;
+  box-shadow: 0 0 6px 1px rgb(200 220 255 / 0.5);
+  opacity: 0.1;
+  animation-name: amb-twinkle;
+  animation-duration: calc(6s * var(--dur));
+  animation-timing-function: ease-in-out;
+}
+@keyframes amb-twinkle {
+  0%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .amb-layer {
     display: none;
   }
 }
 /* ================= END AMBIENCE ================= */
-
-/* ================= VOXEL ME (VoxelMe.tsx) =================
-   Pavle as a Minecraft-style block figure, pure CSS 3D. --px is one skin
-   pixel on screen (VoxelMe sets it from `size`); the figure is 16 x 32 --px.
-   A face is 1 --px per skin pixel of its net, cut from the 64x64 skin with
-   background-position, pixelated. Each part is a preserve-3d box of six
-   backface-hidden faces; the rig is one 3D context, so parts depth-sort.
-
-   The base rules are the still pose (and the reduced-motion pose): head
-   turned 12deg toward you and tilted, arms 4deg off the body. Every loop is
-   inside the no-preference query below, so nothing moves unless allowed. */
-.voxel-me {
-  --px: var(--voxel-px, 6px);
-  position: relative;
-  display: block;
-  width: calc(var(--px) * 16);
-  height: calc(var(--px) * 32);
-  /* 200 skin px away: enough depth that the near arm reads bigger, not so
-     little that the head's top edge fans out */
-  perspective: calc(var(--px) * 200);
-  perspective-origin: 50% 35%;
-  -webkit-tap-highlight-color: transparent;
-}
-.voxel-me:focus-visible {
-  outline-offset: calc(var(--px) * 2);
-  border-radius: calc(var(--px) * 2);
-}
-.vx-rig,
-.vx-upper,
-.vx-part {
-  position: absolute;
-  transform-style: preserve-3d;
-}
-/* -28deg on Y shows his front and his left side, -10deg on X the tops */
-.vx-rig {
-  inset: 0;
-  transform: rotateX(-10deg) rotateY(-28deg);
-}
-/* head, body and arms: 20 --px tall, pivoting at the hips (its bottom) */
-.vx-upper {
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: calc(var(--px) * 20);
-  transform-origin: 50% 100%;
-}
-.vx-part {
-  left: calc(var(--px) * var(--x));
-  top: calc(var(--px) * var(--y));
-  width: calc(var(--px) * var(--w));
-  height: calc(var(--px) * var(--h));
-}
-.vx-face {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("/images/voxel/pavle-skin.png");
-  background-repeat: no-repeat;
-  background-size: calc(var(--px) * 64) calc(var(--px) * 64);
-  background-position: calc(var(--px) * var(--u) * -1) calc(var(--px) * var(--v) * -1);
-  image-rendering: pixelated;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-/* Faces start flat at the box's front plane and are turned out to its sides.
-   Side faces are d wide, centred on the box, then pushed out by w/2; top and
-   bottom are d tall, centred, pushed out by h/2. */
-.vx-face--front {
-  transform: translateZ(calc(var(--px) * var(--d) / 2));
-}
-.vx-face--back {
-  transform: rotateY(180deg) translateZ(calc(var(--px) * var(--d) / 2));
-}
-.vx-face--right,
-.vx-face--left {
-  left: calc(var(--px) * (var(--w) - var(--d)) / 2);
-  width: calc(var(--px) * var(--d));
-}
-.vx-face--right {
-  transform: rotateY(-90deg) translateZ(calc(var(--px) * var(--w) / 2));
-}
-.vx-face--left {
-  transform: rotateY(90deg) translateZ(calc(var(--px) * var(--w) / 2));
-}
-.vx-face--top,
-.vx-face--bottom {
-  top: calc(var(--px) * (var(--h) - var(--d)) / 2);
-  height: calc(var(--px) * var(--d));
-}
-.vx-face--top {
-  transform: rotateX(90deg) translateZ(calc(var(--px) * var(--h) / 2));
-}
-/* Minecraft maps the bottom net mirrored (its bottom row meets the front,
-   like the top's), which no rotation alone reproduces: hence the flip. */
-.vx-face--bottom {
-  transform: rotateX(-90deg) translateZ(calc(var(--px) * var(--h) / 2)) scaleY(-1);
-}
-/* Pivots: the neck (head's bottom centre), the shoulders (2 px down the
-   arm, where Minecraft puts them). */
-.vx-head {
-  transform-origin: 50% 100% 0;
-  transform: rotateY(12deg) rotateZ(-3deg);
-}
-.vx-arm-r,
-.vx-arm-l {
-  transform-origin: 50% calc(var(--px) * 2) 0;
-}
-.vx-arm-r {
-  transform: rotateZ(4deg);
-}
-.vx-arm-l {
-  transform: rotateZ(-4deg);
-}
-/* The raised hand: +rotateZ swings his right arm out, 160deg is up and a
-   touch clear of the head. Held still here (reduced motion); waved below. */
-.voxel-me:hover .vx-arm-r,
-.voxel-me:focus-visible .vx-arm-r,
-.voxel-me--waving .vx-arm-r {
-  transform: rotateZ(160deg);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .vx-upper {
-    animation: vx-breathe 3.6s ease-in-out infinite;
-  }
-  .vx-head {
-    animation: vx-look 11s ease-in-out infinite;
-  }
-  .vx-arm-r {
-    animation: vx-sway-r 3.6s ease-in-out infinite;
-  }
-  .vx-arm-l {
-    animation: vx-sway-l 3.6s ease-in-out infinite;
-  }
-  /* raise, three waves, lower: 2.2s */
-  .voxel-me:hover .vx-arm-r,
-  .voxel-me:focus-visible .vx-arm-r {
-    animation: vx-wave 2.2s ease-in-out both;
-  }
-  .voxel-me.voxel-me--waving .vx-arm-r {
-    animation: vx-wave-hold 1.2s ease-in-out infinite;
-  }
-  .voxel-me[data-paused] * {
-    animation-play-state: paused;
-  }
-}
-/* 1.8% of 20 --px: the head rises about a third of a skin pixel */
-@keyframes vx-breathe {
-  0%,
-  100% {
-    transform: scaleY(1);
-  }
-  50% {
-    transform: scaleY(1.018);
-  }
-}
-/* +Y turns him toward the viewer (the rig faces -28deg), -Y away */
-@keyframes vx-look {
-  0%,
-  10% {
-    transform: rotateY(6deg);
-  }
-  22%,
-  40% {
-    transform: rotateY(26deg) rotateX(-4deg);
-  }
-  52%,
-  62% {
-    transform: rotateY(4deg);
-  }
-  74%,
-  90% {
-    transform: rotateY(-20deg) rotateX(3deg);
-  }
-  100% {
-    transform: rotateY(6deg);
-  }
-}
-@keyframes vx-sway-r {
-  0%,
-  100% {
-    transform: rotateZ(2deg) rotateX(3deg);
-  }
-  50% {
-    transform: rotateZ(5deg) rotateX(-3deg);
-  }
-}
-@keyframes vx-sway-l {
-  0%,
-  100% {
-    transform: rotateZ(-2deg) rotateX(-3deg);
-  }
-  50% {
-    transform: rotateZ(-5deg) rotateX(3deg);
-  }
-}
-@keyframes vx-wave {
-  0% {
-    transform: rotateZ(3deg);
-  }
-  16% {
-    transform: rotateZ(156deg);
-  }
-  28%,
-  52%,
-  76% {
-    transform: rotateZ(174deg);
-  }
-  40%,
-  64% {
-    transform: rotateZ(140deg);
-  }
-  86% {
-    transform: rotateZ(156deg);
-  }
-  100% {
-    transform: rotateZ(3deg);
-  }
-}
-@keyframes vx-wave-hold {
-  0%,
-  100% {
-    transform: rotateZ(174deg);
-  }
-  50% {
-    transform: rotateZ(140deg);
-  }
-}
-/* ================= END VOXEL ME ================= */

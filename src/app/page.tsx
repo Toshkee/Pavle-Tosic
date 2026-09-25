@@ -19,18 +19,26 @@ export default function Home() {
         Skip to content
       </a>
       <Nav />
-      {/* One blocky world, golden hour to dawn, a biome per section:
-          Minecraft-with-shaders voxel scenes (AI-generated, Higgsfield
-          z_image, credited in the footer): cherry-blossom temple, sea cliffs,
-          torii in the sea, minecart canyon, sunrise over the clouds. Each
-          carries its own weather layer (Ambience.tsx). */}
+      {/* One evening, dusk into night, in the hero's hand-painted anime
+          style (AI-generated, Higgsfield z_image, credited in the footer):
+          countryside at dusk, sky islands at sunset, a moonlit night sky, a
+          night train over the sea. The moonlit sky is the batch's sunset
+          cumulus graded to night offline (cool silver clouds, extra stars,
+          the shooting star kept): at sunset it read as the islands again.
+          The night train is lifted off its bridge and crosses it (the
+          slide's `plane`, see MorphBackdrop). A painting can span a run of
+          sections, and each section picks its weather layer (Ambience.tsx). */}
       <MorphBackdrop
         slides={[
-          { src: "/images/morph/voxel-sakura-temple.webp", small: "/images/morph/voxel-sakura-temple-sm.webp", sectionId: "about" },
-          { src: "/images/morph/voxel-sea-cliffs.webp", small: "/images/morph/voxel-sea-cliffs-sm.webp", sectionId: "work" },
-          { src: "/images/morph/voxel-torii-sea.webp", small: "/images/morph/voxel-torii-sea-sm.webp", sectionId: "clients" },
-          { src: "/images/morph/voxel-rail-canyon.webp", small: "/images/morph/voxel-rail-canyon-sm.webp", sectionId: "log" },
-          { src: "/images/morph/voxel-cloud-sunrise.webp", small: "/images/morph/voxel-cloud-sunrise-sm.webp", sectionId: "contact" },
+          { src: "/images/morph/dusk-countryside.webp", small: "/images/morph/dusk-countryside-sm.webp", sectionIds: ["about"] },
+          { src: "/images/morph/sky-islands.webp", small: "/images/morph/sky-islands-sm.webp", sectionIds: ["work", "clients"] },
+          { src: "/images/morph/moonlit-sky.webp", small: "/images/morph/moonlit-sky-sm.webp", sectionIds: ["stack"] },
+          {
+            src: "/images/morph/night-train.webp",
+            small: "/images/morph/night-train-sm.webp",
+            sectionIds: ["log", "contact"],
+            plane: "/images/morph/night-train-cars.webp",
+          },
         ]}
       />
       <main id="main" className="relative">

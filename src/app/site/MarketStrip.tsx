@@ -83,7 +83,7 @@ export default function MarketStrip() {
   return (
     <div
       ref={ref}
-      className="plate mt-6 grid grid-cols-3 divide-x divide-line rounded-[8px] text-[13px]"
+      className="plate grid grid-cols-3 divide-x divide-line rounded-[8px] text-[13px]"
       aria-live="off"
     >
       {PAIRS.map((p) => {

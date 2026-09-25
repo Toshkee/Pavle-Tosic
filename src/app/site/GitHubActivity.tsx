@@ -37,7 +37,7 @@ export default async function GitHubActivity() {
   // the section never silently loses its GitHub line.
   if (!data) {
     return (
-      <p className="inside-reveal mt-10 text-[13px] text-faint">
+      <p className="text-[13px] text-faint">
         Commits, games and experiments in the open on{" "}
         <a
           href={`https://github.com/${GITHUB_USER}`}
@@ -64,7 +64,7 @@ export default async function GitHubActivity() {
   }
 
   return (
-    <div className="inside-reveal mt-10">
+    <div>
       <p className="text-[13px] text-faint">
         {totalLastYear.toLocaleString()} contributions in the last year on{" "}
         <a
@@ -81,8 +81,8 @@ export default async function GitHubActivity() {
         aria-label={`GitHub contribution activity over the last year: ${totalLastYear} contributions`}
         className="mt-4 flex w-full gap-[3px] pb-1"
       >
-        {/* Week columns share the panel's full width (flex-1, square cells),
-            so the calendar spans the card instead of stopping at 60% of it.
+        {/* Week columns share the column's full width (flex-1, square
+            cells), so the calendar spans it instead of stopping short.
             The busiest days (level 4) carry a small ember glow. */}
         {weeks.map((week, wi) => (
           <div

@@ -1,7 +1,5 @@
 import { Section, Heading } from "./Section";
 import { ABOUT_HEADING, ABOUT, SPEC } from "./content";
-import Island from "./Island";
-import VoxelMe from "./VoxelMe";
 
 /* About, on one dark-tinted glass panel so the text reads over any photo.
    The statement is the section heading; the portrait runs the panel's full
@@ -10,13 +8,7 @@ import VoxelMe from "./VoxelMe";
 export default function Spec() {
   return (
     <Section id="about" label="About">
-      <Heading kicker="About" index={1} island={
-          <Island name="cabin">
-            <span className="island__me">
-              <VoxelMe />
-            </span>
-          </Island>
-        }>
+      <Heading kicker="About" index={1}>
         {ABOUT_HEADING}
       </Heading>
       <div className="glass glass-blur glass-panel glass-dark-deep grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">

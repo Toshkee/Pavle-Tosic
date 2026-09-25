@@ -8,9 +8,10 @@ import Ambience from "./Ambience";
    photos, the same easing, aspect-cover and edge mirroring, with no arrows,
    thumbnails, autoplay or swipe. Which photo shows is decided by one
    IntersectionObserver per section (the section owning the middle of the
-   viewport wins); scrolling into the next section runs the morph.
+   viewport wins); a slide can own a run of sections, and crossing into a
+   section owned by the next slide runs the morph.
 
-   The canvas only draws DURING a morph (1.5 s per section change) and then
+   The canvas only draws DURING a morph (1.5 s per slide change) and then
    stops: at rest it is a still, so the glass panels above it are not
    re-blurred every frame. (An earlier cut drifted the photo at 30 fps; over
    a dozen backdrop-filter surfaces that meant a full-screen blur pass 30
@@ -22,10 +23,20 @@ import Ambience from "./Ambience";
    WebGL has actually failed so they never preload on the happy path. Under
    reduced motion the swap is a cut.
 
-   The scenes are AI-generated voxel landscapes, credited in page.tsx and
-   the footer. Phones get the 1200 px cut so the five textures stay small. */
+   The scenes are AI-generated anime paintings, credited in page.tsx and
+   the footer. Phones get the 1200 px cut so the four textures stay small.
 
-export type MorphSlide = { src: string; small: string; sectionId: string };
+   One slide can carry a `plane`: a cut-out that moves across its painting
+   (the night train, lifted off the bridge, its painting re-plated without
+   it). It is DOM, not shader, so the canvas can stay a still: a <div>
+   sized and offset with the same cover-plus-framing maths as coverUV,
+   under the scrim, fading in with its slide, and its image only requested
+   along with that slide's texture. The crossing itself is a CSS keyframe
+   (globals.css, MORPH PLANE), paused whenever the backdrop sleeps. */
+
+/* `plane`: a transparent cut-out laid over this slide's painting; its box
+   in the painting and its motion live in globals.css (MORPH PLANE). */
+export type MorphSlide = { src: string; small: string; sectionIds: string[]; plane?: string };
 
 const VERT = `
 attribute vec2 a_position;
@@ -102,6 +113,10 @@ const load = (src: string) =>
 export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ambRef = useRef<HTMLDivElement>(null);
+  const planeRef = useRef<HTMLDivElement>(null);
+  const planeImgRef = useRef<HTMLImageElement>(null);
+  const planeIdx = slides.findIndex((s) => s.plane);
+  const planeFraming = planeIdx >= 0 ? framingOf(planeIdx) : null;
   // The <img> fallback exists only once WebGL has failed. Rendering it up
   // front (even at opacity 0) made React hoist a high-priority preload for
   // every slide into the document head: 2.5 MB of photos fetched before the
@@ -176,22 +191,39 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
       return best;
     };
 
-    // the weather layer (Ambience.tsx) follows the wanted scene and sleeps
-    // while the hero covers the screen or the tab is hidden
+    // the weather layer (Ambience.tsx) follows the section owning the
+    // viewport (not the slide, which can span several) and sleeps while the
+    // hero covers the screen or the tab is hidden
     const amb = ambRef.current;
+    const plane = planeRef.current;
+    let scene = slides[0]?.sectionIds[0] ?? "";
     const syncAmb = () => {
-      if (!amb) return;
-      amb.dataset.scene = slides[wanted]?.sectionId ?? "";
-      if (covered || document.hidden) amb.dataset.paused = "true";
-      else delete amb.dataset.paused;
+      const asleep = covered || document.hidden;
+      if (amb) {
+        amb.dataset.scene = scene;
+        if (asleep) amb.dataset.paused = "true";
+        else delete amb.dataset.paused;
+      }
+      // the plane shows with its slide and moves only while the backdrop is awake
+      if (plane) {
+        if (wanted === planeIdx) plane.dataset.on = "true";
+        else delete plane.dataset.on;
+        if (asleep) plane.dataset.paused = "true";
+        else delete plane.dataset.paused;
+      }
+    };
+    // the plane's image is fetched with its slide, not with the page
+    const wakePlane = (i: number) => {
+      const img = planeImgRef.current;
+      const src = slides[i]?.plane;
+      if (img && src && !img.getAttribute("src")) img.src = src;
     };
 
     const go = (i: number) => {
       if (i === wanted) return;
       dir = i > wanted ? 1 : -1;
       wanted = i;
-      syncAmb();
-      if (!useGL) { setFallbackIdx(i); return; }
+      if (!useGL) { wakePlane(i); setFallbackIdx(i); return; }
       // the wanted slide and the one after it, so the next morph is ready
       ensure(i); ensure(i + 1);
       const target = nearestReady(i);
@@ -223,13 +255,14 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
         tex[i] = t; aspect[i] = img.naturalWidth / Math.max(img.naturalHeight, 1);
       });
 
-    // Textures load one section ahead of the visitor, not all at once: the
-    // five desktop photos are 2.5 MB, and a visitor who leaves from the hero
-    // should not have paid for the contact section's sunset.
+    // Textures load one slide ahead of the visitor, not all at once: the
+    // four desktop paintings are 380 KB, and a visitor who leaves from the
+    // hero should not have paid for the contact section's night train.
     const requested = new Set<number>();
     const ensure = (i: number) => {
       if (i < 0 || i >= slides.length || requested.has(i)) return;
       requested.add(i);
+      wakePlane(i);
       uploadTexture(i).then(() => { if (!dead) onReady(i); });
     };
 
@@ -273,14 +306,17 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
 
     // ---- which slide is wanted: the section that owns the middle of the viewport
     const sections = slides
-      .map((s, i) => ({ i, el: document.getElementById(s.sectionId) }))
-      .filter((t): t is { i: number; el: HTMLElement } => t.el !== null);
+      .flatMap((s, i) => s.sectionIds.map((id) => ({ i, id, el: document.getElementById(id) })))
+      .filter((t): t is { i: number; id: string; el: HTMLElement } => t.el !== null);
     const sectionIO = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const hit = sections.find((t) => t.el === entry.target);
-          if (hit) go(hit.i);
+          if (!hit) continue;
+          scene = hit.id;
+          go(hit.i);
+          syncAmb();
         }
       },
       { rootMargin: "-45% 0px -45% 0px", threshold: 0 }
@@ -302,7 +338,7 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
       document.removeEventListener("visibilitychange", onVis);
       if (gl) { tex.forEach((t) => t && gl.deleteTexture(t)); if (program) gl.deleteProgram(program); }
     };
-  }, [slides]);
+  }, [slides, planeIdx]);
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-bg">
@@ -321,6 +357,18 @@ export default function MorphBackdrop({ slides }: { slides: MorphSlide[] }) {
               style={{ opacity: i === fallbackIdx ? 1 : 0, transition: "opacity 700ms ease", maxWidth: "none" }}
             />
           ))}
+        </div>
+      )}
+      {planeFraming && (
+        <div
+          ref={planeRef}
+          className="morph-plane"
+          style={{ "--z": planeFraming[0], "--ox": planeFraming[1], "--oy": planeFraming[2] } as React.CSSProperties}
+        >
+          <div className="morph-plane__scene">
+            {/* src arrives with the slide's texture (wakePlane) */}
+            <img ref={planeImgRef} alt="" decoding="async" className="morph-plane__img" />
+          </div>
         </div>
       )}
       {/* legibility: the photos sit under a dark scrim, the panels do the rest.

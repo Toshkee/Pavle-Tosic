@@ -29,26 +29,20 @@ export function Section({
 
 /* The heading is a statement; what the section IS goes in the kicker
    above it ("02  Work"), numbered in page order. The biggest type in each
-   section used to be spent on a label the nav already says. `island` is the
-   section's floating voxel island (Island.tsx): above the kicker on phones,
-   beside the heading from lg, where the block reserves its height (ISLANDS
-   in globals.css). */
+   section used to be spent on a label the nav already says. */
 export function Heading({
   children,
   kicker,
   index,
   lead,
-  island,
 }: {
   children: ReactNode;
   kicker: string;
   index: number;
   lead?: string;
-  island?: ReactNode;
 }) {
   return (
-    <div className={`relative mb-10 md:mb-14 ${island ? "heading--island" : ""}`}>
-      {island && <div className="heading__island">{island}</div>}
+    <div className="relative mb-10 md:mb-14">
       <p className="mb-5 flex items-center gap-3 font-display text-[12px] font-medium uppercase tracking-[0.3em] text-ink/70">
         <span className="tabular-nums text-ink">{String(index).padStart(2, "0")}</span>
         <span aria-hidden className="h-px w-8 bg-line-strong" />

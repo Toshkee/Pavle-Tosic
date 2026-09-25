@@ -3,7 +3,6 @@ import { MARKS, STACK_LINE } from "./content";
 import GitHubActivity from "./GitHubActivity";
 import StackOrbit from "./StackOrbit";
 import StackMarquee from "./StackMarquee";
-import Island from "./Island";
 
 /* The stack as an orbit + one marquee + two still rows, split the way the
    Spec sheet splits it: tools picked freely (the outer ring, the moving
@@ -14,14 +13,16 @@ import Island from "./Island";
    real logos at runtime); this section itself stays a server component so
    it can compose the GitHub heatmap directly. Sits on the same dark glass
    panel as Log and Field, since the backdrop photo behind it can run
-   bright. */
+   bright. The heatmap shares the column beside the orbit with the rows: on
+   its own under the grid it left that column a thin strip of pills beside
+   a 440 px orbit, mostly empty panel. */
 export default function Inside() {
   const [byChoice, ...rest] = MARKS;
   const inner = rest.flatMap((g) => g.marks);
 
   return (
     <Section id="stack" label="Stack" className="!py-[8svh] md:!py-[10svh]">
-      <Heading kicker="Stack" index={4} lead={STACK_LINE} island={<Island name="ores" />}>
+      <Heading kicker="Stack" index={4} lead={STACK_LINE}>
         The tools I reach for.
       </Heading>
       <div className="glass glass-panel glass-dark p-6 md:p-10 lg:p-12">
@@ -32,9 +33,11 @@ export default function Inside() {
           <div className="hidden lg:block">
             <StackOrbit inner={inner} outer={byChoice.marks} />
           </div>
-          <StackMarquee moving={byChoice} still={rest} />
+          <div className="flex min-w-0 flex-col gap-10">
+            <StackMarquee moving={byChoice} still={rest} />
+            <GitHubActivity />
+          </div>
         </div>
-        <GitHubActivity />
       </div>
     </Section>
   );

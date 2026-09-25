@@ -5,7 +5,6 @@ import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion
 import { PROJECTS, type Project } from "../projects";
 import { Section, Heading } from "./Section";
 import MarketStrip from "./MarketStrip";
-import Island from "./Island";
 import NumberFlow from "@number-flow/react";
 
 /* GitLab-style stacking cards, ONE mechanism end to end (no JS fit-check,
@@ -20,9 +19,15 @@ import NumberFlow from "@number-flow/react";
    it only runs at lg, where cards pin, so the card being read never shrinks.
    Highlights, KPIs and the live market strip render on every size, reflowed
    (single column, then 3-up from sm), so a phone gets the same case for
-   each build, not a teaser. Only the card nearest the pin line has its
-   video decoding: an IntersectionObserver (not scroll) tracks that, on
-   every breakpoint. */
+   each build, not a teaser. At lg the demo column carries the KPIs under
+   the video, top-aligned with the text, and the links sit at the foot of
+   the text column (mt-auto), level with the KPIs: with the KPIs in it, the
+   text column ran 90-300 px taller than a bare video, and centring the
+   video against it left an empty block above and below it. Below lg both
+   columns are display: contents, so `order` keeps the phone sequence
+   (demo, highlights, KPIs, strip, links). Only the card nearest the pin
+   line has its video decoding: an IntersectionObserver (not scroll) tracks
+   that, on every breakpoint. */
 
 /* The Work stack is every "build" in projects.ts, in data order: my own
    studio first, then the bootcamp rebuilds, then the team sprint. Client
@@ -120,7 +125,6 @@ export default function Features() {
       <Heading
         kicker="Work"
         index={2}
-        island={<Island name="workshop" />}
         lead="My studio's site and back office, three bootcamp projects rebuilt from scratch in 2026, and one team sprint. The videos are the actual apps."
       >
         Five builds. All of them live.
@@ -202,8 +206,8 @@ function Card({
         className="relative p-5 md:p-10 lg:p-12"
         style={{ scale: reduced || !isLg ? 1 : scale }}
       >
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)] lg:items-center lg:gap-12">
-          <div className="contents lg:block">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.3fr)] lg:gap-12">
+          <div className="contents lg:flex lg:flex-col">
             <p className="truncate text-[12px] text-faint lg:text-[13px]">
               <span className="mr-2 font-display tabular-nums text-ink">
                 {String(index + 1).padStart(2, "0")}
@@ -224,17 +228,12 @@ function Card({
                 </li>
               ))}
             </ul>
-            <dl className="order-2 mt-6 grid max-w-[52ch] grid-cols-1 gap-5 sm:grid-cols-3 lg:order-none lg:gap-6">
-              {project.kpis.map((k) => (
-                <Kpi key={k.label} label={k.label} value={k.value} />
-              ))}
-            </dl>
             {project.slug === "cryptoflow" && (
-              <div className="order-2 lg:order-none">
+              <div className="order-3 mt-6 lg:order-none">
                 <MarketStrip />
               </div>
             )}
-            <p className="order-3 mt-1 flex flex-wrap gap-2 text-[13px] lg:order-none lg:mt-8">
+            <p className="order-4 mt-1 flex flex-wrap gap-2 text-[13px] lg:order-none lg:mt-auto lg:pt-8">
               {/* the primary action: solid ink, not ember (ember is the email CTA's) */}
               <a href={project.live} target="_blank" rel="noreferrer" className="rounded-full bg-ink px-3.5 py-1.5 font-semibold text-bg transition-colors hover:bg-white lg:px-4 lg:py-2">
                 Live site
@@ -247,8 +246,15 @@ function Card({
               </a>
             </p>
           </div>
-          <div className="order-1 lg:order-none">
-            <Demo project={project} playing={playing} />
+          <div className="contents lg:flex lg:flex-col lg:gap-8">
+            <div className="order-1 lg:order-none">
+              <Demo project={project} playing={playing} />
+            </div>
+            <dl className="order-2 mt-6 grid max-w-[52ch] grid-cols-1 gap-5 sm:grid-cols-3 lg:order-none lg:mt-0 lg:max-w-none lg:gap-6">
+              {project.kpis.map((k) => (
+                <Kpi key={k.label} label={k.label} value={k.value} />
+              ))}
+            </dl>
           </div>
         </div>
       </motion.article>

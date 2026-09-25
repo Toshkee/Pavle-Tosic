@@ -3,7 +3,6 @@
 import { Icon } from "@iconify/react";
 import type { Mark } from "./content";
 import "./icons";
-import CraftingBlock from "./CraftingBlock";
 
 /* Two counter-rotating rings of glass icon chips, the section's one moving
    piece. Mechanism adapted from Magic UI's OrbitingCircles
@@ -16,9 +15,14 @@ import CraftingBlock from "./CraftingBlock";
    Inside.tsx. The ring is one `role="img"` for screen readers; individual
    chips are decorative, named on hover by a CSS label (data-name), and the
    whole orbit holds still while hovered so a label can be read. Chips are
-   light "app icon" tiles: several brand marks (Next.js, GitHub) are black
-   and vanished on the old dark glass chips. A spinning crafting table
-   (CraftingBlock.tsx) sits at the core. */
+   dark glass tiles, the material the pills beside them use: they were light
+   "app icon" tiles once, because the GitHub, Unity and Astro marks are
+   near-black, but white tiles were the brightest thing in the section and
+   the Oracle wordmark didn't read at 26 px. Those four are one-colour
+   Simple Icons now (content.ts, icons.ts), in ink, Oracle in its red. The
+   core is Pavle, the one the tools go round: portrait-core.webp, a 256 px
+   face-centred crop of the About portrait (8.7 KB, not the 163 KB
+   original). */
 
 function Ring({
   marks,
@@ -42,7 +46,7 @@ function Ring({
             animationDelay: `${-((duration * i) / marks.length)}s`,
           }}
         >
-          <Icon icon={m.icon} width={26} height={26} aria-hidden focusable="false" />
+          <Icon icon={m.icon} color={m.color} width={26} height={26} aria-hidden focusable="false" />
         </span>
       ))}
     </div>
@@ -54,7 +58,7 @@ export default function StackOrbit({ inner, outer }: { inner: Mark[]; outer: Mar
   return (
     <div className="orbit mx-auto" role="img" aria-label={`Tools orbiting: ${all}`}>
       <div className="orbit-core">
-        <CraftingBlock />
+        <img src="/images/hero/portrait-core.webp" alt="" width={256} height={256} loading="lazy" decoding="async" />
       </div>
       <Ring marks={inner} duration={26} />
       <Ring marks={outer} duration={38} reverse />

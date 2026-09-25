@@ -39,9 +39,12 @@ export const SPEC: { label: string; value: string }[] = [
 
 /* Brand marks, grouped the way the Spec sheet groups them: tools picked
    freely, tools the day job runs on, and the two game engines from personal
-   projects, which are neither. `icon` is an Iconify id from the coloured
-   "logos" set, rendered by StackOrbit / StackMarquee. */
-export type Mark = { name: string; icon: string };
+   projects, which are neither. `icon` is an Iconify id, rendered by
+   StackOrbit / StackMarquee and bundled in icons.ts: the coloured "logos"
+   set, or a one-colour "simple-icons" mark (drawn in the text colour, or in
+   `color`) where the coloured one is black or a wordmark and vanished on
+   the dark glass tiles. */
+export type Mark = { name: string; icon: string; color?: string };
 export type MarkGroup = { heading: string; marks: Mark[] };
 
 export const MARKS: MarkGroup[] = [
@@ -50,14 +53,14 @@ export const MARKS: MarkGroup[] = [
     marks: [
       { name: "Next.js", icon: "logos:nextjs-icon" },
       { name: "React", icon: "logos:react" },
-      { name: "Astro", icon: "logos:astro-icon" },
+      { name: "Astro", icon: "simple-icons:astro" },
       { name: "TypeScript", icon: "logos:typescript-icon" },
       { name: "Tailwind CSS", icon: "logos:tailwindcss-icon" },
       { name: "Node.js", icon: "logos:nodejs-icon" },
       { name: "PostgreSQL", icon: "logos:postgresql" },
       { name: "Cloudflare", icon: "logos:cloudflare-icon" },
       { name: "Django", icon: "logos:django-icon" },
-      { name: "GitHub", icon: "logos:github-icon" },
+      { name: "GitHub", icon: "simple-icons:github" },
     ],
   },
   {
@@ -65,14 +68,14 @@ export const MARKS: MarkGroup[] = [
     marks: [
       { name: "Angular", icon: "logos:angular-icon" },
       { name: ".NET", icon: "logos:dotnet" },
-      { name: "Oracle", icon: "logos:oracle" },
+      { name: "Oracle", icon: "simple-icons:oracle", color: "#f80000" },
     ],
   },
   {
     heading: "Off the clock",
     marks: [
       { name: "Godot", icon: "logos:godot-icon" },
-      { name: "Unity", icon: "logos:unity" },
+      { name: "Unity", icon: "simple-icons:unity" },
     ],
   },
 ];

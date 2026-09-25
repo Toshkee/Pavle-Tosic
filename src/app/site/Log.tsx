@@ -4,7 +4,6 @@ import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { Section, Heading } from "./Section";
 import { LOG } from "./content";
-import Island from "./Island";
 
 /* Release history. Scoped the way it happened: a contribution is called a
    contribution, a prototype is called a prototype.
@@ -33,7 +32,7 @@ export default function Log() {
 
   return (
     <Section id="log" label="Experience">
-      <Heading kicker="Log" index={5} island={<Island name="rail" />}>From bootcamp to public registers.</Heading>
+      <Heading kicker="Log" index={5}>From bootcamp to public registers.</Heading>
       {/* Capped to the text measure and centred: at 1440px the panel's
           content column stopped well short of its own right edge, leaving
           the glass looking under-filled rather than airy. The rail lives in

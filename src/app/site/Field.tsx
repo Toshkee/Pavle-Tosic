@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { PROJECTS, type Project } from "../projects";
 import { Section, Heading } from "./Section";
-import Island from "./Island";
 
 /* Client work as a ruled index. These sites have no demo video, so they get
    an honest table instead of being padded out to match the rail above: year,
@@ -93,7 +92,6 @@ export default function Field() {
       <Heading
         kicker="Client work"
         index={3}
-        island={<Island name="village" />}
         lead="Paid freelance sites, both bilingual, both static, both on Cloudflare. Shipped September 2026."
       >
         Two paid sites, live for real clients.

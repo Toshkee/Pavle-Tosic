@@ -1,28 +1,29 @@
-/* The backdrop's weather: one particle set per scene, all square, because
-   everything in this world is a block. MorphBackdrop mounts this inside its
+/* The backdrop's weather: one particle set per scene, all small soft
+   points of light over the paintings. MorphBackdrop mounts this inside its
    fixed layer and sets data-scene (the section id owning the viewport) and
    data-paused (hero covering the screen, or tab hidden) on the wrapper, so
    switching scene is an attribute flip: no state, no re-render. Only the
    active set is displayed (globals.css, AMBIENCE), so the other sets'
    animations never run.
 
-   - petals: cherry blossom, falling and swaying (about: the temple,
-     clients: the torii shore)
-   - spray: sea spray lifting off the bottom edge (work: the cliffs)
-   - fireflies: slow wanderers that blink (log: the canyon at night)
-   - motes: warm dust rising in the sunrise (contact)
+   - fireflies: slow wanderers that blink (about: the countryside at dusk)
+   - motes: warm dust rising through the sunset glow (work, clients: the
+     sky islands)
+   - twinkle: stars that swell and fade in place (stack: the moonlit sky)
+   - spray: mist lifting off the water at the bottom edge (log, contact:
+     the night train over the sea)
 
    Positions, sizes and timings come from a fixed hash of the index, not
    Math.random, so the server and client markup match. Transform and
    opacity only; nothing renders under reduced motion. */
 
-type AmbSet = { kind: "petals" | "spray" | "fireflies" | "motes"; count: number };
+type AmbSet = { kind: "spray" | "fireflies" | "motes" | "twinkle"; count: number };
 
 const SETS: AmbSet[] = [
-  { kind: "petals", count: 26 },
   { kind: "spray", count: 18 },
   { kind: "fireflies", count: 22 },
   { kind: "motes", count: 18 },
+  { kind: "twinkle", count: 16 },
 ];
 
 // 0..1, stable per (i, salt). Integer-only 32-bit mixing (Math.imul and
