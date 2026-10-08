@@ -53,6 +53,15 @@ other page re-render on each request instead of serving a cache HIT.
 
 Requires **Node 22+** (wrangler refuses to run on 20).
 
+**Keep `@opennextjs/cloudflare` at 1.20.9 or newer with Next 16.3.8+.** Next
+16.3.8 changed the incremental-cache keys (`/route-cache/APP_PAGE/<hash>/$/…`);
+an older adapter still writes the old names, the Worker finds nothing, and
+every prerendered `/work/[slug]` 404s in production while `next start` is
+fine (seen live on 2026-10-09). Test the adapter build locally before a
+dependency bump: `npx opennextjs-cloudflare build && npx opennextjs-cloudflare
+populateCache local && npx wrangler dev`, then expect `x-nextjs-cache: HIT`
+on a case-study URL.
+
 Config lives in `open-next.config.ts` and `wrangler.jsonc`. The OpenNext config
 sets `incrementalCache: staticAssetsIncrementalCache`, which serves that
 prerendered output from the `ASSETS` binding under `cdn-cgi/_next_cache`. It is
