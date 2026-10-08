@@ -76,10 +76,10 @@ export const ABOUT = [
 ];
 export const STACK_LINE =
   "My core stack, as it stands on my CV, plus what my projects run on.";
-// His answer (October 2026) to "which project are you proudest of". The
-// chat may say so; no other favourite exists.
+// His answer (October 2026) to "which project are you proudest of", in his
+// order. The chat may say so; no other favourite exists.
 export const PROUDEST =
-  "Reform Fitness, the members' app I built through Vaky, and vaky.me itself, my own business site.";
+  "the Infostream company site first, then Reform Fitness, the members' app I built through Vaky, and vaky.me itself, my own business site.";
 
 /* The spec sheet: checkable facts only. Roles and dates live in
    EXPERIENCE below, so each fact is stated once. Availability is his
