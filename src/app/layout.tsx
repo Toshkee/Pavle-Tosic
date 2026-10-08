@@ -33,7 +33,7 @@ export const metadata: Metadata = {
       {
         // ?v=2 busts social scrapers' preview caches (WhatsApp/Telegram/X hold
         // og:images for weeks keyed by URL): bump it whenever og.png changes.
-        url: "/og.png?v=5",
+        url: "/og.png?v=6",
         width: 1200,
         height: 630,
         alt: "Pavle Tošić, Software Developer",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pavle Tošić, Software Developer",
     description: DESCRIPTION,
-    images: ["/og.png?v=5"],
+    images: ["/og.png?v=6"],
   },
 };
 
