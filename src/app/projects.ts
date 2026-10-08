@@ -1,4 +1,4 @@
-/* Project data — the single source of truth for the chat's project cards,
+/* Project data (nine projects, newest first) — the single source of truth for the chat's project cards,
    the facts the chat model is given (api/chat/prompt.ts) AND the crawlable
    case-study routes under /work/[slug]. Plain data, no "use client": client
    components and server routes both import it.
@@ -84,6 +84,47 @@ export const PROJECTS: Project[] = [
       { src: "/images/projects/reform-fitness-schedule.webp", label: "Schedule" },
       { src: "/images/projects/reform-fitness-panel.webp", label: "Owner's panel" },
     ],
+  },
+  {
+    slug: "infostream",
+    title: "Infostream",
+    blurb:
+      "The company website of Infostream, the Podgorica software house I work for: a bilingual Next.js site, English and Montenegrin, that presents twenty years of finance, HR and document-management systems for Montenegrin institutions, with a page per expertise domain, hosted on the company's own server.",
+    problem:
+      "Infostream needed a site that explains two decades of enterprise work in a few screens, in two languages, runs on the company's own server, and whose copy can change without anyone touching a component.",
+    highlights: [
+      "Next.js 16 App Router with one [lang] segment: English and Montenegrin from two JSON dictionaries, and a repo check that fails the moment their key trees differ",
+      "GSAP and Lenis scroll: a pinned Expertise section scrubs one CSS variable per frame, all of it gated on prefers-reduced-motion",
+      "Strict CSP and security headers, no environment variables, no API routes; deployed to the company's VPS with an atomic release switch (build beside the live release, then one symlink) behind Cloudflare",
+    ],
+    result: [
+      "Built from May to October 2026 and live at infostream.co.me in both languages, with a generated OG image per locale.",
+      "Handed over with a hosting guide and a deploy script: a failed build never touches the live release, and a rollback is one symlink.",
+      "Every visible word lives in the dictionaries, so the two languages cannot drift apart: the parity check runs with lint and typecheck before every release.",
+    ],
+    kpis: [
+      // git rev-list --count HEAD; first commit 26 May 2026, last 2 Oct 2026
+      { label: "commits", value: "119, May to October 2026" },
+      // src/lib/dict/eng.json: leaf strings; mne.json must match key for key
+      { label: "translated strings", value: "301 per language, parity checked" },
+      // src/lib/dict/eng.json: expertise.items[].clients, 6 + 6 + 9
+      { label: "client systems listed", value: "21 across three domains" },
+    ],
+    role: "Solo build, in my job at Infostream",
+    kind: "client",
+    context: "Infostream, May to October 2026",
+    stack: ["Next.js 16", "TypeScript", "Tailwind CSS", "GSAP", "nginx on a VPS"],
+    live: "https://infostream.co.me/eng",
+    code: null,
+    shot: "/images/projects/infostream.webp",
+    video: null,
+    domain: "infostream.co.me",
+    gallery: [
+      { src: "/images/projects/infostream.webp", label: "Home" },
+      { src: "/images/projects/infostream-finance.webp", label: "Finance domain page" },
+      { src: "/images/projects/infostream-mne.webp", label: "Home, in Montenegrin" },
+    ],
+    note: "The company's own site, built as its developer; the repository is Infostream's, so there is no public code link.",
   },
   {
     slug: "vaky",

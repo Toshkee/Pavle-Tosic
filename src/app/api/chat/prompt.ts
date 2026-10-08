@@ -58,7 +58,7 @@ const facts = [
   "## Projects",
   ...PROJECTS.map((project) =>
     [
-      `### ${project.title} (slug: ${project.slug}, ${project.kind === "client" ? "client work" : "own build"})`,
+      `### ${project.title} (slug: ${project.slug}, ${project.kind === "client" ? "built for a client or my employer" : "own build"})`,
       `${project.role}. ${project.context}.`,
       project.blurb,
       `Problem: ${project.problem}`,
