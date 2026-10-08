@@ -1,6 +1,7 @@
-/* Project data — the single source of truth for the Work kiosk on the home
-   page AND the crawlable case-study routes under /work/[slug]. Plain data, no
-   "use client": the client page and the server routes both import it.
+/* Project data — the single source of truth for the chat's project cards,
+   the facts the chat model is given (api/chat/prompt.ts) AND the crawlable
+   case-study routes under /work/[slug]. Plain data, no "use client": client
+   components and server routes both import it.
 
    Every claim here is grounded in the actual repos (cloned and mined) — the
    arch trees, the "what broke" notes, the code excerpts and the `kpis` numbers
@@ -27,15 +28,63 @@ export type Project = {
       (paid sites for someone else). The case-study routes take both. */
   kind: "build" | "client";
   stack: string[];
-  live: string;
-  code: string;
+  /** Null for a private app or a private repo: no link is shown. */
+  live: string | null;
+  code: string | null;
   shot: string;
   video: string | null;
-  domain: string;
+  domain: string | null;
   gallery: { src: string; label: string }[];
+  /** The screens are phone-sized (portrait), so pages show them narrow. */
+  phone?: boolean;
+  /** A one-line honest status shown under the links. */
+  note?: string;
 };
 
 export const PROJECTS: Project[] = [
+  {
+    slug: "reform-fitness",
+    title: "Reform Fitness",
+    blurb:
+      "A members' app for a fitness and pilates studio in Podgorica, built through Vaky: members book, cancel and move their own classes, track their membership, weight and meal plan, and get notifications on their phone; the owner runs members, payments and the schedule from a panel in the same app. An installable PWA, no app store.",
+    problem:
+      "Classes at the studio's two locations, Fitness and Pilates, were booked by message, over Viber and WhatsApp, straight with the owner.",
+    highlights: [
+      "React 19 + TypeScript PWA (vite-plugin-pwa): installs to the home screen, with a service worker for the app cache and push",
+      "Firebase backend: Auth, Firestore, Cloud Functions, Storage and Cloud Messaging, all in europe-west3 (Frankfurt)",
+      "Owner's panel in the same app: members, memberships and payments, the schedule, a weekly template and invites",
+    ],
+    result: [
+      "Live for the studio's members, built and shipped in October 2026.",
+      "Tested at three levels: unit tests, Firestore rules and the API against the Firebase emulators, and an end-to-end run through the Functions emulator.",
+    ],
+    kpis: [
+      // grep -cE '^export const [a-zA-Z]+ = (callable|scheduled|created|updated)' functions/src/index.ts
+      { label: "Cloud Functions", value: "27: bookings, invites, reminders, push" },
+      // git ls-files | grep -E '\.(test|spec)\.(ts|tsx)$' | xargs grep -hE '^\s*(it|test)(\.each\([^)]*\))?\(' | wc -l
+      { label: "tests", value: "919 in 98 files" },
+      // git log --oneline | wc -l, first commit 1 Oct 2026
+      { label: "commits", value: "54 since 1 October 2026" },
+    ],
+    role: "Solo build, client work",
+    kind: "client",
+    context: "Vaky, October 2026",
+    stack: ["React 19", "TypeScript", "Tailwind CSS", "Firebase", "PWA"],
+    // The app is for the studio's members only and the repo is private, so
+    // there is nothing public to link, as on vaky.me.
+    live: null,
+    code: null,
+    shot: "/images/projects/reform-fitness-home.webp",
+    video: null,
+    domain: null,
+    phone: true,
+    note: "The app is private, for the studio's members only, so there is no link to it. The screens are from its demo build, with made-up members.",
+    gallery: [
+      { src: "/images/projects/reform-fitness-home.webp", label: "Home" },
+      { src: "/images/projects/reform-fitness-schedule.webp", label: "Schedule" },
+      { src: "/images/projects/reform-fitness-panel.webp", label: "Owner's panel" },
+    ],
+  },
   {
     slug: "vaky",
     title: "Vaky.me",
@@ -87,6 +136,7 @@ export const PROJECTS: Project[] = [
       "Live Binance WebSocket feeds: candles, depth and trades on one socket",
       "Server-authoritative engine: 1-125× leverage, client prices ignored",
       "Concurrency-safe wallet: row locks and atomic transactions",
+      "Redesigned in October 2026 as a Bloomberg-style terminal: F1-F3 screen keys, a command line (BTC opens the terminal, BTC DES the coin page) and a live 16-perp monitor",
     ],
     result: [
       "Shipped and live: spot and futures both settle against the server's own Binance price, so a tampered client can't mint balance.",
@@ -105,14 +155,16 @@ export const PROJECTS: Project[] = [
     context: "General Assembly, rebuilt 2026",
     stack: ["React 19", "TypeScript", "Django REST", "WebSockets", "PostgreSQL"],
     live: "https://cryptofloww.netlify.app/",
+    note: "The demo API runs on a free tier, so the first request may take a moment to wake.",
     code: "https://github.com/Toshkee/CryptoFlow",
-    shot: "/images/projects/cryptoflow.webp",
+    // The landing page leads (his pick); the terminal still is in the gallery.
+    shot: "/images/projects/cryptoflow-landing.webp",
     video: "/video/projects/cryptoflow.mp4",
     domain: "cryptofloww.netlify.app",
     gallery: [
+      { src: "/images/projects/cryptoflow-landing.webp", label: "Landing" },
       { src: "/images/projects/cryptoflow-terminal.webp", label: "Trading terminal" },
       { src: "/images/projects/cryptoflow-markets.webp", label: "Live markets" },
-      { src: "/images/projects/cryptoflow-landing.webp", label: "Landing" },
     ],
   },
   {
@@ -220,6 +272,7 @@ export const PROJECTS: Project[] = [
     context: "General Assembly, 2025",
     stack: ["React", "Node.js", "Express", "MongoDB", "Socket.IO"],
     live: "https://meet2explore.netlify.app/",
+    note: "The demo's backend host has lapsed, so sign-in and live trips are offline; the landing page still loads.",
     code: "https://github.com/Toshkee/Meet2Explore-Frontend",
     shot: "/images/projects/meet2explore.webp",
     // No demo video on purpose: the only recording was a 720x416 screen
@@ -313,14 +366,6 @@ export const PROJECTS: Project[] = [
     ],
   },
 ];
-
-// PROJECTS[].live → a one-line honest status shown under the demo links.
-export const DEMO_NOTES: Record<string, string> = {
-  "https://cryptofloww.netlify.app/":
-    "demo api runs on a free tier, so the first request may take a moment to wake",
-  "https://meet2explore.netlify.app/":
-    "the demo's backend host has lapsed, so sign-in and live trips are offline; the landing page still loads",
-};
 
 // Engineering "case files", shown as extra tabs on each project's kiosk
 // frame. Every line is grounded in the actual repos (cloned + mined) — the
@@ -868,9 +913,9 @@ export const CASES: Record<string, CaseFile> = {
   "Mandarina, Petrovac": MANDARINA_CASE,
 };
 
-// Every screenshot in public/images/projects ships as a full-width .webp for
-// the lightbox and a 640px "-thumb.webp" twin. The rail renders into a ~15vw
-// box, so it takes the twin; the lightbox keeps the full file.
+// Every screenshot in public/images/projects ships as a full-width .webp and
+// a 640px "-thumb.webp" twin. The /work index and the chat's gallery strip
+// render at 288px or less, so they take the twin.
 export const thumbOf = (src: string) => src.replace(/\.webp$/, "-thumb.webp");
 
 export const projectBySlug = (slug: string): Project | undefined =>

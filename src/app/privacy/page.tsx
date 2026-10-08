@@ -2,14 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EMAIL } from "../contact";
 
-/* Privacy notice. Everything stated here is checkable against the code:
-   src/app/site/MarketStrip.tsx is the only third-party data connection the
-   site makes from the browser, and nothing is written to local storage. */
+/* Privacy notice. Everything stated here is checkable against the code: the
+   chat is the only feature that sends what a visitor types anywhere
+   (src/app/api/chat/route.ts, which logs status codes, never message text),
+   and the theme toggle (src/app/site/ThemeToggle.tsx) is the only thing
+   written to local storage. */
 
 export const metadata: Metadata = {
   title: "Privacy — Pavle Tošić",
   description:
-    "How this site handles analytics and the one public live-data connection it makes.",
+    "How this site handles analytics, the questions you ask the chat, and the one setting it stores.",
   alternates: { canonical: "https://pavletosic.com/privacy" },
   robots: { index: true, follow: true },
 };
@@ -59,27 +61,36 @@ export default function Privacy() {
           cookieless and does not fingerprint visitors or track them across
           sites. It records aggregate page views along with the page URL, the
           referrer, coarse device and browser information, country, and page
-          load timings. I use it to see which sections people read. It does not
+          load timings. I use it to see which pages people read. It does not
           identify you, and I cannot single out an individual visit from it.
         </p>
       </Section>
 
-      <Section title="Public live data">
+      <Section title="The chat">
         <p>
-          The CryptoFlow entry in the Work section shows three live Binance
-          spot prices. While that block is on screen, your browser opens a
-          connection to Binance&apos;s public WebSocket service, which can
-          receive the ordinary network details that accompany any request:
-          your IP address, browser information and this site&apos;s origin.
-          The connection closes when you scroll past. Nothing about you is
-          sent, and no other third-party data is loaded by the page.
+          The answers on this site are written by an AI model speaking for me.
+          When you ask a question, it goes to this site&apos;s server, which
+          sends it, together with the earlier questions and answers from the
+          same page visit, to Anthropic&apos;s Claude API to write the reply. I do
+          not store the conversation: it lives in your browser tab and is gone
+          when you close it or reload.
+        </p>
+        <p>
+          Anthropic processes the messages under its commercial terms, which
+          do not allow using them to train its models; Anthropic may keep them
+          for a limited time to detect abuse.
+          Please don&apos;t type anything personal or sensitive into the chat.
+          To limit abuse, the server counts requests per IP address for one
+          minute; the count is not stored beyond that.
         </p>
       </Section>
 
       <Section title="Storage on your device">
         <p>
-          The site sets no cookies and writes nothing to local or session
-          storage.
+          The site sets no cookies. If you switch between light and dark with
+          the toggle, that one choice is saved in your browser&apos;s local
+          storage under the key <code>theme</code>, so the next page opens the
+          same way. Nothing else is written.
         </p>
       </Section>
 

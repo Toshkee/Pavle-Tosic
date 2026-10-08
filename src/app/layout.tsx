@@ -1,23 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import { EMAIL } from "./contact";
+import FluidCursor from "./site/FluidCursor";
 
-// Nippo (Fontshare, self-hosted under the ITF Free Font License, see
-// fonts/NIPPO-LICENSE-FFL.txt): the display face for the wordmark, section
-// heads and project titles. Two weights only. Body copy is the system stack,
-// so this is the site's only webfont.
-const nippo = localFont({
-  src: [
-    { path: "./fonts/nippo-500.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/nippo-700.woff2", weight: "700", style: "normal" },
-  ],
-  variable: "--font-nippo",
-  display: "swap",
-});
+// Runs before first paint, so a visitor who picked dark with the toggle
+// never sees a flash of the light page. Without a stored choice the page is
+// light. Inline on purpose: CSP allows inline scripts (next.config.ts) and
+// an external file would arrive after the paint.
+const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
 const DESCRIPTION =
-  "Software developer at Infostream (Montenegro · Remote). TypeScript and React by choice, Oracle APEX and SQL on the job. I build web apps front to back.";
+  "Software developer at Infostream, Montenegro. TypeScript and React by choice, Oracle APEX, Oracle Database and .NET with C# at work. I build web apps front to back.";
 
 // Web analytics: Cloudflare Web Analytics is enabled on the zone (dashboard →
 // Analytics & Logs → Web Analytics, site pavletosic.com) and injects its RUM
@@ -57,9 +50,8 @@ export const metadata: Metadata = {
 };
 
 // Structured data so search engines tie the domain to the person and to the
-// GitHub/LinkedIn profiles. Kept in sync by hand with the NAME/ROLE/SOCIAL
-// constants in page.tsx: that file is "use client", so importing from it here
-// would drag the whole page module into the server layout.
+// GitHub/LinkedIn profiles. Kept in sync by hand with NAME/ROLE/SOCIAL in
+// site/content.ts.
 const PROFILE_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "ProfilePage",
@@ -78,6 +70,8 @@ const PROFILE_JSON_LD = {
       "Next.js",
       "Node.js",
       "Oracle APEX",
+      "Oracle Database",
+      ".NET",
       "SQL",
     ],
     sameAs: [
@@ -93,8 +87,7 @@ export const viewport: Viewport = {
   // phones fall back to a ~980px layout and render the desktop layout shrunk.
   width: "device-width",
   initialScale: 1,
-  themeColor: "#0a0a0c",
-  colorScheme: "dark",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -102,23 +95,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Font variables live on <html>: Tailwind v4 @theme tokens are substituted
-  // at :root, so var(--font-nippo) must be defined there.
   return (
-    <html
-      lang="en"
-      // globals.css sets `scroll-behavior: smooth` on <html>. Declaring it here
-      // too tells Next the smooth scroll is deliberate, so route changes jump
-      // to the top instantly instead of animating a long scroll (and landing
-      // scroll restoration in the wrong place) on the way to a new page.
-      data-scroll-behavior="smooth"
-      className={nippo.variable}
-    >
+    // The theme script writes data-theme before React hydrates, so the
+    // attribute legitimately differs from the server HTML.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(PROFILE_JSON_LD) }}
         />
+        <FluidCursor />
         {children}
       </body>
     </html>

@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
+// Gives `next dev` the Worker's bindings (the CHAT_LIMITER rate limiter in
+// /api/chat) through getCloudflareContext(), the same as in production.
+initOpenNextCloudflareForDev();
 
 // Enforced allowlist for every browser-controlled resource type. Next's static
 // bootstrap currently requires inline scripts, but inline event-handler
@@ -12,14 +17,15 @@ const CSP = [
   // still pins every EXTERNAL script origin, which is what stops an injected
   // third-party script from loading.
   "script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
-  // Tailwind v4 and Framer Motion both write inline styles.
+  // React style attributes (icon colours, animation offsets) are inline.
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
   "media-src 'self'",
-  // Binance market stream + REST fallback (LiveTicker), the contributions API
-  // (GitHubGraph), and the analytics beacon's own reporting endpoint.
-  "connect-src 'self' wss://stream.binance.com:9443 https://api.binance.com https://data-api.binance.vision https://github-contributions-api.jogruber.de https://api.github.com https://cloudflareinsights.com",
+  // The chat streams from /api/chat on this origin (the model is called from the
+  // Worker, never the browser); the other origin is the analytics beacon's
+  // reporting endpoint.
+  "connect-src 'self' https://cloudflareinsights.com",
   "script-src-attr 'none'",
   "worker-src 'none'",
   "frame-src 'none'",

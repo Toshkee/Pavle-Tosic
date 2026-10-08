@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PROJECTS, CASES, DEMO_NOTES, projectBySlug } from "../../projects";
+import { PROJECTS, CASES, projectBySlug } from "../../projects";
 
 /* One crawlable case study per project. Deliberately a SERVER component with
    no client JS: the home page is a single "use client" deck that a crawler
@@ -109,7 +109,6 @@ export default async function CaseStudy({ params }: Params) {
   if (!p) notFound();
 
   const caseFile = CASES[p.title];
-  const demoNote = DEMO_NOTES[p.live];
   const url = `https://pavletosic.com/work/${p.slug}`;
 
   // SoftwareSourceCode rather than a generic Article: the subject of the page
@@ -120,7 +119,7 @@ export default async function CaseStudy({ params }: Params) {
     name: p.title,
     description: p.blurb,
     url,
-    codeRepository: p.code,
+    ...(p.code ? { codeRepository: p.code } : {}),
     programmingLanguage: p.stack,
     author: { "@type": "Person", name: "Pavle Tošić", url: "https://pavletosic.com" },
   };
@@ -155,27 +154,31 @@ export default async function CaseStudy({ params }: Params) {
           {p.blurb}
         </p>
 
-        <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
-          <a
-            href={p.live}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="link-underline font-medium text-accent-ink"
-          >
-            Live demo
-          </a>
-          <a
-            href={p.code}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-muted transition-colors hover:text-ink"
-          >
-            Source on GitHub
-          </a>
-        </div>
-        {demoNote && (
-          <p className="mt-2 text-[13px] text-faint">{demoNote}</p>
+        {(p.live || p.code) && (
+          <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
+            {p.live && (
+              <a
+                href={p.live}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-underline font-medium text-accent-ink"
+              >
+                Live demo
+              </a>
+            )}
+            {p.code && (
+              <a
+                href={p.code}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted transition-colors hover:text-ink"
+              >
+                Source on GitHub
+              </a>
+            )}
+          </div>
         )}
+        {p.note && <p className="mt-2 text-[13px] text-faint">{p.note}</p>}
 
         <ul className="mt-5 flex flex-wrap gap-x-1">
           {p.stack.map((s) => (
@@ -189,13 +192,14 @@ export default async function CaseStudy({ params }: Params) {
         </ul>
       </header>
 
+      {/* Phone screens stay phone-width instead of a page-tall image. */}
       <Image
         src={p.shot}
         alt={`${p.title} screenshot`}
-        width={1280}
-        height={720}
+        width={p.phone ? 720 : 1280}
+        height={p.phone ? 1558 : 720}
         priority
-        className="mt-10 w-full rounded-xl border border-line"
+        className={`mt-10 rounded-xl border border-line ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
       />
 
       {/* Numbers first: they are what a reader scanning the page stops on,

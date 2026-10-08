@@ -16,5 +16,15 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  // /api/chat spends the Gemini key, so each visitor IP gets 10 messages a
+  // minute (period can only be 10 or 60). namespace_id is any number that is
+  // unique within the Cloudflare account.
+  "ratelimits": [
+    {
+      "name": "CHAT_LIMITER",
+      "namespace_id": "1101",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
 }

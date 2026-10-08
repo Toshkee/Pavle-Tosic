@@ -1,109 +1,101 @@
 @import "tailwindcss";
 
 /* =================================================================
-   NEAR-BLACK + GLASS. White type, silver highlights, no hue. Display
-   face: Nippo (self-hosted). Body: the system stack. Token-driven
-   (Tailwind v4 @theme).
+   AI PORTFOLIO. White page, black type, one blue (the send button),
+   after aaabadcode.com / toukoum.fr. Light by default; dark only when
+   the visitor picks it with the toggle, which sets data-theme on
+   <html> before first paint (script in layout.tsx).
+   Token NAMES are shared with the /work and /privacy routes; change
+   values, not names.
 ================================================================= */
 
-@theme {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  --font-display: var(--font-nippo), var(--font-sans);
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-  /* Surfaces & text: near-black, white type, silver only. Token NAMES are
-     shared with the /work and /privacy routes; change values, not names. */
-  --color-bg: #0a0a0c;
-  --color-surface: #121216;
-  --color-plate: #17171c;
-  --color-ink: #f2f3f5;
-  --color-body: #a5a8b0;
-  --color-muted: #8b8f98;
-  --color-faint: #a3a8b2; /* ~9.2:1 on bg; ~4.6:1 over the brightest glass-dark panels, see the [glass task] note below */
-  --color-line: rgba(242, 243, 245, 0.1);
-  --color-line-strong: rgba(242, 243, 245, 0.2);
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #f7f7f8; /* inputs, the visitor's bubble */
+  --plate: #f4f4f5; /* card fills, image placeholders */
+  --ink: #0a0a0a; /* headings */
+  --body: #3f3f46; /* running text, 10.4:1 on bg */
+  --muted: #52525b;
+  --faint: #71717a; /* 4.8:1 on bg, 4.5:1 on surface: the floor for small text */
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
+  --send: #0171e3; /* 4.7:1 under the white arrow */
+  --send-hover: #0062c4;
+}
 
-  /* "Accent" is a tonal step of the ink, never a hue. */
-  --color-accent: #c9ccd3;
-  --color-accent-hover: #ffffff;
-  --color-accent-ink: #e6e8ec;
-  --color-accent-2: #8f939c;
-  --color-accent-soft: rgba(230, 232, 236, 0.12);
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0a0a0a;
+  --surface: #161618;
+  --plate: #1c1c1f;
+  --ink: #fafafa;
+  --body: #d4d4d8;
+  --muted: #a1a1aa;
+  --faint: #a1a1aa; /* 7.7:1 on bg */
+  --line: #27272a;
+  --line-strong: #3f3f46;
+  --send: #2563eb;
+  --send-hover: #3b74f0;
+}
 
-  /* Ember: the site's one colour. Rationed on purpose, see the usage list in
-     the upgrade brief: primary CTA, active nav pill, Log rail, GitHub
-     heatmap ramp. Everything else stays neutral. */
-  --color-ember: #ff7a45; /* 7.2:1 on bg */
-  --color-ember-hover: #ff9466;
-  --color-ember-ink: #1a0c06; /* text on ember */
-  --color-ember-soft: rgba(255, 122, 69, 0.14);
+@theme inline {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-sans);
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-plate: var(--plate);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent-ink: var(--ink);
+  --color-send: var(--send);
+  --color-send-hover: var(--send-hover);
 }
 
 /* ================= BASE ================= */
 
 html {
-  scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
-  overflow-x: clip;
-  background-color: var(--color-bg);
+  background-color: var(--bg);
 }
 
+/* The page colour is on <html> alone: the cursor smoke (FluidCursor in
+   layout.tsx) is a fixed canvas at z-index -1, and a body background would
+   paint over it. */
 body {
-  background-color: var(--color-bg);
-  color: var(--color-body);
+  color: var(--body);
   font-family: var(--font-sans);
-  /* `clip`, not `hidden`, so body never becomes a scroll container (that
-     would break position: sticky). */
-  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-::selection {
-  background-color: var(--color-accent-2);
-  color: var(--color-ink);
-}
-
 .font-display {
   font-family: var(--font-display);
-  font-feature-settings: "kern" 1;
 }
 
-/* Skip-to-content link: off-screen until a keyboard user focuses it. */
-.skip-link {
-  position: fixed;
-  top: 8px;
-  left: 8px;
-  z-index: 100;
-  transform: translateY(-160%);
-  border-radius: 999px;
-  background-color: var(--color-plate);
-  padding: 0.5rem 0.9rem;
-  font-size: 0.875rem;
-  color: var(--color-ink);
-  transition: transform 0.2s ease;
-}
-.skip-link:focus {
-  transform: translateY(0);
+/* In the base layer, so a utility (the chat input's
+   focus-visible:outline-none, whose pill shows the focus instead) can turn
+   it off: an unlayered rule would beat every Tailwind utility. */
+@layer base {
+  :where(a, button, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--send);
+    outline-offset: 3px;
+  }
 }
 
-section {
-  scroll-margin-top: 88px;
-}
-
-:where(a, button, [tabindex]):focus-visible {
-  outline: 2px solid var(--color-accent-ink);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
-/* Text links: a quiet static underline that only changes tone on hover.
-   Never animated (docs/slop.md, "underline-fill hover animations"). */
+/* Text links: a quiet static underline that only changes tone on hover. */
 .link-underline {
   text-decoration: underline;
   text-decoration-thickness: 1px;
-  text-decoration-color: var(--color-line-strong);
+  text-decoration-color: var(--line-strong);
   text-underline-offset: 0.22em;
   transition: text-decoration-color 0.15s ease, color 0.15s ease;
 }
@@ -111,1272 +103,91 @@ section {
   text-decoration-color: currentColor;
 }
 
-/* ================= GLASS ================= */
-
-/* [glass task] iOS-26 "liquid glass" material, lighter and more translucent
-   than the old smoked-black plate. Recipe (fill + stronger blur/saturate +
-   a crisp top lip + a faint inner edge + a soft drop + a thin sheen) is
-   adapted from the CSS these three 21st.dev components share, read via
-   curl -sL -A "Mozilla/5.0" https://21st.dev/@paceui/components/liquid-glass ,
-   https://21st.dev/@jahed/components/apple-tahoe-liquid-glass-button and
-   https://21st.dev/@cult-ui/components/glass-effect. Their inset recipe
-   (inset 0 1px 1px rgba(255,255,255,.85), inset 0 0 0 1px rgba(0,0,0,.07),
-   inset 0 -6px 10px -6px rgba(0,0,0,.2), two soft outer drops) is what
-   --glass-lip / --glass-edge / the box-shadow below are built from, tuned
-   for our dark theme; cult-ui's actual glass-effect mechanism is an SVG
-   feTurbulence displacement filter, which we deliberately do NOT take
-   (perf-hostile, and this site avoids SVG displacement filters). Used for
-   the nav, the about / log / contact panels and small controls, and every
-   surface is paint-contained.
-
-   The real backdrop-filter is rationed: .glass is the material (fill, lip,
-   edge, shadow, sheen) with NO filter, and .glass-blur adds the blur. Only
-   the nav bar (always over the raw photo, small) and the About panel (the
-   first panel, the signature moment) carry .glass-blur. The Work cards,
-   Client work, Stack, Log, Contact, the footer and every chip are unblurred
-   glass on a deeper fill. Reason: the backdrop is a full-viewport WebGL
-   canvas under a stack of sticky cards; a dozen blurred surfaces over it
-   meant a full-screen blur pass on every scrolled frame (the research
-   brief's own rule was ONE blurred surface, never over moving media). Blur
-   radius is 18px: past ~20px nobody can tell, and the cost scales with it.
-
-   --glass-fill / --glass-fill-strong only ever sit on chips nested INSIDE
-   an already dark-tinted panel (see .glass-btn / .glass-strong usage), so
-   they can run light. --glass-dark-fill is the one surface that sits
-   directly over a raw photo (nav bar, and every panel carrying text-ink/80
-   running text), so it is kept deliberately darker than the rest of the
-   "lighter" pass: rgba(24,24,29,.56) over a bright, 35%-scrimmed sunset
-   still leaves text-ink/80 at roughly 4.8:1 against the panel by the WCAG
-   formula, with --glass-sheen's peak kept low (.06) so it doesn't eat that
-   margin. Don't lighten --glass-dark-fill further without re-checking this. */
-:root {
-  --glass-fill: rgba(255, 255, 255, 0.14);
-  --glass-fill-strong: rgba(255, 255, 255, 0.16);
-  /* blurred surfaces can run translucent: the blur does the legibility work */
-  --glass-dark-fill-blur: rgba(24, 24, 29, 0.56);
-  --glass-dark-deep-fill-blur: rgba(20, 20, 24, 0.72);
-  /* unblurred surfaces sit over a crisp photo, so they carry more fill;
-     text-ink/80 stays above 4.5:1 against them by the WCAG formula even
-     over the brightest sunset slide */
-  --glass-dark-fill: rgba(24, 24, 29, 0.84);
-  --glass-dark-deep-fill: rgba(20, 20, 24, 0.9);
-  --glass-blur: 18px;
-  --glass-saturate: 180%;
-  --glass-lip: rgba(255, 255, 255, 0.6);
-  --glass-edge: rgba(255, 255, 255, 0.14);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 42%);
-}
-
-.glass {
-  background: var(--glass-sheen), var(--glass-fill);
-  box-shadow:
-    inset 0 1px 0 0 var(--glass-lip),
-    inset 0 0 0 1px var(--glass-edge),
-    inset 0 -10px 16px -12px rgba(0, 0, 0, 0.22),
-    0 14px 34px rgba(0, 0, 0, 0.3);
-  contain: paint;
-  transition: background-color 0.18s ease;
-}
-/* The one real blur. Nav and the About panel only, see the note above. */
-.glass-blur {
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-.glass-strong {
-  background-color: var(--glass-fill-strong);
-}
-/* Dark-tinted glass: for the nav and for panels that carry running text,
-   so they read the same over a night sky and over sunlit hills. Kept
-   apart from --glass-fill on purpose, see the contrast note above. */
-.glass-dark {
-  background-color: var(--glass-dark-fill);
-}
-.glass-blur.glass-dark {
-  background-color: var(--glass-dark-fill-blur);
-}
-/* A touch deeper than .glass-dark, for the panels carrying long paragraphs
-   of running text (About, Log, Client work, Contact) rather than a card of
-   short labels. Footer and the Work/Stack panels stay on the lighter
-   .glass-dark so a little of the photo still shows through their shorter
-   runs of text. */
-.glass-dark-deep {
-  background-color: var(--glass-dark-deep-fill);
-}
-.glass-blur.glass-dark-deep {
-  background-color: var(--glass-dark-deep-fill-blur);
-}
-.glass-pill {
-  border-radius: 999px;
-}
-.glass-panel {
-  border-radius: 24px;
-}
-.glass-btn {
-  border-radius: 999px;
-  transition: background-color 0.18s ease, color 0.18s ease;
-}
-.glass-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-@supports not (backdrop-filter: blur(1px)) {
-  .glass-blur {
-    background: rgba(24, 24, 29, 0.96);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --glass-fill: rgba(24, 24, 29, 0.96);
-    --glass-fill-strong: rgba(30, 30, 36, 0.97);
-    --glass-dark-fill: rgba(18, 18, 22, 0.97);
-    --glass-dark-deep-fill: rgba(16, 16, 19, 0.98);
-    --glass-dark-fill-blur: rgba(18, 18, 22, 0.97);
-    --glass-dark-deep-fill-blur: rgba(16, 16, 19, 0.98);
-    --glass-blur: 0px;
-  }
-}
-
-/* Solid plate: no filter, for media frames and the project cards. */
+/* Image frame on the /work pages. */
 .plate {
-  background: var(--color-plate);
-  box-shadow:
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
-    0 3px 4px rgba(0, 0, 0, 0.4);
+  background: var(--plate);
+  border: 1px solid var(--line);
 }
 
-/* ================= HERO (Osmo parallax, verbatim) ================= */
-
-.parallax {
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-  background: #000;
-}
-.parallax__header {
-  z-index: 2;
-  justify-content: center;
-  align-items: center;
-  min-height: 100svh;
-  display: flex;
-  position: relative;
-}
-.parallax__visuals {
-  object-fit: cover;
-  width: 100%;
-  max-width: none;
-  height: 120%;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-.parallax__layers {
-  object-fit: cover;
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  overflow: hidden;
-}
-.parallax__layer-img {
-  pointer-events: none;
-  width: 100%;
-  max-width: none;
-  height: 117.5%;
-  position: absolute;
-  top: -17.5%;
-  left: 0;
-}
-/* ---- The gorge (Hero.tsx) ----
-   Each plane is a size container holding a 16:9 "scene" sized to cover it
-   (max of the width and 16/9 of the height, in container units). Every
-   overlay inside is placed in percent of the painting, so the fall's mask,
-   the mist and the foreground cut-out stay pinned to the painted pixels at
-   any viewport. Both planes use identical scene boxes, which is what lines
-   the cut-out up with the plate at rest. --focal is the horizontal anchor:
-   the scene's point at that percentage sits mid-viewport. Desktop leans a
-   touch right of centre so the fall and the sunset both stay in frame.
-   Upright screens don't cover (see the portrait rule below). */
-.gorge {
-  container-type: size;
-  overflow: hidden;
-}
-.gorge__scene {
-  --focal: 52%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max(100cqw, calc(100cqh * 16 / 9));
-  aspect-ratio: 16 / 9;
-  transform: translate(calc(var(--focal) * -1), -50%);
-}
-/* Upright screens (phones, tablets held upright). Covering the plane there
-   showed ~18% of the painting's width: the dark fall alone, no sunset, half
-   the phone black under the buttons. Instead the scene shows 58% of the
-   width (x 16-74%: the sun, the valley and the fall) and sits low in the
-   plane, its bottom 22cqh up from the plane's (~89% down the screen at
-   rest), and the sky runs on above it behind the name. That sky starts at
-   #203d69, the painting's top row (flat from x 15% to 65%), and darkens
-   upward; it reaches down behind the plate's top 14% (13.5cqw of a
-   96.75cqw-tall scene), which fades into it so there is no edge. The rock
-   plane shares .gorge__scene, so it stays pinned to the plate. */
-@media (max-aspect-ratio: 4/5) {
-  .gorge__scene {
-    --focal: 45%;
-    top: auto;
-    bottom: 22cqh;
-    width: 172cqw;
-    transform: translateX(calc(var(--focal) * -1));
-  }
-  .gorge:not(.gorge--front) .gorge__scene::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 86%;
-    height: 200cqh;
-    background:
-      radial-gradient(1.5px 1.5px at 38% 88%, rgb(255 255 255 / 0.7), transparent),
-      radial-gradient(1px 1px at 52% 80%, rgb(255 255 255 / 0.6), transparent),
-      radial-gradient(1px 1px at 44% 70%, rgb(255 255 255 / 0.5), transparent),
-      radial-gradient(1.5px 1.5px at 61% 76%, rgb(255 255 255 / 0.65), transparent),
-      radial-gradient(1px 1px at 33% 64%, rgb(255 255 255 / 0.45), transparent),
-      radial-gradient(1px 1px at 57% 92%, rgb(255 255 255 / 0.5), transparent),
-      radial-gradient(1px 1px at 68% 85%, rgb(255 255 255 / 0.45), transparent),
-      linear-gradient(to top, #203d69 14cqw, #13243f calc(14cqw + 20cqh), #0b1426 calc(14cqw + 45cqh));
-  }
-  .gorge__plate {
-    mask-image: linear-gradient(to bottom, transparent, #000 14%);
-  }
-  /* The scene no longer runs past the hero's bottom, so the rising rock
-     cut-out would show its bottom edge floating mid-screen. The rock mass
-     carries on below it instead: #141a22 is the cut-out's bottom row. */
-  .gorge--front .gorge__scene::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 99.8%;
-    height: 60cqh;
-    background: linear-gradient(to bottom, #141a22, #0a0a0c 40%);
-  }
-  /* the fall's base sits low on a phone; the full 48svh fade buried it.
-     Two classes: the base 48svh is declared further down. */
-  .parallax__header .parallax__fade {
-    height: 30svh;
-  }
-}
-/* The rock plane sits ABOVE the header's long fade (z 30), or the fade
-   would swallow it and the name would never visibly go behind anything.
-   Its own short fade (.parallax__fade--front) blends its cut edge into the
-   page instead. Still clipped by .parallax__layers, being its descendant. */
-.gorge--front {
-  z-index: 31;
-}
-.gorge__plate {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-/* The cut-out covers the painting's bottom 30.56% (y 800-1152 of 1152). */
-.gorge__front {
-  position: absolute;
-  left: 0;
-  top: 69.44%;
-  width: 100%;
-  height: 30.56%;
-}
-/* The painted fall's bounding box, measured off the mask: x 55.52%,
-   y 15.02%, 12.99% x 72.92% of the painting. The water is drawn inside it
-   and clipped to the fall's own silhouette by the mask, intersected with a
-   fade: the painted fall breaks into spray from ~60% of its height and the
-   base (88%) is mist, so falling lines there read as a smeared video, not
-   water. The mask image and the fade must stay in the same order in both
-   the standard and -webkit- lists. */
-.gorge__falls {
-  position: absolute;
-  left: 55.52%;
-  top: 15.02%;
-  width: 12.99%;
-  height: 72.92%;
-  overflow: hidden;
-  mask-image: url("/images/hero/gorge-falls-mask.webp"), linear-gradient(to bottom, #000 0%, #000 58%, transparent 86%);
-  mask-size: 100% 100%, 100% 100%;
-  mask-composite: intersect;
-  -webkit-mask-image: url("/images/hero/gorge-falls-mask.webp"), linear-gradient(to bottom, #000 0%, #000 58%, transparent 86%);
-  -webkit-mask-size: 100% 100%, 100% 100%;
-  -webkit-mask-composite: source-in;
-}
-/* Each layer is a column one tile taller than the fall, sliding down by
-   exactly one tile per loop, so the repeat seam never shows. Sheets are the
-   body of the water: wide soft bands, slow. Trails are droplets with bright
-   heads, fast, in two sizes so no single texture reads as sliding.
-   (gorge-sheets.webp 128x512, gorge-trails.webp 96x512, both generated
-   in PIL with periods that divide the tile height.) */
-.gorge__water {
-  --tile: 320px;
-  --ratio: 0.25;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(var(--tile) * -1);
-  height: calc(100% + var(--tile));
-  background-repeat: repeat;
-  background-size: calc(var(--tile) * var(--ratio)) var(--tile);
-  animation: gorge-fall linear infinite;
-}
-.gorge__water--sheets {
-  background-image: url("/images/hero/gorge-sheets.webp");
-  opacity: 0.95;
-  animation-duration: 2.6s;
-}
-.gorge__water--trails {
-  --tile: 280px;
-  --ratio: 0.1875;
-  background-image: url("/images/hero/gorge-trails.webp");
-  opacity: 0.6;
-  animation-duration: 0.95s;
-}
-.gorge__water--trails-far {
-  --tile: 190px;
-  --ratio: 0.1875;
-  background-image: url("/images/hero/gorge-trails.webp");
-  background-position: 23px 0;
-  opacity: 0.3;
-  animation-duration: 1.35s;
-}
-@keyframes gorge-fall {
-  to {
-    transform: translateY(var(--tile));
-  }
-}
-/* The crest: where the water pours over the lip (x 63.8%, y 15.2%), a
-   bright band that shimmers. */
-.gorge__crest {
-  position: absolute;
-  left: 63.6%;
-  top: 14.9%;
-  width: 4.4%;
-  height: 3.2%;
-  border-radius: 40%;
-  background: radial-gradient(closest-side, rgb(240 246 255 / 0.75), rgb(210 224 245 / 0.25) 60%, transparent);
-  animation: gorge-shimmer 1.7s ease-in-out infinite alternate;
-}
-@keyframes gorge-shimmer {
-  from {
-    opacity: 0.55;
-    transform: scaleX(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: scaleX(1.06);
-  }
-}
-/* Spray where the fall hits the gorge: a soft glow that breathes. */
-.gorge__glow {
-  position: absolute;
-  left: 52%;
-  top: 70%;
-  width: 20%;
-  height: 22%;
-  background: radial-gradient(closest-side, rgb(210 218 240 / 0.35), transparent);
-  animation: gorge-breathe 4.5s ease-in-out infinite alternate;
-}
-@keyframes gorge-breathe {
-  from {
-    opacity: 0.55;
-  }
-  to {
-    opacity: 1;
-  }
-}
-/* Foam and spray: the fall actually lands at y ~84% of the painting, which
-   the hero's crop puts at ~97svh, under the fade and the rock plane, so
-   nothing there is ever seen. They sit where the fall visibly dissolves
-   into mist instead (y ~66-74%): puffs that swell and fade out of step, so
-   the mist churns, and droplets lifting out of it. */
-.gorge__foam {
-  position: absolute;
-  left: 55%;
-  top: 64%;
-  width: 13%;
-  height: 11%;
-}
-.gorge__foam span {
-  position: absolute;
-  left: var(--fx);
-  top: var(--fy);
-  width: 46%;
-  aspect-ratio: 1.6;
-  translate: -50% -50%;
-  border-radius: 999px;
-  background: radial-gradient(closest-side, rgb(236 242 252 / 0.7), rgb(220 230 246 / 0.22) 55%, transparent);
-  animation: gorge-foam 2.8s ease-out infinite;
-  animation-delay: var(--fd);
-}
-@keyframes gorge-foam {
-  0% {
-    transform: scale(0.55);
-    opacity: 0;
-  }
-  25% {
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.35) translateY(-18%);
-    opacity: 0;
-  }
-}
-/* Spray: fine droplets lifting off the impact and drifting up-left on the
-   breeze, 4 s each, staggered. */
-.gorge__spray span {
-  position: absolute;
-  left: var(--sx);
-  top: 72%;
-  width: 0.28%;
-  aspect-ratio: 1;
-  border-radius: 999px;
-  background: rgb(240 246 255 / 0.85);
-  opacity: 0;
-  animation: gorge-spray 4s ease-out infinite;
-  animation-delay: var(--sd);
-}
-@keyframes gorge-spray {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(var(--sdx), -900%);
-    opacity: 0;
-  }
-}
-/* Mist: a strip twice the scene's width, tiled every 50%, drifting left by
-   exactly one tile per loop. The back band sits in the gorge behind the
-   rocks, the front band rides the foreground plane. */
-.gorge__mist {
-  position: absolute;
-  left: 0;
-  width: 200%;
-  background: url("/images/hero/gorge-mist.webp") repeat-x;
-  background-size: 50% 100%;
-  animation: gorge-drift 90s linear infinite;
-}
-.gorge__mist--back {
-  top: 66%;
-  height: 24%;
-  opacity: 0.5;
-}
-.gorge__mist--front {
-  top: 80%;
-  height: 20%;
-  opacity: 0.16;
-  animation-duration: 60s;
-  animation-direction: reverse;
-}
-@keyframes gorge-drift {
-  to {
-    transform: translateX(-50%);
-  }
-}
-.parallax[data-paused] .gorge * {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .gorge * {
-    animation: none;
-  }
-}
-.parallax__layer-title {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 1.1rem;
-  width: 100%;
-  height: 100svh;
-  padding: 0 1.5rem;
-  display: flex;
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-@media (max-width: 767px) {
-  .parallax__layer-title {
-    justify-content: flex-start;
-    padding-top: 17svh;
-    gap: 0.9rem;
-  }
-}
-.parallax__kicker {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(11px, 1vw, 13px);
-  font-weight: 500;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.72);
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
-}
-.parallax__title {
-  pointer-events: auto;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  column-gap: 0.22em;
-  margin: 0 0.075em 0 0;
-  font-family: var(--font-display);
-  /* ~85% of the viewport's width at every size: the name is the frame */
-  font-size: clamp(3rem, 15.5vw, 17rem);
-  font-weight: 700;
-  line-height: 1;
-  white-space: nowrap;
-  color: #fff;
-  position: relative;
-  text-shadow: 0 2px 30px rgba(0, 0, 0, 0.35);
-}
-.parallax__title .word {
-  display: inline-flex;
-}
-.parallax__title .word--light {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.86);
-}
-.parallax__title .clip {
-  display: inline-block;
-  overflow: hidden;
-  padding: 0.06em 0.01em 0.02em; /* clear the cut: accents and descenders */
-  margin: -0.06em -0.01em -0.02em;
-}
-/* One line of pitch and the two ways forward, under the name. */
-.parallax__pitch {
-  margin: 0.4rem 0 0;
-  max-width: 34ch;
-  text-align: center;
-  font-size: clamp(15px, 1.35vw, 19px);
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.86);
-  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.6);
-}
-.parallax__ctas {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 0.6rem;
-}
-/* A short fade over the rock plane only, where the header meets the page.
-   Double class: .parallax__fade's 48svh is declared further down. */
-.parallax__fade.parallax__fade--front {
-  z-index: 32;
-  height: 16svh;
-}
-/* Scroll cue: a hairline with a bead running down it, visible at rest. */
-.parallax__cue {
-  position: absolute;
-  z-index: 33;
-  bottom: 3svh;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
-}
-.parallax__cue-line {
-  position: relative;
-  width: 1px;
-  height: 44px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.18);
-}
-.parallax__cue-line::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1px;
-  height: 14px;
-  background: #fff;
-  animation: cue-run 2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-@keyframes cue-run {
-  from {
-    transform: translateY(-14px);
-  }
-  to {
-    transform: translateY(44px);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .parallax__cue-line::after {
-    animation: none;
-    transform: translateY(15px);
-  }
-}
-/* The name rises letter by letter out of each clip: 115% down and 4deg
-   over, expo-out, 45 ms apart, after a 250 ms beat (Osmo's numbers, as a
-   CSS keyframe instead of a GSAP "from" tween so the text is never gated on
-   JS). --i is the letter's index across both words (Hero.tsx). */
-.parallax__title .letter {
-  display: inline-block;
-  animation: letter-rise 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: calc(0.25s + var(--i, 0) * 0.045s);
-}
-@keyframes letter-rise {
-  from {
-    transform: translateY(115%) rotate(4deg);
-  }
-  to {
-    transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .parallax__title .letter {
-    animation: none;
-  }
-}
-.parallax__fade {
-  z-index: 30;
-  pointer-events: none;
-  width: 100%;
-  max-width: none;
-  height: 48svh;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  /* a long, evenly eased fade: the scene's bottom is bright (the moon), so
-     the darkening has to start high and reach opaque before the edge */
-  background: linear-gradient(
+/* The giant handle behind the landing page: ink fading to nothing, so it
+   reads as texture, never as text competing with the title. 13% ink at the
+   top: readable as a word, still well under the tiles' border. */
+.watermark {
+  background-image: linear-gradient(
     to bottom,
-    rgb(10 10 12 / 0) 0%,
-    rgb(10 10 12 / 0.03) 12%,
-    rgb(10 10 12 / 0.11) 25%,
-    rgb(10 10 12 / 0.25) 38%,
-    rgb(10 10 12 / 0.44) 51%,
-    rgb(10 10 12 / 0.64) 64%,
-    rgb(10 10 12 / 0.81) 76%,
-    rgb(10 10 12 / 0.93) 87%,
-    rgb(10 10 12 / 0.99) 95%,
-    rgb(10 10 12 / 1) 100%
+    color-mix(in oklab, var(--ink) 13%, transparent),
+    transparent 92%
   );
-}
-.parallax__black-line-overflow {
-  z-index: 20;
-  background-color: var(--color-bg);
-  width: 100%;
-  height: 2px;
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-}
-/* Continues the hero's fade over the top of the photo backdrop so the eye
-   moves video, near-black, photo, with no edge. */
-.hero-seam {
-  position: relative;
-  z-index: 1;
-  height: 30svh;
-  margin-bottom: -30svh;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgb(10 10 12 / 1) 0%,
-    rgb(10 10 12 / 0.738) 19%,
-    rgb(10 10 12 / 0.541) 34%,
-    rgb(10 10 12 / 0.382) 47%,
-    rgb(10 10 12 / 0.278) 56.5%,
-    rgb(10 10 12 / 0.194) 65%,
-    rgb(10 10 12 / 0.126) 73%,
-    rgb(10 10 12 / 0.075) 80.2%,
-    rgb(10 10 12 / 0.042) 86.1%,
-    rgb(10 10 12 / 0.021) 91%,
-    rgb(10 10 12 / 0.008) 95.2%,
-    transparent 100%
-  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
-.parallax__radial-gradient {
-  z-index: 10;
-  background-image: radial-gradient(circle farthest-corner at 50% 50%, transparent, #000);
-  opacity: 0.5;
-  pointer-events: none;
-  mix-blend-mode: multiply;
-  position: absolute;
-  inset: 0;
+.no-scrollbar {
+  scrollbar-width: none;
 }
-
-/* Availability dot: a tonal point, no pulse ring. */
-.dot-live {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--color-ink);
-  box-shadow: 0 0 0 3px var(--color-accent-soft);
-}
-
-/* ================= SHEET + SIGNATURE ================= */
-
-/* Four crop marks on the spec sheet. Drawn from the sheet's own corners with
-   pseudo-elements and gradients, no extra markup. */
-.crop {
-  --mark: 14px;
-  --mark-color: var(--color-line-strong);
-  background-image:
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color)),
-    linear-gradient(var(--mark-color), var(--mark-color));
-  background-repeat: no-repeat;
-  background-size:
-    var(--mark) 1px, 1px var(--mark),
-    var(--mark) 1px, 1px var(--mark),
-    var(--mark) 1px, 1px var(--mark),
-    var(--mark) 1px, 1px var(--mark);
-  background-position:
-    left top, left top,
-    right top, right top,
-    left bottom, left bottom,
-    right bottom, right bottom;
-}
-/* The closing wordmark: tonal, tracked, whole on three sides, cut only by
-   the bottom of the page. Line-height is tight and the block is pushed down
-   by a fraction of its own height so the cut is deliberate, not accidental. */
-.signature {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(6rem, 21vw, 21rem);
-  line-height: 0.8;
-  letter-spacing: 0.02em;
-  color: #16161b;
-  margin-top: 8svh;
-  margin-bottom: -0.11em; /* the only cut: the bottom edge, and only a little */
-  padding-top: 0.1em; /* clear the cut: no cap or accent ever shaved at the top */
-}
-
-/* ================= STACKING CARDS (Features.tsx) ================= */
-
-/* The GitLab-style pin-and-scale stack runs at lg and up, where there's
-   room for each card to overlap the last; below that .stack-card is a
-   plain relative block (relative only so it anchors the card's ambient
-   glow; its `top` is set at lg only, or it would shift), so cards read as a
-   normal column and nothing needs measuring at runtime: the breakpoint
-   IS the fit check, replacing the old JS stack-fit logic. The scale-down
-   half of the effect is framer-motion, driven off each card's own scroll
-   progress (see Features.tsx); this file only owns the pin. */
-.stack-card {
-  position: relative; /* containing block for the card's ambient glow */
-}
-:root {
-  --stack-top: 76px;
-  --stack-step: 12px;
-}
-@media (min-width: 1024px) {
-  .stack-card {
-    position: sticky;
-    top: calc(var(--stack-top) + var(--i, 0) * var(--stack-step));
-  }
-  :root {
-    --stack-top: 96px;
-    --stack-step: 18px;
-  }
-}
-/* Opaque on purpose. A stacked card has the previous card behind it, not
-   the photo, and on the .84 glass fill the card underneath's headline and
-   copy read straight through as ghost text. The sheen, lip and edge stay,
-   so it is still the same material as the other panels, just on the
-   solid plate. */
-.stack-card.glass-dark {
-  background-color: var(--color-plate);
-}
-/* The card under the one being read (Features.tsx sets data-covered from
-   its band observer). Only where cards pin and can actually be covered. */
-@media (min-width: 1024px) {
-  .stack-card > article {
-    transition: opacity 0.35s ease;
-  }
-  .stack-card[data-covered="true"] > article {
-    opacity: 0.45;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .stack-card > article {
-    transition: none;
-  }
-}
-
-/* ================= INSIDE: STACK ENTRANCE (Inside.tsx) =================
-   Replaces the old looping marquee. A single scroll-linked, one-time fade for
-   the grouped wordmarks and the GitHub heatmap: native scroll-driven
-   animation (same mechanism as .stack-card's card-in), behind @supports so
-   browsers without it just show the content at rest, and gated on
-   prefers-reduced-motion. Nothing loops. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .inside-reveal {
-      animation: inside-reveal-in linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 60%;
-    }
-  }
-}
-@keyframes inside-reveal-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* ================= STACK: ORBIT (Inside.tsx, StackOrbit.tsx) =================
-   Two counter-rotating rings of glass icon chips. The keyframe is Magic
-   UI's OrbitingCircles trick (https://21st.dev/@dillionverma/components/orbiting-circles):
-   rotate the chip around the ring's centre, translate it out by the radius,
-   then rotate it back the same amount, so it stays upright while it sweeps
-   the circle — transform only, nothing else animates. Radius lives on each
-   ring (`--orbit-r`, inherited by its chips); duration and a negative delay
-   per chip are set inline in StackOrbit.tsx, the delay is what staggers the
-   chips evenly around the ring. Reduced motion pauses every chip in place,
-   which (thanks to the negative delay) freezes it at its share of the ring
-   instead of bunched at the start, i.e. exactly the "static ring" asked
-   for, no separate layout needed. Also checked
-   https://21st.dev/@olovajs/components/orbiting-skills and
-   https://21st.dev/@shadcnspace/components/orbiting-circles-02 for ring
-   proportions; the mechanism below is the shared one, not either's markup. */
-.orbit {
-  position: relative;
-  width: clamp(300px, 31vw, 440px);
-  height: clamp(300px, 31vw, 440px);
-}
-.orbit-ring {
-  position: absolute;
-  inset: 0;
-}
-/* radii as a share of the orbit box, so the rings scale with it; outer
-   radius + half a chip stays inside the box (0.43 + 26px < 0.5) */
-.orbit-ring-inner {
-  --orbit-r: calc(clamp(300px, 31vw, 440px) * 0.25);
-}
-.orbit-ring-outer {
-  --orbit-r: calc(clamp(300px, 31vw, 440px) * 0.43);
-}
-/* the ring's own track, a hairline circle at its radius */
-.orbit-ring::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--orbit-r) * 2);
-  height: calc(var(--orbit-r) * 2);
-  translate: -50% -50%;
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-}
-/* the core: Pavle's portrait in a circle, set off from the inner ring by a
-   dark gap and a hairline, the same line weight as the ring tracks */
-.orbit-core {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 26%;
-  aspect-ratio: 1;
-  translate: -50% -50%;
-  overflow: hidden;
-  border-radius: 999px;
-  box-shadow: 0 0 0 4px rgb(10 10 12 / 0.6), 0 0 0 5px var(--color-line-strong);
-}
-.orbit-core img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.orbit-chip {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  width: 52px;
-  height: 52px;
-  margin: -26px;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  /* the pills' glass (sheen, lip, edge), on a solid fill so the ring's
-     hairline doesn't run through the tile: #34343a is what the pills'
-     14% white fill comes to over this panel */
-  background: var(--glass-sheen), #34343a;
-  box-shadow:
-    inset 0 1px 0 0 var(--glass-lip),
-    inset 0 0 0 1px var(--glass-edge),
-    0 10px 22px rgb(0 0 0 / 0.45);
-  color: var(--color-ink);
-  animation-name: stack-orbit;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-/* the chip's name, on hover only; the orbit holds still meanwhile */
-.orbit-chip::after {
-  content: attr(data-name);
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  translate: -50% 4px;
-  white-space: nowrap;
-  border-radius: 999px;
-  background: var(--color-plate);
-  padding: 3px 9px;
-  font-size: 12px;
-  color: var(--color-ink);
-  box-shadow: inset 0 0 0 1px var(--color-line-strong);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, translate 0.15s ease;
-}
-.orbit-chip:hover::after {
-  opacity: 1;
-  translate: -50% 0;
-}
-.orbit:hover .orbit-chip {
-  animation-play-state: paused;
-}
-.orbit-chip[data-reverse="true"] {
-  animation-direction: reverse;
-}
-@keyframes stack-orbit {
-  from {
-    transform: rotate(0deg) translateY(calc(var(--orbit-r) * -1)) rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg) translateY(calc(var(--orbit-r) * -1)) rotate(-360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .orbit-chip {
-    animation-play-state: paused;
-  }
-}
-
-/* ================= STACK: MARQUEE (Inside.tsx, StackMarquee.tsx) =================
-   Adapted from the duplicated-track shape of
-   https://21st.dev/@grootstudio/components/logo-marquee (its own runtime
-   drives the track with framer-motion's imperative `animate()`; this site
-   keeps that off the main thread and uses a plain CSS keyframe instead,
-   translating the track by exactly one copy's width, -50%, so the loop
-   seam is invisible). Edges fade with a mask instead of a hard clip, and
-   hover/focus pauses the loop so it can be read. */
-.marquee-mask {
-  overflow: hidden;
-  /* Belt-and-braces alongside min-w-0 on StackMarquee's root: without it the
-     mask box is a grid item whose default min-width is auto, so it stretches
-     to the track's max-content width and the row (and the overflow:hidden
-     above) never actually clips. */
-  min-width: 0;
-  /* 16% fade each side (was 10%): at desktop widths the narrower fade left
-     a half-cut chip readable at the left edge, which read as a bug rather
-     than a loop */
-  mask-image: linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 16%, #000 84%, transparent);
-}
-.marquee-track {
-  display: flex;
-  width: max-content;
-  gap: 10px;
-  animation-name: marquee-x;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-.marquee-row:hover .marquee-track,
-.marquee-row:focus-within .marquee-track {
-  animation-play-state: paused;
-}
-@keyframes marquee-x {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
-  }
-}
-
-/* ================= CLIENT WORK: SCROLLING PAGE (Field.tsx) =================
-   The "whole site in a frame" preview. No 21st.dev component does this one
-   (searched: the scroll galleries there move many images, not one page
-   through a frame), so it is hand-built, a plain CSS loop: the frame is a
-   size container, and the page inside
-   translates from its top to its bottom, `-100% + 100cqh`, i.e. its own
-   height less one frame. Holds at both ends (0-8%, 46-54%, 92-100%).
-   Paused until Field.tsx marks the frame on screen, and under the pointer. */
-.scroll-shot {
-  position: relative;
-  overflow: hidden;
-  container-type: size;
-  background: var(--color-plate);
-}
-.scroll-shot__page {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: auto;
-  animation: shot-scroll 20s ease-in-out infinite;
-  animation-play-state: paused;
-}
-.scroll-shot[data-run] .scroll-shot__page {
-  animation-play-state: running;
-}
-.scroll-shot:hover .scroll-shot__page {
-  animation-play-state: paused;
-}
-@keyframes shot-scroll {
-  0%,
-  8% {
-    transform: none;
-  }
-  46%,
-  54% {
-    transform: translateY(calc(-100% + 100cqh));
-  }
-  92%,
-  100% {
-    transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .scroll-shot__page {
-    animation: none;
-  }
-}
-
-/* ================= MORPH PLANE (MorphBackdrop.tsx) =================
-   The night train, cut from its painting: night-train-cars.webp is the two
-   cars plus their window reflections on the water, 1548x346 cut at x 480,
-   y 806 of the 2048x1152 painting, over the re-plated bridge
-   (night-train.webp, the cars and reflections painted out). The scene box
-   repeats MorphBackdrop's coverUV: cover the viewport (the larger of its
-   width and 16/9 of its height), times the slide's zoom --z, panned by
-   --ox/--oy (y flipped: the texture's v runs bottom up), so at rest the
-   cars sit exactly on their painted pixels. */
-.morph-plane {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  container-type: size;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-}
-.morph-plane[data-on] {
-  opacity: 1;
-}
-.morph-plane__scene {
-  --w: calc(var(--z) * max(100cqw, 100cqh * 16 / 9));
-  --h: calc(var(--w) * 9 / 16);
-  position: absolute;
-  left: calc(50cqw - (0.5 + var(--ox)) * var(--w));
-  top: calc(50cqh - (0.5 - var(--oy)) * var(--h));
-  width: var(--w);
-  height: var(--h);
-}
-.morph-plane__img {
-  position: absolute;
-  left: 23.4375%;
-  top: 69.9653%;
-  width: 75.5859%;
-  max-width: none;
-  height: 30.0347%;
-  will-change: transform;
-  animation: morph-train 68s linear infinite;
-}
-.morph-plane:not([data-on]) .morph-plane__img,
-.morph-plane[data-paused] .morph-plane__img {
-  animation-play-state: paused;
-}
-/* Right to left (the cab faces left) at 0.032 painting-widths a second,
-   ~46 px/s on a 1440 screen: off the left edge by 48.5%, 9 s of empty
-   bridge, back in from the right, home at 100%. Percentages are of the
-   cut-out's own width (75.59% of the painting): -138.9% takes its right
-   edge 6% past the painting's left edge, 109.2% its left edge 6% past the
-   right one. The jump between them happens off screen (step-end). */
-@keyframes morph-train {
-  0% {
-    transform: translateX(0);
-  }
-  48.5% {
-    transform: translateX(-138.9%);
-    animation-timing-function: step-end;
-  }
-  61.8% {
-    transform: translateX(109.2%);
-  }
-  100% {
-    transform: translateX(0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .morph-plane__img {
-    animation: none;
-  }
-}
-
-/* ================= AMBIENCE (Ambience.tsx, in MorphBackdrop) =================
-   Soft round points of light over the backdrop, one set per scene; only the
-   set for the current [data-scene] is displayed. (They were square blocks
-   for the voxel world; over the paintings a square read as a dead pixel.)
-   Each span carries --x/--y (start),
-   --s (scale), --dur (a 0.8-1.4 multiplier on the set's base duration),
-   --delay (negative, so the sky is already full on arrival) and --sway. */
-.amb-layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-.amb {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-.amb span {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: calc(6px * var(--s));
-  height: calc(6px * var(--s));
-  border-radius: 50%;
-  animation-delay: var(--delay);
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-.amb-layer[data-paused] .amb span {
-  animation-play-state: paused;
-}
-.amb-layer[data-scene="about"] .amb--fireflies,
-.amb-layer[data-scene="work"] .amb--motes,
-.amb-layer[data-scene="clients"] .amb--motes,
-.amb-layer[data-scene="stack"] .amb--twinkle,
-.amb-layer[data-scene="log"] .amb--spray,
-.amb-layer[data-scene="contact"] .amb--spray {
-  display: block;
-}
-/* spray: lifts off the bottom, drifts, fades, 7 s base; smaller and cooler
-   than the fireflies and motes, a fleck of mist, not a light */
-.amb--spray span {
-  top: auto;
-  bottom: -2vh;
-  width: calc(4px * var(--s));
-  height: calc(4px * var(--s));
-  background: rgb(225 238 255 / 0.75);
-  box-shadow: 0 0 8px 1px rgb(190 215 255 / 0.35);
-  opacity: 0;
-  animation-name: amb-spray;
-  animation-duration: calc(7s * var(--dur));
-}
-@keyframes amb-spray {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0;
+
+/* ================= MOTION ================= */
+
+/* Landing entrance, after the reference: the header drops in from above,
+   the input rises from below. Plain CSS, so it runs before hydration, and
+   transform only: the content is readable from the first frame. */
+@keyframes rise {
+  from {
+    transform: translateY(var(--rise-from, 60px));
   }
-  15% {
-    opacity: 0.75;
+}
+.rise {
+  animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Each new bubble and card in the chat settles up into place. CSS, not a
+   JS animation (a hidden or throttled tab freezes rAF), and no opacity
+   start, so nothing ever sits half-faded. */
+@keyframes settle {
+  from {
+    transform: translateY(12px);
   }
+}
+.settle {
+  animation: settle 0.3s ease-out both;
+}
+
+/* "Typing" dots before the first token arrives. */
+@keyframes dot {
+  0%,
+  80%,
   100% {
-    transform: translate(var(--sway), -34vh);
-    opacity: 0;
+    opacity: 0.25;
   }
-}
-/* fireflies: wander a small loop and blink, 9 s base */
-.amb--fireflies span {
-  background: #e8ff9a;
-  box-shadow: 0 0 10px 2px rgb(210 255 120 / 0.55);
-  animation-name: amb-wander;
-  animation-duration: calc(9s * var(--dur));
-}
-@keyframes amb-wander {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0.1;
-  }
-  25% {
-    transform: translate(calc(var(--sway) * 0.3), -3vh);
+  40% {
     opacity: 1;
   }
-  50% {
-    transform: translate(calc(var(--sway) * 0.5), 1vh);
-    opacity: 0.2;
-  }
-  75% {
-    transform: translate(calc(var(--sway) * 0.2), 3vh);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(0, 0);
-    opacity: 0.1;
-  }
 }
-/* motes: warm dust rising slowly through the sunset, 14 s base */
-.amb--motes span {
-  background: #ffd9a0;
-  box-shadow: 0 0 8px rgb(255 200 120 / 0.6);
-  opacity: 0;
-  animation-name: amb-rise;
-  animation-duration: calc(14s * var(--dur));
+.dots span {
+  animation: dot 1.2s ease-in-out infinite;
 }
-@keyframes amb-rise {
-  0% {
-    transform: translate(0, 12vh);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(var(--sway), -30vh);
-    opacity: 0;
-  }
+.dots span:nth-child(2) {
+  animation-delay: 0.15s;
 }
-/* twinkle: stars that swell and fade where they stand, 6 s base; kept in
-   the top 60% of the screen, where the moonlit sky is open */
-.amb--twinkle span {
-  top: calc(var(--y) * 0.6);
-  width: calc(3px * var(--s));
-  height: calc(3px * var(--s));
-  background: #e6eeff;
-  box-shadow: 0 0 6px 1px rgb(200 220 255 / 0.5);
-  opacity: 0.1;
-  animation-name: amb-twinkle;
-  animation-duration: calc(6s * var(--dur));
-  animation-timing-function: ease-in-out;
+.dots span:nth-child(3) {
+  animation-delay: 0.3s;
 }
-@keyframes amb-twinkle {
-  0%,
-  100% {
-    transform: scale(0.6);
-    opacity: 0.1;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 0.9;
-  }
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .amb-layer {
-    display: none;
+  .rise,
+  .settle,
+  .dots span {
+    animation: none;
   }
 }
-/* ================= END AMBIENCE ================= */
+
+/* The project dialog: a native <dialog>, so focus trapping, Escape and the
+   top layer come from the browser. */
+dialog.sheet::backdrop {
+  background: rgb(0 0 0 / 0.45);
+  backdrop-filter: blur(4px);
+}
