@@ -28,7 +28,7 @@ export default function MeCard() {
       <dl className="mt-6 divide-y divide-line border-y border-line text-sm">
         {SPEC.map(({ label, value }) => (
           <div key={label} className="flex justify-between gap-6 py-2.5">
-            <dt className="text-faint">{label}</dt>
+            <dt className="shrink-0 text-faint">{label}</dt>
             <dd className="text-right text-ink">{value}</dd>
           </div>
         ))}

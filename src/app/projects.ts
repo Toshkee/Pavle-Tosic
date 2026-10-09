@@ -23,9 +23,9 @@ export type Project = {
   kpis: { label: string; value: string }[];
   role: string;
   context: string;
-  /** Which home-page section shows it: "build" is the Work stack (my own
-      products and the bootcamp rebuilds), "client" is the Client work index
-      (paid sites for someone else). The case-study routes take both. */
+  /** "build" is my own product or a bootcamp build, "client" a paid site
+      for someone else or my employer's. The prompt tells the model which is
+      which; every project gets a case study either way. */
   kind: "build" | "client";
   stack: string[];
   /** Null for a private app or a private repo: no link is shown. */
@@ -408,8 +408,9 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-// Engineering "case files", shown as extra tabs on each project's kiosk
-// frame. Every line is grounded in the actual repos (cloned + mined) — the
+// Engineering "case files": the Architecture, "What broke" and code
+// sections of a case study (work/[slug]). Every line is grounded in the
+// actual repos (cloned + mined) — the
 // arch trees, the "what broke" notes and the code excerpts all point at real
 // files. Don't add claims that aren't in the code.
 export const VAKY_CASE = {
@@ -494,7 +495,7 @@ export const onRequestPost = async (
 };
 
 export const CRYPTOFLOW_CASE = {
-  // Lines are kept ≤ ~42 chars so nothing clips at the kiosk frame width.
+  // Lines are kept ≤ ~42 chars so the panes never scroll sideways on a phone.
   codeFile: "close.py",
   arch: `browser ── react 19 + vite SPA
  │  wss → binance
@@ -930,19 +931,6 @@ if (targets.length) {
 };
 
 export type CaseFile = typeof CRYPTOFLOW_CASE;
-export type CaseTab = "demo" | "arch" | "notes" | "code" | "live";
-export const CASE_TABS: { key: CaseTab; file: string }[] = [
-  { key: "demo", file: "demo.mp4" },
-  { key: "arch", file: "arch.txt" },
-  { key: "notes", file: "notes.md" },
-  // the code tab's filename comes from each case file (codeFile)
-  { key: "code", file: "" },
-];
-
-// Projects that expose a genuinely-live data tab (not a screenshot). Only
-// CryptoFlow does: its "live" tab streams the real Binance feed the app runs.
-export const LIVE_TABBED = new Set<string>(["CryptoFlow"]);
-export const LIVE_TAB: { key: CaseTab; file: string } = { key: "live", file: "markets.live" };
 
 export const CASES: Record<string, CaseFile> = {
   "Vaky.me": VAKY_CASE,

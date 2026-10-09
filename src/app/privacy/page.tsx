@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EMAIL } from "../contact";
+import Crumbs from "../site/Crumbs";
 
 /* Privacy notice. Everything stated here is checkable against the code: the
    chat is the only feature that sends what a visitor types anywhere
@@ -38,13 +39,7 @@ function Section({
 export default function Privacy() {
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-      <nav className="text-[13px] text-faint">
-        <Link href="/" className="transition-colors hover:text-ink">
-          Pavle Tošić
-        </Link>
-        <span aria-hidden> / </span>
-        <span className="text-muted">Privacy</span>
-      </nav>
+      <Crumbs trail={[{ label: "Privacy" }]} />
 
       <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
         Privacy
