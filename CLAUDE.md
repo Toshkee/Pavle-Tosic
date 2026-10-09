@@ -53,7 +53,9 @@ other page re-render on each request instead of serving a cache HIT.
 
 Requires **Node 22+** (wrangler refuses to run on 20).
 
-**Keep `@opennextjs/cloudflare` at 1.20.9 or newer with Next 16.3.8+.** Next
+**Keep `@opennextjs/cloudflare` at 1.20.9 or newer with Next 16.3.8+** (1.20.10
+pulls a `glob` with a high advisory through `@opennextjs/aws`, so the lock
+pins 1.20.9 until that clears `npm run audit:security`). Next
 16.3.8 changed the incremental-cache keys (`/route-cache/APP_PAGE/<hash>/$/…`);
 an older adapter still writes the old names, the Worker finds nothing, and
 every prerendered `/work/[slug]` 404s in production while `next start` is
@@ -67,6 +69,10 @@ sets `incrementalCache: staticAssetsIncrementalCache`, which serves that
 prerendered output from the `ASSETS` binding under `cdn-cgi/_next_cache`. It is
 read-only by design: nothing on this site revalidates. Everything under
 `public/` ships as a static asset, so keep it to files the site references.
+Static assets are served without running the Worker, so the `headers()` in
+`next.config.ts` never touch them: their `Cache-Control` comes from
+`public/_headers` (a year for the hashed `/_next/static/*`, a day for
+`/images`, `/video` and the CV), which Cloudflare reads and does not serve.
 
 The chat needs two things in production: the `ANTHROPIC_API_KEY` Worker secret,
 and the `CHAT_LIMITER` rate-limit binding declared in `wrangler.jsonc`.

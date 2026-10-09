@@ -1,0 +1,20 @@
+# Cache-Control for the static assets, which Cloudflare serves without
+# running the Worker (so next.config.ts headers() never sees them) and
+# would otherwise send with max-age=0, must-revalidate: every chunk and
+# image revalidated on every visit. Workers reads this file from the
+# assets directory and does not serve it. Format:
+# https://developers.cloudflare.com/workers/static-assets/headers/
+
+# Next hashes everything under _next/static, so a changed file is a new
+# URL: safe to cache for a year.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Site media keeps its filename when it changes (a re-shot screenshot, a
+# new CV), so a day in the browser, a week stale while it revalidates.
+/images/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/video/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/pavle-tosic-cv.pdf
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
