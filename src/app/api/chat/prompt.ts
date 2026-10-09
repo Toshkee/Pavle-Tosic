@@ -19,7 +19,8 @@ import {
 /* The system prompt, built once per isolate from the same data the cards
    render, so the model and the cards can never disagree. It never changes
    between requests (no dates, no per-visitor values), so the cache_control
-   breakpoint in route.ts keeps hitting. */
+   breakpoint in route.ts keeps hitting. The facts are also what /llms.txt
+   publishes, with absolute links. */
 
 const list = (items: string[]) => items.map((item) => `- ${item}`).join("\n");
 
@@ -37,7 +38,8 @@ const entry = (item: LogEntry) =>
     .filter(Boolean)
     .join("\n");
 
-const facts = [
+export const facts = (base = "") =>
+  [
   "## About me",
   list([
     `Name: ${NAME}`,
@@ -68,13 +70,13 @@ const facts = [
       list(project.result),
       `Numbers: ${project.kpis.map((kpi) => `${kpi.label}: ${kpi.value}`).join("; ")}`,
       `Stack: ${project.stack.join(", ")}`,
-      `Live: ${project.live ?? "no public link"} | Code: ${project.code ?? "private repo"} | Case study: /work/${project.slug}`,
+      `Live: ${project.live ?? "no public link"} | Code: ${project.code ?? "private repo"} | Case study: ${base}/work/${project.slug}`,
       project.note ? `Note: ${project.note}` : "",
     ]
       .filter(Boolean)
       .join("\n"),
   ),
-  "## Games in progress (parked; only when asked about games)",
+  "## Games in progress (unreleased)",
   ...IN_PROGRESS.map(
     (game) => `${game.title}: ${game.text} (${game.stack.join(", ")})`,
   ),
@@ -86,7 +88,7 @@ const facts = [
     `Email: ${EMAIL}`,
     `GitHub: ${SOCIAL.github}`,
     `LinkedIn: ${SOCIAL.linkedin}`,
-    `CV (PDF): ${RESUME}`,
+    `CV (PDF): ${base}${RESUME}`,
   ]),
 ].join("\n\n");
 
@@ -121,4 +123,4 @@ export const SYSTEM_PROMPT = `You answer visitors on the portfolio site of ${NAM
 
 # FACTS
 
-${facts}`;
+${facts()}`;

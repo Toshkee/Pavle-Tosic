@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { PROJECTS, thumbOf } from "../projects";
+import Crumbs from "../site/Crumbs";
 
 /* Index for the case studies: the flat, linkable list a crawler and a
-   recruiter both want. Same ruled-index treatment as the client work on the
-   front page. */
+   recruiter both want, with a way into the chat for anyone who would
+   rather ask. */
 
 export const metadata: Metadata = {
   title: "Work — case studies | Pavle Tošić",
@@ -17,13 +18,7 @@ export const metadata: Metadata = {
 export default function WorkIndex() {
   return (
     <main className="mx-auto w-full max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
-      <nav className="text-[13px] text-faint">
-        <Link href="/" className="transition-colors hover:text-ink">
-          Pavle Tošić
-        </Link>
-        <span aria-hidden> / </span>
-        <span className="text-muted">Work</span>
-      </nav>
+      <Crumbs trail={[{ label: "Work" }]} />
 
       <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
         Work
@@ -31,6 +26,17 @@ export default function WorkIndex() {
       <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
         Nine projects, each with a case study: the problem it set out to solve,
         the decisions behind it, what broke along the way, and what shipped.
+        Or{" "}
+        <Link
+          href={{
+            pathname: "/chat",
+            query: { q: "What are your projects? What have you built recently?" },
+          }}
+          className="link-underline text-ink"
+        >
+          ask me about them
+        </Link>
+        .
       </p>
 
       <ul className="mt-10 divide-y divide-line border-y border-line">

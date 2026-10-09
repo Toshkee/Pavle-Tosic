@@ -9,10 +9,12 @@ import { MEMOJI, NAME } from "./content";
    little less, the way a head follows a glance. The still is a frame of my
    Messages recording with both irises painted out; each iris is its own
    cutout, clipped by a mask of the eye opening so it slides under the lids
-   instead of over them (layers cut by scripts/memoji-gaze.py). Mouse only,
-   nothing under reduced motion, and everything is written straight to the
-   elements by one rAF loop that stops once the face has settled. Before
-   hydration, and without a mouse, the face looks straight ahead. */
+   instead of over them (layers cut by scripts/memoji-gaze.py). Without a
+   mouse (phones, tablets) there is no cursor to follow, so every few
+   seconds the face glances at a point nearby and back, the way someone
+   waiting looks around. Nothing under reduced motion, and everything is
+   written straight to the elements by one rAF loop that stops once the
+   face has settled. Before hydration the face looks straight ahead. */
 const { still, size, eyes } = MEMOJI.gaze;
 // Full deflection: how far an iris travels and how far the head turns and
 // leans (base-image px and degrees), reached when the cursor is REACH px
@@ -23,6 +25,11 @@ const LEAN = { x: 7, y: 4 };
 const REACH = 220;
 const EYE_EASE = 0.2;
 const HEAD_EASE = 0.08;
+// Without a mouse: a glance every 3 to 7 s, held for 0.9 to 1.6 s. Random,
+// so it never reads as a loop; the loop sleeps in between.
+const GLANCE = { pauseMs: [3000, 7000], holdMs: [900, 1600] } as const;
+const between = ([min, max]: readonly [number, number]) =>
+  min + Math.random() * (max - min);
 
 type Point = { x: number; y: number };
 
@@ -51,7 +58,7 @@ export default function MemojiGaze({ className = "" }: { className?: string }) {
     const root = ref.current;
     const mouse = window.matchMedia("(hover: hover) and (pointer: fine)");
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!root || !mouse.matches || reduced.matches) return;
+    if (!root || reduced.matches) return;
     const head = root.firstElementChild as HTMLElement;
     const irises = Array.from(root.querySelectorAll<HTMLElement>("[data-iris]"));
 
@@ -88,10 +95,29 @@ export default function MemojiGaze({ className = "" }: { className?: string }) {
       cursor = null;
       wake();
     };
-    window.addEventListener("mousemove", onMove, { passive: true });
-    document.documentElement.addEventListener("mouseleave", onLeave);
+    // A glance is a made-up cursor somewhere within reach, then none.
+    let glance = 0;
+    const lookAround = () => {
+      const box = root.getBoundingClientRect();
+      cursor = {
+        x: box.left + box.width / 2 + (Math.random() * 2 - 1) * REACH,
+        y: box.top + box.height / 2 + (Math.random() * 2 - 1) * REACH * 0.5,
+      };
+      wake();
+      glance = window.setTimeout(() => {
+        onLeave();
+        glance = window.setTimeout(lookAround, between(GLANCE.pauseMs));
+      }, between(GLANCE.holdMs));
+    };
+    if (mouse.matches) {
+      window.addEventListener("mousemove", onMove, { passive: true });
+      document.documentElement.addEventListener("mouseleave", onLeave);
+    } else {
+      glance = window.setTimeout(lookAround, between(GLANCE.pauseMs));
+    }
     return () => {
       cancelAnimationFrame(frame);
+      clearTimeout(glance);
       window.removeEventListener("mousemove", onMove);
       document.documentElement.removeEventListener("mouseleave", onLeave);
       head.style.transform = "";

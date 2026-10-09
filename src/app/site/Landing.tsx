@@ -13,7 +13,8 @@ import ThemeToggle from "./ThemeToggle";
    a giant faded handle;
    the coloured smoke under it all comes from the layout. Everything is a
    link or a GET form to /chat, so it works before (and without)
-   hydration. */
+   hydration. The page says little on purpose: /about is the crawlable
+   version of who I am. */
 export default function Landing() {
   return (
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 pt-20 pb-16">
@@ -86,6 +87,9 @@ export default function Landing() {
         aria-label="More"
         className="absolute bottom-4 z-10 flex gap-4 text-[13px] text-faint"
       >
+        <Link href="/about" className="transition-colors hover:text-ink">
+          About
+        </Link>
         <Link href="/work" className="transition-colors hover:text-ink">
           Case studies
         </Link>

@@ -30,6 +30,7 @@ if (PROJECT_SLUGS.length === 0) fail("could not resolve any project slugs");
 
 const PAGES = [
   "/",
+  "/about",
   "/work",
   ...PROJECT_SLUGS.map((s) => `/work/${s}`),
   "/privacy",
@@ -143,6 +144,13 @@ console.log("\nsitemap + robots");
   else if (!/Sitemap:\s*https:\/\/pavletosic\.com\/sitemap\.xml/i.test(txt))
     fail("robots.txt does not declare the sitemap");
   else ok("robots.txt declares the sitemap");
+
+  const llms = await fetch(`${BASE}/llms.txt`);
+  const llmsText = llms.ok ? await llms.text() : "";
+  if (!llms.ok) fail(`/llms.txt returned ${llms.status}`);
+  else if (!llmsText.startsWith("# ") || !llmsText.includes("/work/"))
+    fail("llms.txt does not look like the llms.txt convention");
+  else ok("llms.txt is published");
 
   const security = await fetch(`${BASE}/.well-known/security.txt`);
   const policy = security.ok ? await security.text() : "";

@@ -3,13 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PROJECTS, CASES, projectBySlug } from "../../projects";
+import Crumbs from "../../site/Crumbs";
 
 /* One crawlable case study per project. Deliberately a SERVER component with
-   no client JS: the home page is a single "use client" deck that a crawler
-   (or anyone you send a link to) can't deep-link into, so this is the version
-   of a project that has its own URL, its own <title> and its own structured
-   data. Content is the same data the kiosk renders, laid out in the order a
-   reader wants it: problem → role → decisions → challenges → result. */
+   no client JS: the chat shows a project as a card only once the model
+   calls for it, so this is the version of a project that has its own URL,
+   its own <title> and its own structured data, for a crawler and for
+   anyone you send a link to. Same data as the card, laid out in the order
+   a reader wants it: problem → role → decisions → challenges → result. */
 
 export const dynamicParams = false;
 
@@ -131,17 +132,7 @@ export default async function CaseStudy({ params }: Params) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <nav className="text-[13px] text-faint">
-        <Link href="/" className="transition-colors hover:text-ink">
-          Pavle Tošić
-        </Link>
-        <span aria-hidden> / </span>
-        <Link href="/work" className="transition-colors hover:text-ink">
-          Work
-        </Link>
-        <span aria-hidden> / </span>
-        <span className="text-muted">{p.title}</span>
-      </nav>
+      <Crumbs trail={[{ label: "Work", href: "/work" }, { label: p.title }]} />
 
       <header className="mt-6">
         <h1 className="font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
@@ -154,30 +145,36 @@ export default async function CaseStudy({ params }: Params) {
           {p.blurb}
         </p>
 
-        {(p.live || p.code) && (
-          <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
-            {p.live && (
-              <a
-                href={p.live}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="link-underline font-medium text-accent-ink"
-              >
-                Live demo
-              </a>
-            )}
-            {p.code && (
-              <a
-                href={p.code}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted transition-colors hover:text-ink"
-              >
-                Source on GitHub
-              </a>
-            )}
-          </div>
-        )}
+        {/* "Visit <domain>", as on the chat's card: a client's site is not
+            a demo. The chat link is always there, link or no link. */}
+        <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
+          {p.live && (
+            <a
+              href={p.live}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link-underline font-medium text-accent-ink"
+            >
+              Visit {p.domain ?? "the site"}
+            </a>
+          )}
+          {p.code && (
+            <a
+              href={p.code}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted transition-colors hover:text-ink"
+            >
+              Source on GitHub
+            </a>
+          )}
+          <Link
+            href={{ pathname: "/chat", query: { q: `Tell me about ${p.title}` } }}
+            className="text-muted transition-colors hover:text-ink"
+          >
+            Ask me about it in the chat
+          </Link>
+        </div>
         {p.note && <p className="mt-2 text-[13px] text-faint">{p.note}</p>}
 
         <ul className="mt-5 flex flex-wrap gap-x-1">
