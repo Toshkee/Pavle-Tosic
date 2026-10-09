@@ -3,7 +3,7 @@ import { PROJECTS } from "../../projects";
 import { FUN } from "../../site/content";
 import type { Card } from "../../chat-protocol";
 
-/* The cards the model can put on screen. Each tool takes no input except
+/* The eight cards the model can put on screen. Each tool takes no input except
    show_project, and none of them fetch anything: calling one is the model
    saying "show this card", and the card renders from the same data files the
    prompt was built from. */
@@ -59,6 +59,10 @@ const ALL_TOOLS: Anthropic.Tool[] = [
     "show_fun",
     "Show my hobbies and what I do off the clock. Use when the visitor asks what I do for fun, my hobbies, or something personal and light.",
   ),
+  card(
+    "show_github",
+    "Show my GitHub activity: public repositories, pushes in the last month, and when each project repo was last pushed. Use when the visitor asks whether I am active on GitHub, about open source, commits or recent coding activity.",
+  ),
 ];
 
 // show_fun only exists once there is something true to show.
@@ -92,6 +96,8 @@ export function toCard({ name, input }: Anthropic.ToolUseBlock): Card | null {
       return { kind: "contact" };
     case "show_fun":
       return FUN.length > 0 ? { kind: "fun" } : null;
+    case "show_github":
+      return { kind: "github" };
     default:
       return null;
   }

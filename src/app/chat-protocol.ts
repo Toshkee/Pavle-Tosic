@@ -9,7 +9,8 @@ export type Card =
   | { kind: "skills" }
   | { kind: "experience" }
   | { kind: "contact" }
-  | { kind: "fun" };
+  | { kind: "fun" }
+  | { kind: "github" };
 
 export type ChatEvent =
   | { type: "text"; text: string }

@@ -15,6 +15,7 @@
     "check:metadata": "node scripts/image-metadata.mjs",
     "strip:metadata": "node scripts/image-metadata.mjs --strip",
     "check:site": "node scripts/check-site.mjs",
+    "github": "node scripts/github.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"

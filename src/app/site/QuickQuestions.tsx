@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { IconType } from "react-icons";
+import type { Card } from "../chat-protocol";
 import {
   LuBriefcaseBusiness,
   LuLaugh,
@@ -12,7 +13,8 @@ import { FUN } from "./content";
 
 /* The starter questions, as tiles on the landing page and as a row of
    pills above the chat input. Icon colours are the reference's (Experience
-   borrows a sixth). "Fun" only appears once FUN in content.ts has entries:
+   borrows a sixth), except Skills: its purple is out by house rule, so a
+   coral instead. "Fun" only appears once FUN in content.ts has entries:
    the model must not invent hobbies. */
 const ALL_QUICK: {
   label: string;
@@ -35,7 +37,7 @@ const ALL_QUICK: {
   {
     label: "Skills",
     prompt: "What are your skills? What do you build with?",
-    color: "#856ED9",
+    color: "#D2694A",
     Icon: LuLayers,
   },
   {
@@ -59,6 +61,53 @@ const ALL_QUICK: {
 ];
 
 const QUICK = ALL_QUICK.filter(({ label }) => label !== "Fun" || FUN.length > 0);
+
+/* After a card, the two or three questions that naturally come next, as
+   pills under the answer. Static, written here from the same facts the
+   cards show: the model does not make them up, so none can promise a card
+   that does not exist. The quick questions stay in the footer for a
+   change of subject. */
+const FOLLOW_UPS: Record<Card["kind"], string[]> = {
+  me: ["What have you built?", "Where do you work?", "Are you open to work?"],
+  projects: [
+    "Which project are you proudest of?",
+    "Tell me about Reform Fitness",
+    "What do you build with?",
+  ],
+  project: ["What else have you built?", "What do you build with?", "Are you open to work?"],
+  skills: ["What have you built with it?", "Where do you work?", "Are you active on GitHub?"],
+  experience: ["What did you build at Infostream?", "What is Vaky?", "Are you open to work?"],
+  contact: ["What have you built?", "Where do you work?"],
+  fun: ["What have you built?", "Who are you?"],
+  github: ["What are your projects?", "What do you build with?"],
+};
+
+export function FollowUps({
+  kind,
+  onAsk,
+  disabled,
+}: {
+  kind: Card["kind"];
+  onAsk: (prompt: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <ul aria-label="Ask next" className="flex flex-wrap gap-2">
+      {FOLLOW_UPS[kind].map((prompt) => (
+        <li key={prompt}>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onAsk(prompt)}
+            className="rounded-full border border-line bg-bg px-3.5 py-1.5 text-sm text-body transition hover:bg-surface hover:text-ink active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {prompt}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /* Landing: plain links to /chat?q=..., so they work before hydration. */
 export function QuickTiles() {

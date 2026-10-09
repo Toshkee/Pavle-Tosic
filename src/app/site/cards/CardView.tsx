@@ -3,6 +3,7 @@ import { projectBySlug } from "../../projects";
 import ContactCard from "./ContactCard";
 import ExperienceCard from "./ExperienceCard";
 import FunCard from "./FunCard";
+import GithubCard from "./GithubCard";
 import MeCard from "./MeCard";
 import ProjectDetail from "./ProjectDetail";
 import ProjectsCard from "./ProjectsCard";
@@ -32,5 +33,7 @@ export default function CardView({ card }: { card: Card }) {
       return <ContactCard />;
     case "fun":
       return <FunCard />;
+    case "github":
+      return <GithubCard />;
   }
 }

@@ -31,6 +31,7 @@ npm run lint         # ESLint (flat config via eslint-config-next)
 npm run typecheck    # tsc --noEmit
 npm run check:site   # Post-build smoke check against a running server (routes, canonicals, JSON-LD, security headers, internal links)
 npm run check:metadata  # Fails if any image in public/ still carries EXIF/XMP metadata
+npm run github       # Regenerate src/app/site/github.ts (the GitHub card's numbers) from the public API, then commit it
 npm run cf-typegen   # Regenerate cloudflare-env.d.ts after changing wrangler.jsonc or .dev.vars
 ```
 
@@ -95,13 +96,13 @@ An AI portfolio after aaabadcode.com / toukoum.fr: one landing screen, and a cha
 | Route | File | Notes |
 |---|---|---|
 | `/` | `site/Landing.tsx` | Greeting, title, the Memoji (eyes follow the cursor), a GET `<Form action="/chat">` and the starter-question tiles (links to `/chat?q=...`), over a giant faded handle. Works before hydration. Static. |
-| `/chat` | `chat/page.tsx` → `site/Chat.tsx` | Reads `?q=` on the server and asks it on mount. Shows the latest exchange only (question, then text and cards in the order they streamed); earlier turns are sent along as history. Quick-question pills and `AskBar.tsx` (send / stop) at the bottom. `noindex`. |
+| `/chat` | `chat/page.tsx` → `site/Chat.tsx` | Reads `?q=` on the server and asks it on mount. Every exchange stays on screen (question, then text and cards in the order they streamed), earlier ones dimmed above the latest, which scrolls to the top of the view; earlier turns are sent along as history. After a card, two or three static follow-up pills (`FOLLOW_UPS` in `QuickQuestions.tsx`). Quick-question pills and `AskBar.tsx` (send / stop) at the bottom. `noindex`. |
 | `/api/chat` | `api/chat/route.ts` | POST, same-origin only, per-IP rate limit (`CHAT_LIMITER` binding, 10 a minute), body and turn caps from `chat-protocol.ts`. Streams NDJSON `ChatEvent`s: text deltas and cards. Two rounds at most: round one may call a tool, round two has tools off and must answer in text. |
 | `/about` | `about/page.tsx` | The CV as a crawlable page from `content.ts` (About, spec sheet, stack, work, education, contact): the landing says little on purpose and the cards only exist once the model calls for them. Static. |
 | `/llms.txt` | `llms.txt/route.ts` | The site for AI crawlers: the page list plus the same `facts()` the system prompt is built from (`api/chat/prompt.ts`), with absolute links. Static. |
 
-- `api/chat/prompt.ts` builds the system prompt from the data files below, so the model and the cards can never disagree. Honesty rules are in the prompt, including: a card is the answer and the text around it never restates it, and the two parked games come up only when a visitor asks about games.
-- `api/chat/tools.ts`: the seven tools (`show_me`, `show_projects`, `show_project` with a slug enum, `show_skills`, `show_experience`, `show_contact`, `show_fun`). A tool call only means "show this card"; nothing is fetched. `show_fun` and the Fun tile hide while `FUN` is empty.
+- `api/chat/prompt.ts` builds the system prompt from the data files below, so the model and the cards can never disagree. Honesty rules are in the prompt, including: a card is the answer and the text around it never restates it, the two parked games come up only when a visitor asks about games, a website or pricing enquiry is pointed to vaky.me without naming a price, and the GitHub numbers are quoted as of the date they were counted.
+- `api/chat/tools.ts`: the eight tools (`show_me`, `show_projects`, `show_project` with a slug enum, `show_skills`, `show_experience`, `show_contact`, `show_fun`, `show_github`). A tool call only means "show this card"; nothing is fetched. `show_fun` and the Fun tile hide while `FUN` is empty.
 - `site/cards/`: `CardView.tsx` switches on the card kind; `ProjectsCard.tsx` is a snapping photo rail after Aceternity's Apple Cards Carousel, opening `ProjectDetail.tsx` in a native `<dialog>`, with the in-progress games under it.
 - `site/Zoomable.tsx`: any photo or clip that opens full size on click (native `<dialog>`, mounted only while open, so a clip loads nothing until played). Used by the Me photo, the Fun media and every project gallery still.
 - `chat-protocol.ts`: the wire types (`Card`, `ChatEvent`, `Turn`), the limits and the failure message, shared by route and client.
@@ -111,6 +112,7 @@ An AI portfolio after aaabadcode.com / toukoum.fr: one landing screen, and a cha
 - **Pavle's CV (`public/pavle-tosic-cv.pdf`) is the source of truth** for About, skills, work experience and education: `content.ts` follows it in its wording, and nothing goes in that is not on it or in a project repo.
 - `src/app/site/content.ts`: name, role, links, the Memoji (`MEMOJI`: the face sticker on the chat header, the laptop one shown while an answer is on its way, the "call me" one on the contact card, and the `gaze` layers for the landing page) and the real photo (`PHOTO`, the Me card), About copy, spec sheet, stack marks, `EXPERIENCE` and `EDUCATION`, `IN_PROGRESS` (the two Godot games, parked: a line under the project rail, never volunteered by the chat) and `FUN` (hobbies, in Pavle's own words; photos in `public/images/fun/`, his gameplay clips in `public/video/fun/` as H.264 at 540px with metadata stripped). Honesty rules are written into the comments there (a contribution is called a contribution, a prototype a prototype). A fact not in this file or `projects.ts` does not exist for the chat.
 - `src/app/contact.ts`: the email address, shared with the JSON-LD in `layout.tsx`.
+- `src/app/site/github.ts`: generated by `npm run github` (`scripts/github.mjs`) from the public GitHub API and committed: public repo count, pushes in the last 30 days, and the last push to each repo that is a project in `projects.ts` (plus this site's). Only those repos are listed, so the chat never meets a repo name it has no facts for. The card and the prompt say the date it was counted; rerun it now and then.
 
 **Other routes:** `/work` (index, with a link into the chat), `/work/[slug]` (each with "Ask me about it in the chat"), `/privacy` (describes the chat's data flow: keep it true when the chat changes), `robots.ts`, `sitemap.ts` (generated from `PROJECTS`), `not-found.tsx`. The pages outside the chat share `site/Crumbs.tsx` (breadcrumb plus the theme toggle).
 
