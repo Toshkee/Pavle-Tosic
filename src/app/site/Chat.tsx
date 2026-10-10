@@ -208,7 +208,7 @@ export default function Chat({
         </div>
       </main>
 
-      {/* No background: the cursor smoke runs under the whole page, and an
+      {/* No background: the dot grid runs under the whole page, and an
           opaque footer drew a hard line across it. */}
       <footer className="shrink-0 px-4 pt-2 pb-4">
         <div className="mx-auto w-full max-w-3xl space-y-3">
