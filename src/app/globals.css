@@ -185,6 +185,127 @@ body {
   }
 }
 
+/* ================= TOSHKEE'S QUEST (/play) ================= */
+
+/* The game's own dark palette, after Clawd's Quest: a game screen, not a
+   page, so it ignores the theme toggle. Chips in mono, the story on
+   paper slips in a serif. */
+.quest {
+  --q-chip: rgba(26, 26, 26, 0.92);
+  --q-panel: rgba(26, 26, 26, 0.97);
+  --q-line: #333333;
+  --q-ink: #d8d8d8;
+  --q-soft: #8a8a8a;
+  --q-paper: #f3efe6;
+  --q-paper-ink: #1d1b17;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+.quest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--q-chip);
+  border: 1px solid var(--q-line);
+  border-radius: 6px;
+  color: var(--q-ink);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 7px 10px;
+  transition: background-color 0.15s ease;
+}
+a.quest-chip:hover,
+button.quest-chip:hover {
+  background: #262626;
+}
+.quest-paper {
+  background: var(--q-paper);
+  color: var(--q-paper-ink);
+  font-family: Georgia, "Times New Roman", serif;
+  padding: 12px 22px;
+  border-radius: 3px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  clip-path: polygon(0 3%, 100% 0, 99.2% 100%, 0.8% 97%);
+}
+.quest-slip {
+  max-width: min(640px, 92vw);
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.45;
+  transform: rotate(-1.2deg);
+  animation: quest-slip 0.35s ease-out both;
+}
+.quest-slip small {
+  display: block;
+  margin-top: 6px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8378;
+}
+@keyframes quest-slip {
+  from {
+    transform: translateY(-10px) rotate(-1.2deg);
+  }
+}
+.quest-panel {
+  width: 280px;
+  background: var(--q-panel);
+  border: 1px solid var(--q-line);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+  color: var(--q-ink);
+  text-align: left;
+}
+.quest-panel h3 {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.quest-panel dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--q-line);
+}
+.quest-kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 3px 6px;
+  border: 1px solid #444444;
+  border-radius: 4px;
+  background: #222222;
+  font-size: 10px;
+  text-align: center;
+}
+.quest-pad {
+  width: 76px;
+  height: 60px;
+  border: 1px solid var(--q-line);
+  border-radius: 12px;
+  background: var(--q-chip);
+  color: var(--q-ink);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  touch-action: none;
+}
+.quest-pad:active {
+  background: #363636;
+}
+@media (prefers-reduced-motion: reduce) {
+  .quest-slip {
+    animation: none;
+  }
+}
+
 /* The project dialog: a native <dialog>, so focus trapping, Escape and the
    top layer come from the browser. */
 dialog.sheet::backdrop {

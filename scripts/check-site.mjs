@@ -33,6 +33,7 @@ const PAGES = [
   "/about",
   "/work",
   ...PROJECT_SLUGS.map((s) => `/work/${s}`),
+  "/play",
   "/privacy",
 ];
 

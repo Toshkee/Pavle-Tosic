@@ -30,6 +30,9 @@ export default function NotFound() {
         <Link href="/work" className="link-underline text-ink">
           Case studies
         </Link>
+        <Link href="/play" className="link-underline text-ink">
+          Or play a game
+        </Link>
       </p>
     </main>
   );
