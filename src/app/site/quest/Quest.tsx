@@ -153,7 +153,7 @@ export default function Quest() {
               <span
                 key={i}
                 aria-hidden
-                className="text-[13px] text-[#2f7cf6]"
+                className="text-[13px] text-[#d97757]"
                 style={{ opacity: i < ui.hearts ? 1 : 0.22 }}
               >
                 ♥
