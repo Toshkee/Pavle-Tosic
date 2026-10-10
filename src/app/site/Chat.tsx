@@ -20,12 +20,12 @@ import Markdown from "./Markdown";
 import { FollowUps, QuickPills } from "./QuickQuestions";
 import ThemeToggle from "./ThemeToggle";
 
-/* The conversation, after aaabadcode.com: the face on top, the questions
-   and answers in the middle (text and cards in the order they streamed),
-   quick questions and the input at the bottom. Earlier exchanges stay
-   above the latest, dimmed, so a visitor can scroll back; each new
-   question scrolls to the top of the view. Earlier turns are sent along
-   too, so follow-ups keep their context. */
+/* The conversation, after aaabadcode.com: the face on top, the latest
+   question and its answer in the middle (text and cards in the order they
+   streamed), quick questions and the input at the bottom. Earlier turns are
+   not shown but are sent along, so follow-ups keep their context. Showing
+   them all, dimmed above the latest, was tried and dropped: a card is the
+   answer and reads best on its own, not as one more item in a feed. */
 
 type Part = { type: "text"; text: string } | { type: "card"; card: Card };
 type Exchange = { question: string; parts: Part[]; error?: string };
@@ -125,7 +125,7 @@ export default function Chat({
   // the swap never shows an empty frame.
   preload(MEMOJI.busy, { as: "image" });
   const abortRef = useRef<AbortController | null>(null);
-  const latestRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!pending) return;
@@ -149,10 +149,9 @@ export default function Chat({
     return () => controller.abort();
   }, [pending]);
 
-  // Each new question starts at the top of the view, the earlier ones
-  // above it to scroll back to.
+  // Each new question starts at the top of the answer area.
   useEffect(() => {
-    latestRef.current?.scrollIntoView({ block: "start" });
+    scrollRef.current?.scrollTo({ top: 0 });
   }, [exchanges.length]);
 
   const busy = pending !== null;
@@ -191,30 +190,15 @@ export default function Chat({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl space-y-10 px-4 pt-2 pb-8">
+      <main ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-8">
           {latest ? (
-            exchanges.map((exchange, index) => {
-              const isLatest = index === exchanges.length - 1;
-              return (
-                <div
-                  key={index}
-                  ref={isLatest ? latestRef : undefined}
-                  className={
-                    isLatest
-                      ? "scroll-mt-2"
-                      : "border-b border-line pb-10 opacity-60 transition-opacity hover:opacity-100 focus-within:opacity-100"
-                  }
-                >
-                  <ExchangeView
-                    exchange={exchange}
-                    busy={busy && isLatest}
-                    latest={isLatest}
-                    onAsk={ask}
-                  />
-                </div>
-              );
-            })
+            <ExchangeView
+              key={exchanges.length}
+              exchange={latest}
+              busy={busy}
+              onAsk={ask}
+            />
           ) : (
             <p className="mt-16 text-center text-lg text-body">
               Ask me anything about my work,
@@ -266,12 +250,10 @@ export default function Chat({
 function ExchangeView({
   exchange,
   busy,
-  latest,
   onAsk,
 }: {
   exchange: Exchange;
   busy: boolean;
-  latest: boolean;
   onAsk: (prompt: string) => void;
 }) {
   const { question, parts, error } = exchange;
@@ -279,7 +261,7 @@ function ExchangeView({
   // The follow-ups belong to the card that answered; one card per answer
   // is the rule, the last one wins if there were more.
   const card = parts.findLast((part) => part.type === "card");
-  const followUps = latest && !busy && !error && card?.type === "card";
+  const followUps = !busy && !error && card?.type === "card";
 
   return (
     <div>
