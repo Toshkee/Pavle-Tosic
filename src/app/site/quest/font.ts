@@ -56,7 +56,7 @@ export function layoutTitle(
             x,
             y: dy,
             r: 2.4 + rand(seed) * 1.2,
-            a: 0.55 + rand(seed + 0.5) * 0.35,
+            a: 0.7 + rand(seed + 0.5) * 0.3,
             fromX: x + (rand(seed + 1) - 0.5) * 320,
             fromY: dy + (rand(seed + 2) - 0.5) * 220,
             delay: rand(seed + 3) * 0.5,

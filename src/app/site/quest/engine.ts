@@ -906,7 +906,8 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
         x = lerp(d.x, d.fromX, leave * leave);
         y = lerp(d.y, d.fromY, leave * leave);
       }
-      ctx.fillStyle = `rgba(${DOT_RGB},${d.a * (1 - leave)})`;
+      // The title in coral too, his call: the warm tone is the game's own.
+      ctx.fillStyle = `rgba(${WARN_RGB},${d.a * (1 - leave)})`;
       ctx.beginPath();
       ctx.arc(x, y, d.r, 0, Math.PI * 2);
       ctx.fill();
