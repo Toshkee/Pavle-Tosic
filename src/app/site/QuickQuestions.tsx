@@ -3,6 +3,7 @@ import type { IconType } from "react-icons";
 import type { Card } from "../chat-protocol";
 import {
   LuBriefcaseBusiness,
+  LuGamepad2,
   LuLaugh,
   LuLayers,
   LuPartyPopper,
@@ -62,6 +63,10 @@ const ALL_QUICK: {
 
 const QUICK = ALL_QUICK.filter(({ label }) => label !== "Fun" || FUN.length > 0);
 
+/* The last tile and pill is not a question: it opens Toshkee's Quest, the
+   game at /play. */
+const GAME = { label: "Quest", title: "Toshkee's Quest, a game", color: "#D94848", Icon: LuGamepad2 };
+
 /* After a card, the two or three questions that naturally come next, as
    pills under the answer. Static, written here from the same facts the
    cards show: the model does not make them up, so none can promise a card
@@ -112,7 +117,7 @@ export function FollowUps({
 /* Landing: plain links to /chat?q=..., so they work before hydration. */
 export function QuickTiles() {
   return (
-    <ul className="mt-4 flex w-full max-w-3xl flex-wrap justify-center gap-3">
+    <ul className="mt-4 flex w-full max-w-4xl flex-wrap justify-center gap-3">
       {QUICK.map(({ label, prompt, color, Icon }) => (
         <li key={label}>
           <Link
@@ -124,11 +129,21 @@ export function QuickTiles() {
           </Link>
         </li>
       ))}
+      <li>
+        <Link
+          href="/play"
+          title={GAME.title}
+          className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
+        >
+          <GAME.Icon aria-hidden className="size-[22px]" style={{ color: GAME.color }} />
+          <span className="text-sm font-medium text-ink">{GAME.label}</span>
+        </Link>
+      </li>
     </ul>
   );
 }
 
-/* Chat: the same questions, sent in place. */
+/* Chat: the same questions, sent in place, and the game as a link. */
 export function QuickPills({
   onAsk,
   disabled,
@@ -151,6 +166,16 @@ export function QuickPills({
           </button>
         </li>
       ))}
+      <li className="shrink-0">
+        <Link
+          href="/play"
+          title={GAME.title}
+          className="flex items-center gap-2.5 rounded-xl border border-line bg-bg px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-surface active:scale-95"
+        >
+          <GAME.Icon aria-hidden className="size-[18px]" style={{ color: GAME.color }} />
+          {GAME.label}
+        </Link>
+      </li>
     </ul>
   );
 }
