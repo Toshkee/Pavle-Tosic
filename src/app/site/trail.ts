@@ -4,9 +4,9 @@
    Background ASCII Wake
    (https://21st.dev/@nikolas-sapa/components/background-ascii-wake).
    Where it passes, dots come up on a 14 px grid, turn into characters in
-   the middle of the wake and fade back out. Grey at the edges, Claude's
-   orange in the middle, on both themes: a wake in ink was the same colour
-   as the text it ran under, and swallowed it. */
+   the middle of the wake and fade back out. Claude's orange on both
+   themes, a little greyer at the faint edges: a wake in ink was the same
+   colour as the text it ran under, and swallowed it. */
 
 // The grid pitch.
 const CELL = 14;
@@ -21,8 +21,11 @@ const RAMP = ":-=+*#%@";
 const DOT = 0.2;
 const SHOW = 0.04;
 // Claude's orange (the same coral as the Quest's bugs): 3.1:1 on white,
-// 6.3:1 on the dark page. The characters run from the faint grey to it.
+// 6.3:1 on the dark page.
 const CLAY: Rgb = [217, 119, 87];
+// The faint edges of the wake are this far from the theme's grey to CLAY;
+// the middle is CLAY itself.
+const EDGE_CLAY = 0.55;
 // Grey to orange in this many steps, so a frame sets few fill styles.
 const SHADES = 8;
 // A cell fades as e^(-t / 0.8 s): a full one drops below SHOW in 2.6 s and
@@ -67,7 +70,7 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
     faint = value;
     const grey = parseHex(value || "#71717a");
     shades = Array.from({ length: SHADES }, (_, s) => {
-      const q = s / (SHADES - 1);
+      const q = EDGE_CLAY + ((1 - EDGE_CLAY) * s) / (SHADES - 1);
       const [r, g, b] = grey.map((v, k) => Math.round(v + (CLAY[k] - v) * q));
       return `rgb(${r},${g},${b})`;
     });
@@ -136,8 +139,9 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
         if (e < SHOW) continue;
         const x = originX + c * CELL;
         const y = originY + r * CELL;
-        // At most 0.75, so text over the wake stays readable.
-        ctx.globalAlpha = 0.3 + 0.45 * e;
+        // At most 0.85: the orange reads clearly, and the 12 px characters
+        // stay too thin to hide the text over them.
+        ctx.globalAlpha = 0.4 + 0.45 * e;
         if (e < DOT) {
           ctx.fillStyle = shades[0];
           ctx.beginPath();
@@ -145,7 +149,8 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
           ctx.fill();
         } else {
           const q = (e - DOT) / (1 - DOT);
-          ctx.fillStyle = shades[Math.round(q * (SHADES - 1))];
+          // The square root reaches full orange early in the wake.
+          ctx.fillStyle = shades[Math.round(Math.sqrt(q) * (SHADES - 1))];
           const step = Math.round(q * top) + jitter[i] - 1;
           ctx.fillText(RAMP[Math.max(0, Math.min(top, step))], x, y);
         }

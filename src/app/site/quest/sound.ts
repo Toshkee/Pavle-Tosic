@@ -32,6 +32,11 @@ const NOTES: Record<Blip, [number, number, OscillatorType, number][]> = {
   pop: [[300, 0.06, "square", 0], [150, 0.08, "square", 0.05]],
 };
 
+// Every blip peaks at 0.12 but the jump: it fires on every hop, and a
+// square wave at full level grates by the tenth one (Pavle asked for it
+// quieter).
+const PEAK: Partial<Record<Blip, number>> = { jump: 0.045 };
+
 /* The music: an original eight-bar loop in A minor at 120 bpm, eighth
    notes, a triangle bass under a square lead kept well below the blips.
    Scheduled 0.3 s ahead on the AudioContext clock, so a late timer never
@@ -112,7 +117,8 @@ export function createSound(): Sound {
     // sound anyway.
     if (!on || !ctx) return;
     const now = ctx.currentTime;
-    for (const [freq, length, wave, at] of NOTES[name]) tone(ctx, freq, now + at, length, wave, 0.12);
+    const peak = PEAK[name] ?? 0.12;
+    for (const [freq, length, wave, at] of NOTES[name]) tone(ctx, freq, now + at, length, wave, peak);
   };
 
   const schedule = () => {
