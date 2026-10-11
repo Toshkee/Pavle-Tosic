@@ -1,15 +1,14 @@
-/* The trail the mouse leaves in the dot grid under every page, after two
-   21st.dev components: Dotted Trail Cursor
+/* The trail the mouse leaves under every page, after two 21st.dev
+   components: Dotted Trail Cursor
    (https://21st.dev/@hyperiux/components/dotted-trail-cursor) and
    Background ASCII Wake
    (https://21st.dev/@nikolas-sapa/components/background-ascii-wake).
-   The resting grid is CSS (.dot-grid in globals.css, on the canvas itself),
-   so it is there before hydration and on touch screens; this draws only
-   what the mouse stirs up. Where it passes, the grid's dots grow, turn into
-   characters in the middle of the wake, and settle back into dots. In ink:
-   black on the light theme, white on the dark one. */
+   Where it passes, dots come up on a 14 px grid, turn into characters in
+   the middle of the wake and fade back out. Grey at the edges, Claude's
+   orange in the middle, on both themes: a wake in ink was the same colour
+   as the text it ran under, and swallowed it. */
 
-// The grid pitch: must match the background-size of .dot-grid.
+// The grid pitch.
 const CELL = 14;
 // The wake's radius at full speed, in px (Pavle picked 70 in the cursor
 // lab). A slow mouse draws it at 55% of that.
@@ -18,15 +17,26 @@ const RADIUS = 70;
 const FULL_SPEED = 2.2;
 // Characters from light to dense, for the middle of the wake.
 const RAMP = ":-=+*#%@";
-// Below DOT a stirred cell is still a dot (an ink one, a little bigger
-// than the grey dot under it); below SHOW it is left to the CSS grid.
+// Below DOT a stirred cell is a dot; below SHOW it is not drawn.
 const DOT = 0.2;
 const SHOW = 0.04;
+// Claude's orange (the same coral as the Quest's bugs): 3.1:1 on white,
+// 6.3:1 on the dark page. The characters run from the faint grey to it.
+const CLAY: Rgb = [217, 119, 87];
+// Grey to orange in this many steps, so a frame sets few fill styles.
+const SHADES = 8;
 // A cell fades as e^(-t / 0.8 s): a full one drops below SHOW in 2.6 s and
 // below FLOOR in 4.4 s, and once every cell is there the loop sleeps.
 const FADE_S = 0.8;
 const FLOOR = 0.004;
 const FONT = "600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+
+type Rgb = [number, number, number];
+
+const parseHex = (hex: string): Rgb => {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
 
 export function startTrail(canvas: HTMLCanvasElement): () => void {
   const context = canvas.getContext("2d");
@@ -47,6 +57,21 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
   let frame = 0;
   let lastFrame = 0;
   let pointer: { x: number; y: number; t: number; speed: number } | null = null;
+  // The grey of the current theme, and the shades from it to CLAY.
+  let faint = "";
+  let shades: string[] = [];
+
+  const readTheme = () => {
+    const value = getComputedStyle(document.documentElement).getPropertyValue("--faint").trim();
+    if (value === faint) return;
+    faint = value;
+    const grey = parseHex(value || "#71717a");
+    shades = Array.from({ length: SHADES }, (_, s) => {
+      const q = s / (SHADES - 1);
+      const [r, g, b] = grey.map((v, k) => Math.round(v + (CLAY[k] - v) * q));
+      return `rgb(${r},${g},${b})`;
+    });
+  };
 
   const resize = () => {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -55,7 +80,7 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // background-position: center puts a CSS dot on the box's centre.
+    // One column and one row through the middle of the viewport.
     originX = (width / 2) % CELL;
     originY = (height / 2) % CELL;
     cols = Math.ceil((width - originX) / CELL) + 1;
@@ -98,9 +123,8 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
 
   const draw = () => {
     ctx.clearRect(0, 0, width, height);
-    // Read every frame, so the theme toggle recolours a wake mid-fade.
-    ctx.fillStyle =
-      getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#0a0a0a";
+    // Every frame, so the theme toggle recolours a wake mid-fade.
+    readTheme();
     ctx.font = FONT;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -112,13 +136,17 @@ export function startTrail(canvas: HTMLCanvasElement): () => void {
         if (e < SHOW) continue;
         const x = originX + c * CELL;
         const y = originY + r * CELL;
-        ctx.globalAlpha = 0.35 + 0.65 * e;
+        // At most 0.75, so text over the wake stays readable.
+        ctx.globalAlpha = 0.3 + 0.45 * e;
         if (e < DOT) {
+          ctx.fillStyle = shades[0];
           ctx.beginPath();
           ctx.arc(x, y, 0.8 + 5 * e, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          const step = Math.round(((e - DOT) / (1 - DOT)) * top) + jitter[i] - 1;
+          const q = (e - DOT) / (1 - DOT);
+          ctx.fillStyle = shades[Math.round(q * (SHADES - 1))];
+          const step = Math.round(q * top) + jitter[i] - 1;
           ctx.fillText(RAMP[Math.max(0, Math.min(top, step))], x, y);
         }
       }

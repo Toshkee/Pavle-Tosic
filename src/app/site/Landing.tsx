@@ -10,8 +10,8 @@ import ThemeToggle from "./ThemeToggle";
 
 /* The front page, after aaabadcode.com: greeting, title, the Memoji whose
    eyes follow the cursor, one question box and the starter questions over
-   a giant faded handle; the dot grid and the cursor trail under it all
-   come from the layout. Everything is a link or a GET form to /chat, so it
+   a giant faded handle; the cursor trail under it all comes from the
+   layout. Everything is a link or a GET form to /chat, so it
    works before (and without) hydration. The page says little on purpose: /about is the crawlable
    version of who I am. */
 export default function Landing() {

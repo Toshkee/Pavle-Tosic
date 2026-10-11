@@ -67,28 +67,14 @@ html {
   background-color: var(--bg);
 }
 
-/* The page colour is on <html> alone: the dot grid and the cursor trail
-   (CursorTrail in layout.tsx) are a fixed canvas at z-index -1, and a body
-   background would paint over it. */
+/* The page colour is on <html> alone: the cursor trail (CursorTrail in
+   layout.tsx) is a fixed canvas at z-index -1, and a body background would
+   paint over it. */
 body {
   color: var(--body);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-}
-
-/* The resting dot grid under every page, on the cursor trail's canvas
-   (site/trail.ts draws the trail over the same points: keep its CELL equal
-   to the 14px here, and the centring, which puts a dot on the viewport's
-   centre). 30% of faint is about #d4d4d8 on white, as light as line-strong. */
-.dot-grid {
-  background-image: radial-gradient(
-    circle,
-    color-mix(in oklab, var(--faint) 30%, transparent) 0.75px,
-    transparent 1.25px
-  );
-  background-size: 14px 14px;
-  background-position: center;
 }
 
 .font-display {
