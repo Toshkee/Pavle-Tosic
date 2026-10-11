@@ -1,9 +1,10 @@
 /* Pixel art as text, one character per pixel: the bugs and the things to
    pick up. (The hero is a PixelLab sprite sheet, see hero.ts.) The bugs
-   are coral, Clawd's colour: in a grey world the one warm tone means
-   danger (pit walls and ledge tops share it, in dots.ts), and the blue
-   glow means something to collect. Each frame is rendered once per scale
-   to an offscreen canvas and then blitted. */
+   are coral, Clawd's colour: at full strength in a grey world it means
+   danger (pit walls and ledge tops share it, in dots.ts; the scenery's
+   warm light is the same coral, dimmer), and the blue glow means
+   something to collect. Each frame is rendered once per scale to an
+   offscreen canvas and then blitted. */
 
 export type Frame = { rows: string[]; pal: Record<string, string> };
 

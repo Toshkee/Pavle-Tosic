@@ -7,11 +7,13 @@ import {
   drawStars,
   drawTrees,
   hash,
+  S,
   type Pit,
   type Platform,
   type Scene,
 } from "./dots";
 import { layoutTitle, type TitleDot } from "./font";
+import { Fx } from "./fx";
 import {
   CELL,
   CENTER,
@@ -23,8 +25,10 @@ import {
   LEAP_FRAME,
   type HeroAnim,
 } from "./hero";
+import { drawFireflies, drawLandmarks } from "./life";
 import { MISSIONS, ULTRA, type Mission } from "./missions";
 import type { Sound } from "./sound";
+import { Sky, drawOrb, orbAt } from "./sky";
 import { BIG_BUG, BUG, PICKUPS, drawFrame, type PickupKind } from "./sprites";
 
 /* The game itself: one canvas, a rAF loop, arcade physics (instant-ish
@@ -155,6 +159,8 @@ const BG = "#171717";
 const DOT_RGB = "150,150,150";
 // Clawd's coral: pit walls, ledge tops and the bugs, the things to mind.
 const WARN_RGB = "217,119,87";
+// The same coral, dimmer, for the warm light of the scenery.
+const EMBER_TONES = [0.22, 0.4, 0.62];
 const ACCENT_RGB = "47,124,246";
 const BEST_KEY = "quest.best";
 const CONTINUE = "Press space to continue";
@@ -213,6 +219,10 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
   const { sound, reduced } = opts;
   const dots = new Dots(DOT_RGB);
   const warn = new Dots(WARN_RGB);
+  const ember = new Dots(WARN_RGB, EMBER_TONES);
+  const accent = new Dots(ACCENT_RGB);
+  const sky = new Sky(reduced);
+  const fx = new Fx(!reduced);
   const hero = new Image();
   hero.src = HERO_SHEET;
 
@@ -246,6 +256,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
   let sparks = { left: 0, right: 0, y: 0 };
   let best = readBest();
   let lastUi = "";
+  let dustT = 0;
   const held = new Set<Action>();
 
   const player = {
@@ -562,6 +573,8 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
     }
     const target = clamp(player.x - w * 0.38, 0, Math.max(0, level.length - w));
     cam += (target - cam) * (1 - Math.exp(-dt * 8));
+    sky.update(dt, scene());
+    fx.update(dt);
   }
 
   /* Between missions and on a slip: no input, but a jump in progress
@@ -632,6 +645,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
       }
     }
     if (land !== null) {
+      if (!p.grounded && p.vy > 420) fx.dust(p.x, land, 6);
       p.y = land;
       p.vy = 0;
       p.grounded = true;
@@ -644,6 +658,11 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
       p.x = clamp(p.x, pit.x + HALF_W, pit.x + pit.w - HALF_W);
     }
     if (p.grounded && Math.abs(p.y - groundY) < 3 && !nearPit(p.x)) p.safeX = p.x;
+    // A kick of dust behind him every few steps at a run.
+    if (p.grounded && Math.abs(p.vx) > WALK + 60 && (dustT -= dt) <= 0) {
+      dustT = 0.08;
+      fx.dust(p.x - p.facing * 14, p.y, 1, -p.facing * 40);
+    }
     if (p.y > h + 80) {
       loseHeart();
       resetPlayer(p.safeX);
@@ -728,11 +747,13 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
         sound.play("hop");
       } else if (doneT === null && f.stop === f.stops.length - 1 && Math.abs(f.x - p.x) < 40) {
         sound.play("pick");
+        fx.burst(f.x, f.y - 40, 16, "shine");
         doneT = 0.6;
       }
     }
     if (level.goal !== null && doneT === null && p.x >= level.goal) {
       sound.play("pick");
+      fx.burst(level.goal, groundY - 30, 16, "shine");
       doneT = 0.8;
     }
   }
@@ -758,6 +779,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
       const ahead = (b.x - p.x) * p.facing;
       if (ahead < -bugHalf(b) || ahead > ATTACK_REACH + bugHalf(b)) return true;
       b.hp--;
+      fx.burst(b.x, groundY - bugHeight(b) / 2, b.hp > 0 ? 6 : 16, "spark");
       if (b.hp > 0) {
         b.x += p.facing * 40;
         return true;
@@ -772,6 +794,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
     k.taken = true;
     level.count++;
     sound.play("pick");
+    fx.burst(k.x, k.y, 12, "shine");
     showToast(mission.lines[level.count - 1]);
     if (mission.kind === "spawn" && level.pickups.length < mission.total) {
       // Two more, ahead of the furthest crate: one low, one on a ledge.
@@ -853,27 +876,34 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
   }
 
+  function scene(): Scene {
+    const night = mode === "quest" && mission.night;
+    return { w, h, groundY, cam, t, night, reduced, orb: orbAt(w, groundY, cam, night) };
+  }
+
   function render(): void {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, w, h);
-    const scene: Scene = {
-      w,
-      h,
-      groundY,
-      cam,
-      t,
-      night: mode === "quest" && mission.night,
-      reduced,
-    };
-    if (scene.night) drawStars(dots, scene);
-    drawClouds(dots, scene);
-    drawHills(dots, scene, 0);
-    drawHills(dots, scene, 1);
-    drawTrees(dots, scene);
-    drawGround(dots, warn, scene, level.pits);
-    drawPlatforms(dots, warn, scene, level.platforms);
+    const s = scene();
+    drawStars(dots, ember, s);
+    drawOrb(dots, ember, s);
+    sky.draw(dots, ember, warn, s);
+    drawClouds(dots, ember, s);
+    drawHills(dots, ember, s, 0);
+    drawLandmarks(dots, ember, warn, s);
+    drawHills(dots, ember, s, 1);
+    drawTrees(dots, ember, s);
+    drawFireflies(ember, warn, s);
+    drawGround(dots, warn, ember, s, level.pits);
+    drawPlatforms(dots, warn, s, level.platforms);
+    // The warm scenery first, under the grey; the full coral on top. A
+    // ledge clears a band through the warm scenery behind it, so its
+    // coral top never runs into the sun.
+    ember.flush(ctx);
+    ctx.fillStyle = BG;
+    for (const pl of level.platforms) ctx.fillRect(pl.x - cam - 8, pl.top - 8, pl.w + 16, 3 * S);
     dots.flush(ctx);
     warn.flush(ctx);
 
@@ -905,6 +935,10 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
       else drawFrame(ctx, BUG[bugFrame], x, groundY, 5);
     }
     drawHero();
+    fx.draw(dots, warn, accent, cam);
+    dots.flush(ctx);
+    warn.flush(ctx);
+    accent.flush(ctx);
     if (mode === "title") drawTitle();
   }
 
@@ -1057,6 +1091,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
           p.vy = -JUMP2;
           p.jumps = 2;
           p.flipT = 0.45;
+          fx.dust(p.x, p.y, 5);
           sound.play("jump");
         }
         return;
@@ -1074,6 +1109,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
         if ((phase === "play" || phase === "title") && free && p.grounded) {
           p.rollT = ROLL_TIME;
           p.inv = Math.max(p.inv, ROLL_TIME);
+          fx.dust(p.x, p.y, 5, -p.facing * 80);
           sound.play("hop");
         }
         return;
