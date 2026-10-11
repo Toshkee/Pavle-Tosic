@@ -11,7 +11,8 @@ import { createSound, type Sound } from "./sound";
 /* Toshkee's Quest, after Clawd's Quest on claude.dev: the canvas is the
    engine's (engine.ts); everything on top of it is here. Chips in the
    corners, paper slips for the story, the controls panel, and on a phone
-   two buttons (he walks east on his own there). The engine reports a
+   touch pads (arrows to walk, a double tap held on one to run; in Ultra,
+   where he runs on his own, a Sprint pad instead). The engine reports a
    snapshot whenever something a visitor can see changes, so this
    component never renders per frame. */
 
@@ -61,6 +62,11 @@ export default function Quest() {
     const touch = matchMedia("(pointer: coarse)").matches;
     const sound = createSound();
     soundRef.current = sound;
+    // Audio may only start inside a gesture; iOS counts the lift of a
+    // finger, desktops the press. Capture, so it runs before the game.
+    const unlock = () => sound.unlock();
+    const gestures = ["pointerdown", "pointerup", "touchend", "keydown"] as const;
+    for (const type of gestures) window.addEventListener(type, unlock, true);
     const engine = createQuest(canvas, {
       sound,
       reduced,
@@ -78,7 +84,9 @@ export default function Quest() {
     observer.observe(root);
     return () => {
       observer.disconnect();
+      for (const type of gestures) window.removeEventListener(type, unlock, true);
       engine.destroy();
+      sound.destroy();
       engineRef.current = null;
     };
   }, []);
@@ -129,6 +137,20 @@ export default function Quest() {
     const { phase, touch } = ui;
     if (ui.slip) engineRef.current?.press("jump");
     else if (touch && phase === "play") engineRef.current?.press("jump");
+  };
+
+  // Two taps on the same arrow within 300 ms, the second one held: run.
+  const lastStep = useRef<{ action: Action | null; at: number }>({ action: null, at: 0 });
+  const walkPress = (action: "left" | "right") => {
+    const now = performance.now();
+    const again = lastStep.current.action === action && now - lastStep.current.at < 300;
+    lastStep.current = { action, at: now };
+    engineRef.current?.press(action);
+    if (again) engineRef.current?.press("sprint");
+  };
+  const walkRelease = (action: "left" | "right") => {
+    engineRef.current?.release(action);
+    engineRef.current?.release("sprint");
   };
 
   const inGame = ui.mode !== "title";
@@ -224,7 +246,8 @@ export default function Quest() {
           </button>
           {ui.touch && (
             <p className="px-6 text-center text-[11px] leading-relaxed text-[#8a8a8a]">
-              He walks east on his own. Tap to jump, tap again in the air for a second jump.
+              Arrows to walk, double-tap and hold one to run. Tap anywhere to jump, again in
+              the air for a second jump.
             </p>
           )}
         </div>
@@ -273,18 +296,37 @@ export default function Quest() {
       {ui.touch && ui.phase === "play" && (
         <div className="absolute inset-x-3 bottom-5 flex justify-between">
           <div className="flex gap-2">
-            <Pad
-              label="Sprint"
-              onPress={() => engineRef.current?.press("sprint")}
-              onRelease={() => engineRef.current?.release("sprint")}
-            />
+            {ui.mode === "quest" ? (
+              <>
+                <Pad
+                  label="←"
+                  name="Walk left"
+                  className="quest-pad-arrow"
+                  onPress={() => walkPress("left")}
+                  onRelease={() => walkRelease("left")}
+                />
+                <Pad
+                  label="→"
+                  name="Walk right"
+                  className="quest-pad-arrow"
+                  onPress={() => walkPress("right")}
+                  onRelease={() => walkRelease("right")}
+                />
+              </>
+            ) : (
+              <Pad
+                label="Sprint"
+                onPress={() => engineRef.current?.press("sprint")}
+                onRelease={() => engineRef.current?.release("sprint")}
+              />
+            )}
+          </div>
+          <div className="flex gap-2">
             <Pad
               label="Roll"
               onPress={() => engineRef.current?.press("roll")}
               onRelease={() => engineRef.current?.release("roll")}
             />
-          </div>
-          <div className="flex gap-2">
             <Pad
               label="Sword"
               onPress={() => engineRef.current?.press("attack")}
@@ -326,17 +368,22 @@ function Slip({ text, sub }: { text: string; sub?: string }) {
    finger lifts or slides off. */
 function Pad({
   label,
+  name,
+  className = "",
   onPress,
   onRelease,
 }: {
   label: string;
+  name?: string;
+  className?: string;
   onPress: () => void;
   onRelease: () => void;
 }) {
   return (
     <button
       type="button"
-      className="quest-pad"
+      aria-label={name}
+      className={`quest-pad ${className}`}
       onPointerDown={(event) => {
         event.preventDefault();
         onPress();

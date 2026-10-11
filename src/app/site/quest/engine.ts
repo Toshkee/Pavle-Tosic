@@ -593,7 +593,7 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
     const p = player;
     const sprint = held.has("sprint");
     let dir = (held.has("right") ? 1 : 0) - (held.has("left") ? 1 : 0);
-    if (mode === "ultra" || (opts.touch && dir === 0)) dir = 1;
+    if (mode === "ultra") dir = 1;
     const ultraSpeed = 300 + Math.min(1, p.x / 14000) * 240;
     const speed = mode === "ultra" ? ultraSpeed + (sprint ? 90 : 0) : sprint ? RUN : WALK;
     const swinging = p.attackT > 0 && p.grounded;
@@ -695,6 +695,18 @@ export function createQuest(canvas: HTMLCanvasElement, opts: Options): Quest {
       const dx = k.x - p.x;
       const dy = k.y - (p.y - 50);
       if (dx * dx + dy * dy < 52 * 52) take(k);
+    }
+    // At the end of the road with something missed: say where it is, or
+    // he just stands at the wall wondering why the mission will not end.
+    const missing = mission.total - level.count;
+    if (
+      mode === "quest" &&
+      (mission.kind === "collect" || mission.kind === "spawn") &&
+      missing > 0 &&
+      toast === null &&
+      p.x > level.length - 120
+    ) {
+      showToast(`${missing} still to find, back to the west.`);
     }
     const f = level.flag;
     if (f) {

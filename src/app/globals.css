@@ -285,8 +285,9 @@ button.quest-chip:hover {
   font-size: 10px;
   text-align: center;
 }
+/* Five pads in a row on a 375 px phone: 16vw is 60 px there. */
 .quest-pad {
-  width: 76px;
+  width: min(76px, 16vw);
   height: 60px;
   border: 1px solid var(--q-line);
   border-radius: 12px;
@@ -299,6 +300,10 @@ button.quest-chip:hover {
 }
 .quest-pad:active {
   background: #363636;
+}
+.quest-pad-arrow {
+  font-size: 22px;
+  letter-spacing: 0;
 }
 @media (prefers-reduced-motion: reduce) {
   .quest-slip {
