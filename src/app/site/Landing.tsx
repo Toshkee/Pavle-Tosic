@@ -1,9 +1,9 @@
 import Form from "next/form";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { LuArrowRight } from "react-icons/lu";
+import { LuArrowRight, LuFileText } from "react-icons/lu";
 import { LIMITS } from "../chat-protocol";
-import { HANDLE, NAME, ROLE, SOCIAL } from "./content";
+import { HANDLE, NAME, RESUME, ROLE, SOCIAL } from "./content";
 import MemojiGaze from "./MemojiGaze";
 import { QuickTiles } from "./QuickQuestions";
 import ThemeToggle from "./ThemeToggle";
@@ -26,17 +26,29 @@ export default function Landing() {
         </span>
       </div>
 
+      {/* The CV sits beside "Open to work": a recruiter's first click. */}
       <div className="absolute top-4 right-4 left-4 z-10 flex items-center justify-between">
-        <Link
-          href={{
-            pathname: "/chat",
-            query: { q: "Are you open to work? How can I reach you?" },
-          }}
-          className="flex items-center gap-2 rounded-full border border-line bg-bg/70 px-3.5 py-2 text-sm font-medium text-ink backdrop-blur transition-colors hover:bg-surface"
-        >
-          <span aria-hidden className="size-2 rounded-full bg-emerald-500" />
-          Open to work
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={{
+              pathname: "/chat",
+              query: { q: "Are you open to work? How can I reach you?" },
+            }}
+            className="flex items-center gap-2 rounded-full border border-line bg-bg/70 px-3.5 py-2 text-sm font-medium text-ink backdrop-blur transition-colors hover:bg-surface"
+          >
+            <span aria-hidden className="size-2 rounded-full bg-emerald-500" />
+            Open to work
+          </Link>
+          <a
+            href={RESUME}
+            target="_blank"
+            rel="noopener"
+            className="flex items-center gap-2 rounded-full border border-line bg-bg/70 px-3.5 py-2 text-sm font-medium text-ink backdrop-blur transition-colors hover:bg-surface"
+          >
+            <LuFileText aria-hidden className="size-4" />
+            CV<span className="sr-only"> (PDF)</span>
+          </a>
+        </div>
         <ThemeToggle />
       </div>
 
@@ -84,13 +96,16 @@ export default function Landing() {
 
       <nav
         aria-label="More"
-        className="absolute bottom-4 z-10 flex gap-4 text-[13px] text-faint"
+        className="absolute inset-x-4 bottom-4 z-10 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] text-faint"
       >
         <Link href="/about" className="transition-colors hover:text-ink">
           About
         </Link>
         <Link href="/work" className="transition-colors hover:text-ink">
           Case studies
+        </Link>
+        <Link href="/how-its-built" className="transition-colors hover:text-ink">
+          How it&apos;s built
         </Link>
         <a href={SOCIAL.github} className="transition-colors hover:text-ink">
           GitHub

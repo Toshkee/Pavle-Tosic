@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PROJECTS, CASES, projectBySlug } from "../../projects";
 import Crumbs from "../../site/Crumbs";
+import Pane from "../../site/Pane";
 
 /* One crawlable case study per project. Deliberately a SERVER component with
    no client JS: the chat shows a project as a card only once the model
@@ -43,28 +44,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
       images: [p.shot],
     },
   };
-}
-
-// A monospace pane for the arch trees, notes and code excerpts. The source
-// strings are hard-wrapped, so <pre> is the honest renderer: reflowing them
-// would break the ASCII trees. Plain plate, no window chrome.
-function Pane({
-  file,
-  children,
-}: {
-  file: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="plate overflow-hidden rounded-[8px]">
-      <div className="border-b border-line px-4 py-2 text-[12px] text-faint">
-        {file}
-      </div>
-      <pre className="overflow-x-auto p-4 font-mono text-[12.5px] leading-[1.6] text-body">
-        {children}
-      </pre>
-    </div>
-  );
 }
 
 function Section({
@@ -189,15 +168,32 @@ export default async function CaseStudy({ params }: Params) {
         </ul>
       </header>
 
-      {/* Phone screens stay phone-width instead of a page-tall image. */}
-      <Image
-        src={p.shot}
-        alt={`${p.title} screenshot`}
-        width={p.phone ? 720 : 1280}
-        height={p.phone ? 1558 : 720}
-        priority
-        className={`mt-10 rounded-xl border border-line ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
-      />
+      {/* The demo clip where there is one, else the still. Phone screens
+          stay phone-width instead of page-tall. The clip loads nothing but
+          its poster until it is played. */}
+      {p.video ? (
+        <video
+          src={p.video.src}
+          poster={p.video.poster}
+          width={p.video.width}
+          height={p.video.height}
+          controls
+          muted
+          playsInline
+          preload="none"
+          aria-label={`${p.title}: demo`}
+          className={`mt-10 h-auto rounded-xl border border-line bg-plate ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
+        />
+      ) : (
+        <Image
+          src={p.shot}
+          alt={`${p.title} screenshot`}
+          width={p.phone ? 720 : 1280}
+          height={p.phone ? 1558 : 720}
+          priority
+          className={`mt-10 rounded-xl border border-line ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
+        />
+      )}
 
       {/* Numbers first: they are what a reader scanning the page stops on,
           and every one of them is counted out of the repo. */}

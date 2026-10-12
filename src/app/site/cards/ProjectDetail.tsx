@@ -20,8 +20,28 @@ export default function ProjectDetail({ project }: { project: Project }) {
       </p>
 
       {/* A fixed-height strip, so desktop stills and phone screens both
-          keep their own shape; each opens full size when clicked. */}
+          keep their own shape; each opens full size when clicked. The demo
+          clip leads, and loads nothing until it is played. */}
       <ul className="no-scrollbar -mx-6 mt-6 flex snap-x gap-3 overflow-x-auto px-6 sm:-mx-8 sm:px-8">
+        {project.video && (
+          <li className="shrink-0 snap-start">
+            <Zoomable
+              media={{
+                kind: "video",
+                src: project.video.src,
+                poster: project.video.poster,
+                preview: thumbOf(project.video.poster),
+                alt: `${project.title}: demo`,
+              }}
+              // The poster thumbs are 640px wide, in the clip's own shape.
+              width={640}
+              height={Math.round((640 * project.video.height) / project.video.width)}
+              frameClassName="rounded-xl border border-line bg-plate"
+              className="h-44 w-auto sm:h-52"
+            />
+            <p className="mt-1.5 text-xs text-faint">Demo</p>
+          </li>
+        )}
         {project.gallery.map((image) => (
           <li key={image.src} className="shrink-0 snap-start">
             <Zoomable

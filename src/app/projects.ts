@@ -32,7 +32,9 @@ export type Project = {
   live: string | null;
   code: string | null;
   shot: string;
-  video: string | null;
+  /** A screen recording of the project in use (H.264, no audio), and a
+      frame of it as the poster ("-thumb" twin as for every still). */
+  video: { src: string; poster: string; width: number; height: number } | null;
   domain: string | null;
   gallery: { src: string; label: string }[];
   /** The screens are phone-sized (portrait), so pages show them narrow. */
@@ -75,10 +77,15 @@ export const PROJECTS: Project[] = [
     live: null,
     code: null,
     shot: "/images/projects/reform-fitness-home.webp",
-    video: null,
+    video: {
+      src: "/video/projects/reform-fitness.mp4",
+      poster: "/images/projects/reform-fitness-demo.webp",
+      width: 540,
+      height: 1168,
+    },
     domain: null,
     phone: true,
-    note: "The app is private, for the studio's members only, so there is no link to it. The screens are from its demo build, with made-up members.",
+    note: "The app is private, for the studio's members only, so there is no link to it. The screens and the demo clip are from its demo build, with made-up members.",
     gallery: [
       { src: "/images/projects/reform-fitness-home.webp", label: "Home" },
       { src: "/images/projects/reform-fitness-schedule.webp", label: "Schedule" },
@@ -117,7 +124,12 @@ export const PROJECTS: Project[] = [
     live: "https://infostream.co.me/eng",
     code: null,
     shot: "/images/projects/infostream.webp",
-    video: null,
+    video: {
+      src: "/video/projects/infostream.mp4",
+      poster: "/images/projects/infostream-demo.webp",
+      width: 1280,
+      height: 800,
+    },
     domain: "infostream.co.me",
     gallery: [
       { src: "/images/projects/infostream.webp", label: "Home" },
@@ -158,7 +170,12 @@ export const PROJECTS: Project[] = [
     live: "https://vaky.me/en/",
     code: "https://github.com/Toshkee/Vaky.me",
     shot: "/images/projects/vaky.webp",
-    video: null,
+    video: {
+      src: "/video/projects/vaky.mp4",
+      poster: "/images/projects/vaky-demo.webp",
+      width: 1280,
+      height: 800,
+    },
     domain: "vaky.me",
     gallery: [
       { src: "/images/projects/vaky.webp", label: "Home" },
@@ -200,7 +217,12 @@ export const PROJECTS: Project[] = [
     code: "https://github.com/Toshkee/CryptoFlow",
     // The landing page leads (his pick); the terminal still is in the gallery.
     shot: "/images/projects/cryptoflow-landing.webp",
-    video: "/video/projects/cryptoflow.mp4",
+    video: {
+      src: "/video/projects/cryptoflow.mp4",
+      poster: "/images/projects/cryptoflow-demo.webp",
+      width: 1280,
+      height: 800,
+    },
     domain: "cryptofloww.netlify.app",
     gallery: [
       { src: "/images/projects/cryptoflow-landing.webp", label: "Landing" },
@@ -238,7 +260,12 @@ export const PROJECTS: Project[] = [
     live: "https://toshkee.github.io/Ronin-Duel/",
     code: "https://github.com/Toshkee/Ronin-Duel",
     shot: "/images/projects/ronin-duel.webp",
-    video: "/video/projects/ronin-duel.mp4",
+    video: {
+      src: "/video/projects/ronin-duel.mp4",
+      poster: "/images/projects/ronin-duel-demo.webp",
+      width: 1280,
+      height: 720,
+    },
     domain: "toshkee.github.io",
     gallery: [
       { src: "/images/projects/ronin-duel-menu.webp", label: "Title & mode select" },
@@ -277,7 +304,12 @@ export const PROJECTS: Project[] = [
     live: "https://arc-anime.vercel.app",
     code: "https://github.com/Toshkee/anime-watchlist",
     shot: "/images/projects/anime-watchlist.webp",
-    video: "/video/projects/anime-watchlist.mp4",
+    video: {
+      src: "/video/projects/anime-watchlist.mp4",
+      poster: "/images/projects/anime-watchlist-demo.webp",
+      width: 960,
+      height: 600,
+    },
     domain: "arc-anime.vercel.app",
     gallery: [
       { src: "/images/projects/anime-watchlist-home.webp", label: "Search & trending" },
@@ -316,10 +348,13 @@ export const PROJECTS: Project[] = [
     note: "The demo's backend host has lapsed, so sign-in and live trips are offline; the landing page still loads.",
     code: "https://github.com/Toshkee/Meet2Explore-Frontend",
     shot: "/images/projects/meet2explore.webp",
-    // No demo video on purpose: the only recording was a 720x416 screen
-    // capture that spent most of its 15 s on an empty chat box (with a
-    // browser permission popup in frame). The landing still is the card.
-    video: null,
+    // The backend has lapsed, so the demo walks the landing's slides only.
+    video: {
+      src: "/video/projects/meet2explore.mp4",
+      poster: "/images/projects/meet2explore-demo.webp",
+      width: 1280,
+      height: 800,
+    },
     domain: "meet2explore.netlify.app",
     gallery: [
       { src: "/images/projects/meet2explore-hero.webp", label: "Discover destinations" },
@@ -358,7 +393,12 @@ export const PROJECTS: Project[] = [
     live: "https://villavucje.me/en/",
     code: "https://github.com/Toshkee/VillaVucje",
     shot: "/images/projects/villavucje-hero.webp",
-    video: null,
+    video: {
+      src: "/video/projects/villa-vucje.mp4",
+      poster: "/images/projects/villa-vucje-demo.webp",
+      width: 1280,
+      height: 800,
+    },
     domain: "villavucje.me",
     gallery: [
       { src: "/images/projects/villavucje-hero.webp", label: "Hero" },
@@ -398,7 +438,12 @@ export const PROJECTS: Project[] = [
     live: "https://mandarinapt.me/en/",
     code: "https://github.com/Toshkee/MandarinaPetrovac",
     shot: "/images/projects/mandarina-hero.webp",
-    video: null,
+    video: {
+      src: "/video/projects/mandarina-petrovac.mp4",
+      poster: "/images/projects/mandarina-petrovac-demo.webp",
+      width: 1280,
+      height: 800,
+    },
     domain: "mandarinapt.me",
     gallery: [
       { src: "/images/projects/mandarina-hero.webp", label: "Hero" },

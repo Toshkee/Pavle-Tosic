@@ -24,6 +24,7 @@ export function GET(): Response {
       ...PROJECTS.map(
         (project) => `  - ${project.title}: ${SITE}/work/${project.slug}`,
       ),
+      `- How this site is built: ${SITE}/how-its-built`,
       `- Toshkee's Quest, a small arcade game: ${SITE}/play`,
       `- Privacy: ${SITE}/privacy`,
     ].join("\n"),
