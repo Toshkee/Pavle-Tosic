@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { IconType } from "react-icons";
-import type { Card } from "../chat-protocol";
+import { QUICK_PROMPTS, type Card } from "../chat-protocol";
 import {
   LuBriefcaseBusiness,
   LuGamepad2,
@@ -25,37 +25,37 @@ const ALL_QUICK: {
 }[] = [
   {
     label: "Me",
-    prompt: "Who are you? I want to know more about you.",
+    prompt: QUICK_PROMPTS.me,
     color: "#329696",
     Icon: LuLaugh,
   },
   {
     label: "Projects",
-    prompt: "What are your projects? What have you built recently?",
+    prompt: QUICK_PROMPTS.projects,
     color: "#3E9858",
     Icon: LuBriefcaseBusiness,
   },
   {
     label: "Skills",
-    prompt: "What are your skills? What do you build with?",
+    prompt: QUICK_PROMPTS.skills,
     color: "#D2694A",
     Icon: LuLayers,
   },
   {
     label: "Experience",
-    prompt: "Where do you work, and what have you done there?",
+    prompt: QUICK_PROMPTS.experience,
     color: "#4F7FD9",
     Icon: LuRoute,
   },
   {
     label: "Fun",
-    prompt: "What do you do for fun? What are your hobbies?",
+    prompt: QUICK_PROMPTS.fun,
     color: "#B95F9D",
     Icon: LuPartyPopper,
   },
   {
     label: "Contact",
-    prompt: "How can I contact you? Are you open to work?",
+    prompt: QUICK_PROMPTS.contact,
     color: "#C19433",
     Icon: LuUserRoundSearch,
   },

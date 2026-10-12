@@ -31,18 +31,23 @@ type Part = { type: "text"; text: string } | { type: "card"; card: Card };
 type Exchange = { question: string; parts: Part[]; error?: string };
 type Pending = { question: string; history: Turn[] };
 
-/* An exchange as history for the next request: only what was said. One
-   that ended in an error or said nothing is dropped whole, so the
-   conversation still alternates user / assistant. */
+/* An exchange as history for the next request: what was said, and the card
+   it showed. One that ended in an error or said nothing is dropped whole,
+   so the conversation still alternates user / assistant. */
 function toTurns({ question, parts, error }: Exchange): Turn[] {
   const text = parts
     .flatMap((part) => (part.type === "text" ? [part.text.trim()] : []))
     .join("\n\n")
     .trim();
   if (error || !text) return [];
+  const card = parts.findLast((part) => part.type === "card");
   return [
     { role: "user", text: question },
-    { role: "assistant", text: text.slice(0, LIMITS.replyChars) },
+    {
+      role: "assistant",
+      text: text.slice(0, LIMITS.replyChars),
+      ...(card?.type === "card" && { card: card.card }),
+    },
   ];
 }
 

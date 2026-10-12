@@ -31,6 +31,7 @@ const CHAT_ARCH = `browser ── POST /api/chat
      │   prompt and tools cached
      ├ round 1: claude-haiku-5-5
      │   may call one of 8 tools
+     │   (a starter question must)
      │   a tool call = "show this card"
      ├ round 2: tools off, text only
      └ NDJSON stream back to the page

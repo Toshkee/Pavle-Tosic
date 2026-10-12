@@ -17,9 +17,23 @@ export type ChatEvent =
   | { type: "card"; card: Card }
   | { type: "error"; message: string };
 
-/* What the client sends: the conversation as plain text. Cards are not sent
-   back; the model sees what it said, and the facts are in its prompt. */
-export type Turn = { role: "user" | "assistant"; text: string };
+/* What the client sends: the conversation as text, and the card an answer
+   showed. Without the card, the model read its own "here's the full set"
+   with nothing shown, and apologised for it on the next turn. */
+export type Turn = { role: "user" | "assistant"; text: string; card?: Card };
+
+/* The starter questions (the landing tiles and the pills over the input),
+   by the card each one asks for. Asked word for word, the route makes the
+   model show that card: left to choose, it now and then answered "here's
+   the full set" in text and showed nothing. */
+export const QUICK_PROMPTS = {
+  me: "Who are you? I want to know more about you.",
+  projects: "What are your projects? What have you built recently?",
+  skills: "What are your skills? What do you build with?",
+  experience: "Where do you work, and what have you done there?",
+  fun: "What do you do for fun? What are your hobbies?",
+  contact: "How can I contact you? Are you open to work?",
+} satisfies Partial<Record<Card["kind"], string>>;
 
 export const LIMITS = {
   // One visitor message. Long enough for a real question, short enough that

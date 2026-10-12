@@ -73,7 +73,10 @@ export const TOOLS = ALL_TOOLS.filter(
 /* Maps a model's tool call to a card, or null when the call is not one of
    ours (an unknown name, or a slug outside the enum: with eager input
    streaming the API does not check the input, so this does). */
-export function toCard({ name, input }: Anthropic.ToolUseBlock): Card | null {
+export function toCard({
+  name,
+  input,
+}: Pick<Anthropic.ToolUseBlock, "name" | "input">): Card | null {
   switch (name) {
     case "show_me":
       return { kind: "me" };
@@ -101,4 +104,23 @@ export function toCard({ name, input }: Anthropic.ToolUseBlock): Card | null {
     default:
       return null;
   }
+}
+
+/* The other way, for the history: the call that showed a card. */
+export function toToolCall(card: Card): { name: string; input: Record<string, string> } {
+  return card.kind === "project"
+    ? { name: "show_project", input: { slug: card.slug } }
+    : { name: `show_${card.kind}`, input: {} };
+}
+
+/* A card that came back from the browser with the history counts only if
+   it is one the model could have shown. */
+export function parseCard(value: unknown): Card | null {
+  if (typeof value !== "object" || value === null || !("kind" in value)) {
+    return null;
+  }
+  const slug = "slug" in value ? value.slug : undefined;
+  return typeof value.kind === "string"
+    ? toCard({ name: `show_${value.kind}`, input: { slug } })
+    : null;
 }

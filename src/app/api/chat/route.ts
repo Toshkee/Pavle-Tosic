@@ -3,11 +3,12 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import {
   FAILED_MESSAGE,
   LIMITS,
+  QUICK_PROMPTS,
   type ChatEvent,
   type Turn,
 } from "../../chat-protocol";
 import { SYSTEM_PROMPT } from "./prompt";
-import { TOOLS, toCard } from "./tools";
+import { TOOLS, parseCard, toCard, toToolCall } from "./tools";
 
 /* POST /api/chat: the conversation in, an NDJSON stream of ChatEvents out
    (text deltas and the cards the model chose to show). Runs on the Worker so
@@ -27,6 +28,8 @@ const UPSTREAM_TIMEOUT_MS = 30_000;
 // Round one may call a tool; round two has tool_choice "none", so it must
 // answer in text. One card per answer is all the prompt asks for.
 const MAX_ROUNDS = 2;
+// What the model is told after each card, now and in the history.
+const SHOWN = "The card is on screen now.";
 
 const RATE_LIMITED =
   "That's a lot of questions in a minute. Give me a moment, then ask again.";
@@ -69,16 +72,56 @@ function parseTurns(body: unknown): Turn[] | null {
     const trimmed = text.trim();
     const max = role === "user" ? LIMITS.messageChars : LIMITS.replyChars;
     if (!trimmed || trimmed.length > max) return null;
-    turns.push({ role, text: trimmed });
+    // A card the server would not have shown is dropped, not refused: a
+    // tab opened before a deploy may still hold one.
+    const card = role === "assistant" ? parseCard(message.card) : null;
+    turns.push(card ? { role, text: trimmed, card } : { role, text: trimmed });
   }
   // The conversation must open and close on a user turn.
   while (turns[0]?.role === "assistant") turns.shift();
   return turns.at(-1)?.role === "user" ? turns : null;
 }
 
+/* The conversation for the API. An answer that showed a card goes back as
+   the call that showed it, then its text, so the model sees what was on
+   screen. Earlier turns carry no thinking blocks, which the API allows. */
+function toMessages(turns: Turn[]): Anthropic.MessageParam[] {
+  return turns.flatMap((turn, index): Anthropic.MessageParam[] => {
+    if (turn.role === "user" || !turn.card) {
+      return [{ role: turn.role, content: turn.text }];
+    }
+    const id = `shown_${index}`;
+    return [
+      {
+        role: "assistant",
+        content: [{ type: "tool_use", id, ...toToolCall(turn.card) }],
+      },
+      {
+        role: "user",
+        content: [{ type: "tool_result", tool_use_id: id, content: SHOWN }],
+      },
+      { role: "assistant", content: turn.text },
+    ];
+  });
+}
+
+/* A starter question asked word for word names its card, so round one
+   calls that tool for certain. Claude Haiku 5.5 accepts a forced
+   tool_choice; Sonnet 5.5 and Opus 5.5 refuse it with a 400. */
+function firstChoice(question: string): Anthropic.ToolChoice {
+  const kind = Object.entries(QUICK_PROMPTS).find(
+    ([, prompt]) => prompt === question,
+  )?.[0];
+  const name = kind && `show_${kind}`;
+  return name && TOOLS.some((tool) => tool.name === name)
+    ? { type: "tool", name }
+    : { type: "auto" };
+}
+
 async function converse(
   client: Anthropic,
   messages: Anthropic.MessageParam[],
+  choice: Anthropic.ToolChoice,
   signal: AbortSignal,
   send: (event: ChatEvent) => void,
 ): Promise<void> {
@@ -98,7 +141,7 @@ async function converse(
           },
         ],
         tools: TOOLS,
-        tool_choice: { type: round < MAX_ROUNDS ? "auto" : "none" },
+        tool_choice: round < MAX_ROUNDS ? choice : { type: "none" },
         // "low" answered well in English but skipped the card on questions
         // in Montenegrin while still saying "see the card below"; "medium"
         // (Haiku 5.5's default) calls the tool.
@@ -135,7 +178,7 @@ async function converse(
         return {
           type: "tool_result",
           tool_use_id: call.id,
-          content: card ? "The card is on screen now." : "There is no such card.",
+          content: card ? SHOWN : "There is no such card.",
           is_error: !card,
         };
       }),
@@ -177,10 +220,8 @@ export async function POST(req: Request): Promise<Response> {
 
   // One retry at most: a visitor is watching the dots.
   const client = new Anthropic({ apiKey, maxRetries: 1 });
-  const messages: Anthropic.MessageParam[] = turns.map((turn) => ({
-    role: turn.role,
-    content: turn.text,
-  }));
+  const messages = toMessages(turns);
+  const choice = firstChoice(turns.at(-1)!.text);
 
   // Aborts the upstream call when the visitor presses stop or leaves, or
   // when the model takes longer than the timeout.
@@ -199,7 +240,7 @@ export async function POST(req: Request): Promise<Response> {
         }
       };
       try {
-        await converse(client, messages, signal, send);
+        await converse(client, messages, choice, signal, send);
       } catch (error) {
         if (!cancel.signal.aborted) {
           // 429 is the account's rate limit, 529 an overloaded API: both
