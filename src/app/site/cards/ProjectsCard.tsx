@@ -97,7 +97,14 @@ export default function ProjectsCard() {
 
       <dialog
         ref={dialogRef}
-        onClose={() => setOpen(null)}
+        // React hands this handler the close of a dialog nested inside it
+        // too (a demo clip or a still opened full size), though the DOM
+        // event does not bubble. Clearing the project then emptied this
+        // dialog while it stayed open: an invisible sheet over a blurred
+        // page until the next click. Only its own close counts.
+        onClose={(event) => {
+          if (event.target === event.currentTarget) setOpen(null);
+        }}
         // A click on the backdrop lands on the <dialog> itself.
         onClick={(event) => {
           if (event.target === event.currentTarget) dialogRef.current?.close();

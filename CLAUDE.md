@@ -75,6 +75,14 @@ Static assets are served without running the Worker, so the `headers()` in
 `public/_headers` (a year for the hashed `/_next/static/*`, a day for
 `/images`, `/video` and the CV), which Cloudflare reads and does not serve.
 
+The one exception is `/video/*`. The asset server answers a `Range` request
+with the whole file (200, no `Accept-Ranges`), so a clip could not be seeked
+past what was buffered and Safari may refuse to play it. `wrangler.jsonc`
+routes `/video/*` to the Worker first (`run_worker_first`), and the Worker's
+entry, `worker.ts`, wraps OpenNext's generated `.open-next/worker.js`: it
+answers those requests with a 206 slice of the file from the `ASSETS`
+binding, and passes everything else to OpenNext untouched.
+
 The chat needs two things in production: the `ANTHROPIC_API_KEY` Worker secret,
 and the `CHAT_LIMITER` rate-limit binding declared in `wrangler.jsonc`.
 
