@@ -34,7 +34,9 @@ async function serveClip(request: Request, env: Cloudflare.Env): Promise<Respons
   const ifRange = request.headers.get("If-Range");
   if (!asset.ok || (ifRange && ifRange !== asset.headers.get("ETag"))) return asset;
 
-  // The largest clip is 4.3 MB, so the whole file in memory is fine.
+  // The largest clip is 8.1 MB, so the whole file in memory is fine. (A
+  // streamed slice needs the length up front, and under wrangler dev the
+  // asset response carries no Content-Length.)
   const body = await asset.arrayBuffer();
   const size = body.byteLength;
   const start = range[1] ? Number(range[1]) : Math.max(size - Number(range[2]), 0);

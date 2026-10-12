@@ -80,8 +80,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/reform-fitness.mp4",
       poster: "/images/projects/reform-fitness-demo.webp",
-      width: 540,
-      height: 1168,
+      width: 720,
+      height: 1558,
     },
     domain: null,
     phone: true,
@@ -127,8 +127,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/infostream.mp4",
       poster: "/images/projects/infostream-demo.webp",
-      width: 1280,
-      height: 800,
+      width: 1920,
+      height: 1200,
     },
     domain: "infostream.co.me",
     gallery: [
@@ -173,8 +173,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/vaky.mp4",
       poster: "/images/projects/vaky-demo.webp",
-      width: 1280,
-      height: 800,
+      width: 1920,
+      height: 1200,
     },
     domain: "vaky.me",
     gallery: [
@@ -220,8 +220,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/cryptoflow.mp4",
       poster: "/images/projects/cryptoflow-demo.webp",
-      width: 1280,
-      height: 800,
+      width: 1920,
+      height: 1200,
     },
     domain: "cryptofloww.netlify.app",
     gallery: [
@@ -263,8 +263,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/ronin-duel.mp4",
       poster: "/images/projects/ronin-duel-demo.webp",
-      width: 1280,
-      height: 720,
+      width: 1920,
+      height: 1080,
     },
     domain: "toshkee.github.io",
     gallery: [
@@ -307,8 +307,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/anime-watchlist.mp4",
       poster: "/images/projects/anime-watchlist-demo.webp",
-      width: 960,
-      height: 600,
+      width: 1920,
+      height: 1200,
     },
     domain: "arc-anime.vercel.app",
     gallery: [
@@ -352,8 +352,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/meet2explore.mp4",
       poster: "/images/projects/meet2explore-demo.webp",
-      width: 1280,
-      height: 800,
+      width: 1920,
+      height: 1200,
     },
     domain: "meet2explore.netlify.app",
     gallery: [
@@ -396,8 +396,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/villa-vucje.mp4",
       poster: "/images/projects/villa-vucje-demo.webp",
-      width: 1280,
-      height: 800,
+      width: 1920,
+      height: 1200,
     },
     domain: "villavucje.me",
     gallery: [
@@ -441,8 +441,8 @@ export const PROJECTS: Project[] = [
     video: {
       src: "/video/projects/mandarina-petrovac.mp4",
       poster: "/images/projects/mandarina-petrovac-demo.webp",
-      width: 1280,
-      height: 800,
+      width: 1920,
+      height: 1200,
     },
     domain: "mandarinapt.me",
     gallery: [
