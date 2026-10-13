@@ -1,10 +1,11 @@
 /* The one place the contact address is written down. It appears in the contact
-   section, the JSON-LD in layout.tsx, the Ask AI grounding in profile.ts and
-   the privacy notice, so a change here has to be a change everywhere.
+   card, the chat's error line, /about, the privacy notice, the JSON-LD in
+   layout.tsx and the system prompt (so llms.txt too), so a change here is a
+   change everywhere. public/.well-known/security.txt and SECURITY.md spell it
+   out by hand: change them with it.
 
-   To move to an address on the domain (hello@pavletosic.com), add the forwarder
-   at the REGISTRAR first — mail for pavletosic.com is delivered by Namecheap's
-   eforward1-5.registrar-servers.com, not by Cloudflare — send yourself a test
-   message, and only then edit this line. Publishing an address before it
-   delivers loses real mail. */
-export const EMAIL = "tosiicsftw@gmail.com";
+   Mail for pavletosic.com is Zoho Mail (EU): MX at mx.zoho.eu, SPF includes
+   zohomail.eu, DKIM under the `zmail` selector. DMARC is p=reject with strict
+   alignment, so a new sending service needs its SPF and DKIM on the domain
+   before its first message, or that message bounces. */
+export const EMAIL = "hello@pavletosic.com";

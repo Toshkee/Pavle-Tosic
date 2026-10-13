@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities privately to `tosiicsftw@gmail.com`.
+Please report suspected vulnerabilities privately to `hello@pavletosic.com`.
 Include the affected URL, impact, and the smallest safe reproduction you can.
 Do not include secrets or personal data in the report.
 
