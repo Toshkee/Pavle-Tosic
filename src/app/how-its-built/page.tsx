@@ -155,6 +155,15 @@ export default function HowItsBuilt() {
           to invent opinions or habits, to call a prototype a prototype, and
           to say it is an AI when asked.
         </p>
+        <p>
+          The same facts, with a link to every page, are published as plain
+          text at{" "}
+          <a href="/llms.txt" className="link-underline text-accent-ink">
+            /llms.txt
+          </a>
+          , for the AI assistants that read this site when someone asks them
+          about me.
+        </p>
       </Section>
 
       <Section cmd="cat notes.md" title="What broke, and what I did about it">

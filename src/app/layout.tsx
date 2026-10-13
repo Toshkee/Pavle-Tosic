@@ -22,8 +22,13 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   metadataBase: new URL("https://pavletosic.com"),
   // The www host serves the same page (Cloudflare answers both), so without
-  // this the two are duplicate content to a crawler.
-  alternates: { canonical: "https://pavletosic.com" },
+  // this the two are duplicate content to a crawler. The llms.txt alternate
+  // only lands on the front page: a page that sets its own `alternates`
+  // replaces this object whole, and the front page is where a crawler starts.
+  alternates: {
+    canonical: "https://pavletosic.com",
+    types: { "text/plain": "/llms.txt" },
+  },
   openGraph: {
     title: "Pavle Tošić, Software Developer",
     description: DESCRIPTION,
