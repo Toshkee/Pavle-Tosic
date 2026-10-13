@@ -57,7 +57,7 @@ export default function Landing() {
         style={{ "--rise-from": "-60px" } as CSSProperties}
       >
         <p className="text-xl font-semibold text-body md:text-2xl">
-          Hey, I&apos;m {NAME.split(" ")[0]} <span aria-hidden>👋</span>
+          Hey, I&apos;m {NAME.split(" ")[0]}
         </p>
         <h1 className="mt-1 text-4xl font-bold tracking-tight text-ink sm:text-5xl md:text-6xl lg:text-7xl">
           {ROLE}
