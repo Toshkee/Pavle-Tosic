@@ -214,7 +214,12 @@ if (LIVE) {
   for (const url of urls) {
     try {
       const res = await fetch(url, { redirect: "follow" });
-      if (res.status >= 400) fail(`${url} returned ${res.status}`);
+      // A 403 or 429 is a host turning away the runner's datacenter IP, not a
+      // dead link: infostream.co.me answers 200 from home and 403 from GitHub
+      // Actions since 2026-10-12. Printed, but it doesn't fail the run.
+      if (res.status === 403 || res.status === 429)
+        console.log(`  warn  ${url} returned ${res.status} (bot filter?)`);
+      else if (res.status >= 400) fail(`${url} returned ${res.status}`);
       else ok(url);
     } catch (err) {
       fail(`${url} is unreachable: ${err.message}`);
