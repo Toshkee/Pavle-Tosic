@@ -12,13 +12,16 @@ export const metadata: Metadata = {
 };
 
 /* Reads the starter question from ?q= on the server, so the first render
-   already shows it and the request starts on mount. */
+   already shows it and the request starts on mount. ?fit (the landing's
+   Job fit tile) opens with the input waiting for a job ad instead. */
 export default async function ChatPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { q } = await searchParams;
+  const { q, fit } = await searchParams;
   const question = typeof q === "string" ? q.trim() : "";
-  return <Chat initialQuestion={question || null} />;
+  return (
+    <Chat initialQuestion={question || null} initialFit={!question && fit !== undefined} />
+  );
 }

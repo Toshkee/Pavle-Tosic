@@ -6,6 +6,7 @@ import { preload } from "react-dom";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import {
   FAILED_MESSAGE,
+  FIT_PROMPT,
   LIMITS,
   type Card,
   type ChatEvent,
@@ -113,8 +114,10 @@ async function streamAnswer(
 
 export default function Chat({
   initialQuestion,
+  initialFit = false,
 }: {
   initialQuestion: string | null;
+  initialFit?: boolean;
 }) {
   const [exchanges, setExchanges] = useState<Exchange[]>(() =>
     initialQuestion ? [{ question: initialQuestion, parts: [] }] : [],
@@ -125,6 +128,8 @@ export default function Chat({
     initialQuestion ? { question: initialQuestion, history: [] } : null,
   );
   const [input, setInput] = useState("");
+  // Set by Job fit: the next message is a job ad, sent after FIT_PROMPT.
+  const [fitting, setFitting] = useState(initialFit);
   const [showQuick, setShowQuick] = useState(true);
   // The laptop pose appears the moment a question is sent; fetch it now so
   // the swap never shows an empty frame.
@@ -161,16 +166,24 @@ export default function Chat({
 
   const busy = pending !== null;
 
-  const ask = (raw: string) => {
-    const question = raw.trim().slice(0, LIMITS.messageChars);
-    if (!question || busy) return;
+  const ask = (raw: string, asFit = false) => {
+    const text = raw.trim();
+    if (!text || busy) return;
+    const question = (asFit ? `${FIT_PROMPT}\n\n${text}` : text).slice(
+      0,
+      LIMITS.messageChars,
+    );
     setPending({
       question,
       history: exchanges.flatMap(toTurns).slice(-(LIMITS.turns - 1)),
     });
     setExchanges((previous) => [...previous, { question, parts: [] }]);
     setInput("");
+    setFitting(false);
   };
+
+  // The input takes focus as fitting turns on, from the pill or the tile.
+  const startFit = () => setFitting(true);
 
   const stop = () => {
     abortRef.current?.abort();
@@ -204,6 +217,11 @@ export default function Chat({
               busy={busy}
               onAsk={ask}
             />
+          ) : fitting ? (
+            <p className="mt-16 text-center text-lg text-body">
+              Paste a job ad below,
+              <br className="sm:hidden" /> and I&apos;ll show how I match it.
+            </p>
           ) : (
             <p className="mt-16 text-center text-lg text-body">
               Ask me anything about my work,
@@ -230,11 +248,15 @@ export default function Chat({
             )}
             {showQuick ? "Hide quick questions" : "Show quick questions"}
           </button>
-          {showQuick && <QuickPills onAsk={ask} disabled={busy} />}
+          {showQuick && (
+            <QuickPills onAsk={ask} onFit={startFit} disabled={busy} />
+          )}
           <AskBar
             value={input}
             onChange={setInput}
-            onSubmit={() => ask(input)}
+            onSubmit={() => ask(input, fitting)}
+            placeholder={fitting ? "Paste the job ad here…" : undefined}
+            focus={fitting}
             onStop={stop}
             busy={busy}
           />
@@ -270,7 +292,8 @@ function ExchangeView({
 
   return (
     <div>
-      <p className="settle ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-lg bg-surface px-4 py-2.5 text-[15px] text-ink">
+      {/* A pasted job ad keeps its lines, but only its opening shows. */}
+      <p className="settle ml-auto line-clamp-6 w-fit max-w-[85%] rounded-3xl rounded-br-lg bg-surface px-4 py-2.5 text-[15px] whitespace-pre-line text-ink">
         {question}
       </p>
 

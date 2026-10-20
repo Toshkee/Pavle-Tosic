@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 // Lines are kept ≤ ~42 chars so the pane never scrolls sideways on a phone.
 const CHAT_ARCH = `browser ── POST /api/chat
  │  same origin only · json only
- │  500 chars a message · 12 turns
+ │  4,000 chars a message · 12 turns
  │
  └─ cloudflare worker (next 16, opennext)
      ├ rate limit: 10 a minute per IP
@@ -30,8 +30,9 @@ const CHAT_ARCH = `browser ── POST /api/chat
      │   content.ts + projects.ts
      │   prompt and tools cached
      ├ round 1: claude-haiku-5-5
-     │   may call one of 8 tools
-     │   (a starter question must)
+     │   may call one of 9 tools
+     │   (a starter question or a
+     │   pasted job ad must)
      │   a tool call = "show this card"
      ├ round 2: tools off, text only
      └ NDJSON stream back to the page
@@ -154,6 +155,14 @@ export default function HowItsBuilt() {
           is not in those files does not exist for the model: it is told not
           to invent opinions or habits, to call a prototype a prototype, and
           to say it is an AI when asked.
+        </p>
+        <p>
+          One card is written by the model: paste a job ad and it lists the
+          key requirements, each marked yes, partly or no from those same
+          facts, with the project that backs it. A missing skill is a plain
+          no. The server checks every field before the card is drawn: a
+          match outside the three, a project not on the list or an overlong
+          line is dropped.
         </p>
         <p>
           The same facts, with a link to every page, are published as plain

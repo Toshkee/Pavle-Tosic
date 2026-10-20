@@ -10,7 +10,20 @@ export type Card =
   | { kind: "experience" }
   | { kind: "contact" }
   | { kind: "fun" }
-  | { kind: "github" };
+  | { kind: "github" }
+  | { kind: "fit"; role: string | null; rows: FitRow[] };
+
+/* One requirement from a pasted job ad, matched against my facts: "yes"
+   when a project, job or skill shows it, "partly" when only something
+   close does, "no" when nothing does. `slug` names the project that proves
+   it, for the case-study link. Unlike every other card, this one carries
+   the model's own words, so tools.ts checks every field. */
+export type FitRow = {
+  requirement: string;
+  match: "yes" | "partly" | "no";
+  evidence: string;
+  slug?: string;
+};
 
 export type ChatEvent =
   | { type: "text"; text: string }
@@ -35,10 +48,17 @@ export const QUICK_PROMPTS = {
   contact: "How can I contact you? Are you open to work?",
 } satisfies Partial<Record<Card["kind"], string>>;
 
+/* What the "Job fit" pill puts before the pasted ad. A message that opens
+   with it (then a blank line) makes the route call show_fit, as a starter
+   question makes it call its card. */
+export const FIT_PROMPT = "Do I fit this job?";
+
 export const LIMITS = {
-  // One visitor message. Long enough for a real question, short enough that
-  // nobody pastes a document in to get it summarised on my key.
-  messageChars: 500,
+  // One visitor message: room for a pasted job ad (most run 1,500 to 3,500
+  // characters), which the fit check reads. About 1,000 tokens at most, a
+  // hundredth of a cent on Haiku; anything off-topic is declined by the
+  // prompt, not by the length.
+  messageChars: 4000,
   // Assistant turns are capped too: they come back from the browser, so a
   // tampered client could otherwise send any amount of "history".
   replyChars: 4000,

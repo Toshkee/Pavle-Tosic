@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import {
   FAILED_MESSAGE,
+  FIT_PROMPT,
   LIMITS,
   QUICK_PROMPTS,
   type ChatEvent,
@@ -21,9 +22,12 @@ import { TOOLS, parseCard, toCard, toToolCall } from "./tools";
 // 100K). The prompt is ~6K tokens and cached after the first request, so an
 // answer costs well under a tenth of a cent.
 const MODEL = "claude-haiku-5-5";
-const MAX_BODY_CHARS = 64_000;
-// Room for a little adaptive thinking plus a short answer.
-const MAX_OUTPUT_TOKENS = 2048;
+// Twelve turns at their caps: six pasted job ads, six answers and the fit
+// cards they showed come to about 70K characters.
+const MAX_BODY_CHARS = 96_000;
+// Room for adaptive thinking plus a short answer, or a fit card's eight
+// rows: weighing a long job ad, 2048 could run out before the tool call.
+const MAX_OUTPUT_TOKENS = 4096;
 const UPSTREAM_TIMEOUT_MS = 30_000;
 // Round one may call a tool; round two has tool_choice "none", so it must
 // answer in text. One card per answer is all the prompt asks for.
@@ -105,10 +109,14 @@ function toMessages(turns: Turn[]): Anthropic.MessageParam[] {
   });
 }
 
-/* A starter question asked word for word names its card, so round one
-   calls that tool for certain. Claude Haiku 5.5 accepts a forced
-   tool_choice; Sonnet 5.5 and Opus 5.5 refuse it with a 400. */
+/* A starter question asked word for word names its card, and a pasted ad
+   sent with the Job fit pill names show_fit, so round one calls that tool
+   for certain. Claude Haiku 5.5 accepts a forced tool_choice; Sonnet 5.5
+   and Opus 5.5 refuse it with a 400. */
 function firstChoice(question: string): Anthropic.ToolChoice {
+  if (question.startsWith(`${FIT_PROMPT}\n`)) {
+    return { type: "tool", name: "show_fit" };
+  }
   const kind = Object.entries(QUICK_PROMPTS).find(
     ([, prompt]) => prompt === question,
   )?.[0];

@@ -2,6 +2,7 @@ import type { Card } from "../../chat-protocol";
 import { projectBySlug } from "../../projects";
 import ContactCard from "./ContactCard";
 import ExperienceCard from "./ExperienceCard";
+import FitCard from "./FitCard";
 import FunCard from "./FunCard";
 import GithubCard from "./GithubCard";
 import MeCard from "./MeCard";
@@ -9,8 +10,8 @@ import ProjectDetail from "./ProjectDetail";
 import ProjectsCard from "./ProjectsCard";
 import SkillsCard from "./SkillsCard";
 
-/* One card the model chose to show. Every card renders from the same data
-   files the system prompt is built from. */
+/* One card the model chose to show. Every card but the fit check renders
+   from the same data files the system prompt is built from. */
 export default function CardView({ card }: { card: Card }) {
   switch (card.kind) {
     case "me":
@@ -35,5 +36,7 @@ export default function CardView({ card }: { card: Card }) {
       return <FunCard />;
     case "github":
       return <GithubCard />;
+    case "fit":
+      return <FitCard role={card.role} rows={card.rows} />;
   }
 }

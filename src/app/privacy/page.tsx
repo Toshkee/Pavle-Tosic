@@ -66,7 +66,8 @@ export default function Privacy() {
           The answers on this site are written by an AI model speaking for me.
           When you ask a question, it goes to this site&apos;s server, which
           sends it, together with the earlier questions and answers from the
-          same page visit, to Anthropic&apos;s Claude API to write the reply. I do
+          same page visit, to Anthropic&apos;s Claude API to write the reply. A
+          job ad you paste for the fit check travels the same way. I do
           not store the conversation: it lives in your browser tab and is gone
           when you close it or reload.
         </p>
