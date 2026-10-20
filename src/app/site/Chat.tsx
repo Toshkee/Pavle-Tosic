@@ -292,10 +292,15 @@ function ExchangeView({
 
   return (
     <div>
-      {/* A pasted job ad keeps its lines, but only its opening shows. */}
-      <p className="settle ml-auto line-clamp-6 w-fit max-w-[85%] rounded-3xl rounded-br-lg bg-surface px-4 py-2.5 text-[15px] whitespace-pre-line text-ink">
-        {question}
-      </p>
+      {/* A pasted job ad keeps its lines, but only its opening shows, with
+          the blank ones dropped so six lines show six lines of the ad. The
+          clamp sits inside the padding: on the padded box itself, the
+          seventh line peeked through the bottom padding. */}
+      <div className="settle ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-lg bg-surface px-4 py-2.5 text-[15px] text-ink">
+        <p className="line-clamp-6 whitespace-pre-line">
+          {question.replace(/\n\s*\n/g, "\n")}
+        </p>
+      </div>
 
       <div className="mt-6 space-y-5" aria-live="polite" aria-busy={busy}>
         {busy && silent && (
