@@ -67,7 +67,8 @@ export default function Privacy() {
           When you ask a question, it goes to this site&apos;s server, which
           sends it, together with the earlier questions and answers from the
           same page visit, to Anthropic&apos;s Claude API to write the reply. A
-          job ad you paste for the fit check travels the same way. I do
+          job ad you paste or attach as a PDF for the fit check travels the
+          same way, and the PDF is not kept either. I do
           not store the conversation: it lives in your browser tab and is gone
           when you close it or reload.
         </p>

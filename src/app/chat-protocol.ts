@@ -64,7 +64,23 @@ export const LIMITS = {
   replyChars: 4000,
   // Turns of history forwarded upstream; older ones are dropped.
   turns: 12,
+  // A job ad as a PDF, read by Claude itself. A text ad of a page or two is
+  // 50 to 300 KB; a page costs roughly 1,500 to 3,000 tokens, so a full
+  // megabyte of pages is still about a cent.
+  pdfBytes: 1_000_000,
 };
+
+/* What the client POSTs. `pdf` is a job ad as base64, sent once with the
+   question it belongs to (which must open with FIT_PROMPT) and never with
+   the history: the fit card that answered it carries what came of it. */
+export type ChatRequest = { messages: Turn[]; pdf?: string };
+
+/* Said when a file is dropped or pasted that the chat cannot read, and
+   when Claude could not read the PDF that was sent. */
+export const PDF_ONLY = "Only a PDF works here. Or copy the ad's text and paste it in.";
+export const PDF_TOO_BIG = "That PDF is over 1 MB. Copy the ad's text and paste it in instead.";
+export const PDF_UNREADABLE =
+  "I couldn't read that PDF. Copy the ad's text and paste it in instead.";
 
 /* Shown when a request fails for any reason other than the rate limit. The
    chat appends the email address, hence the colon. */

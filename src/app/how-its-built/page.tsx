@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 const CHAT_ARCH = `browser ── POST /api/chat
  │  same origin only · json only
  │  4,000 chars a message · 12 turns
+ │  a job ad as a PDF: 1 MB, once
  │
  └─ cloudflare worker (next 16, opennext)
      ├ rate limit: 10 a minute per IP
@@ -157,7 +158,8 @@ export default function HowItsBuilt() {
           to say it is an AI when asked.
         </p>
         <p>
-          One card is written by the model: paste a job ad and it lists the
+          One card is written by the model: paste a job ad (or attach its
+          PDF, which Claude reads as a document) and it lists the
           key requirements, each marked yes, partly or no from those same
           facts, with the project that backs it. A missing skill is a plain
           no. The server checks every field before the card is drawn: a

@@ -75,6 +75,11 @@ const ALL_TOOLS: Anthropic.Tool[] = [
     {
       type: "object",
       properties: {
+        is_job_ad: {
+          type: "boolean",
+          description:
+            "false when what the visitor sent is not a job ad or a list of requirements (a CV, an article, a link on its own, anything else); then leave everything else out and no card is shown.",
+        },
         role: {
           type: "string",
           description: "The job title as the ad gives it; omit when it has none.",
@@ -112,7 +117,7 @@ const ALL_TOOLS: Anthropic.Tool[] = [
           },
         },
       },
-      required: ["rows"],
+      required: ["is_job_ad"],
     },
   ),
 ];
@@ -154,6 +159,21 @@ function parseFit(input: unknown): Card | null {
   });
   const role = "role" in input ? field(input.role, FIT_CHARS.role) : null;
   return valid.length > 0 ? { kind: "fit", role, rows: valid } : null;
+}
+
+/* show_fit called on something that is not a job ad: the Job fit pill
+   forces the call, so this is how the model says "that's not an ad". */
+export function isNotAnAd({
+  name,
+  input,
+}: Pick<Anthropic.ToolUseBlock, "name" | "input">): boolean {
+  return (
+    name === "show_fit" &&
+    typeof input === "object" &&
+    input !== null &&
+    "is_job_ad" in input &&
+    input.is_job_ad === false
+  );
 }
 
 /* Maps a model's tool call to a card, or null when the call is not one of
@@ -202,7 +222,11 @@ export function toToolCall(card: Card): { name: string; input: object } {
     case "fit":
       return {
         name: "show_fit",
-        input: { ...(card.role && { role: card.role }), rows: card.rows },
+        input: {
+          is_job_ad: true,
+          ...(card.role && { role: card.role }),
+          rows: card.rows,
+        },
       };
     default:
       return { name: `show_${card.kind}`, input: {} };

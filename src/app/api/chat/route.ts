@@ -4,12 +4,13 @@ import {
   FAILED_MESSAGE,
   FIT_PROMPT,
   LIMITS,
+  PDF_UNREADABLE,
   QUICK_PROMPTS,
   type ChatEvent,
   type Turn,
 } from "../../chat-protocol";
 import { SYSTEM_PROMPT } from "./prompt";
-import { TOOLS, parseCard, toCard, toToolCall } from "./tools";
+import { TOOLS, isNotAnAd, parseCard, toCard, toToolCall } from "./tools";
 
 /* POST /api/chat: the conversation in, an NDJSON stream of ChatEvents out
    (text deltas and the cards the model chose to show). Runs on the Worker so
@@ -25,6 +26,9 @@ const MODEL = "claude-haiku-5-5";
 // Twelve turns at their caps: six pasted job ads, six answers and the fit
 // cards they showed come to about 70K characters.
 const MAX_BODY_CHARS = 96_000;
+// A job-ad PDF at its cap, as base64, on top of that.
+const MAX_PDF_CHARS = Math.ceil(LIMITS.pdfBytes / 3) * 4;
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 // Room for adaptive thinking plus a short answer, or a fit card's eight
 // rows: weighing a long job ad, 2048 could run out before the tool call.
 const MAX_OUTPUT_TOKENS = 4096;
@@ -34,6 +38,9 @@ const UPSTREAM_TIMEOUT_MS = 30_000;
 const MAX_ROUNDS = 2;
 // What the model is told after each card, now and in the history.
 const SHOWN = "The card is on screen now.";
+// What it is told when it found no job ad to match.
+const NOT_AN_AD =
+  "No card is shown: that was not a job ad. Say so in one sentence, without describing what it was, and ask for the ad's text or its PDF.";
 
 const RATE_LIMITED =
   "That's a lot of questions in a minute. Give me a moment, then ask again.";
@@ -86,11 +93,43 @@ function parseTurns(body: unknown): Turn[] | null {
   return turns.at(-1)?.role === "user" ? turns : null;
 }
 
+/* A job-ad PDF, if the request carries one: base64 within the cap that
+   decodes to a PDF header, sent with a fit question. Anything else makes
+   the request a bad one; Claude itself reports a PDF it cannot read. */
+function parsePdf(body: unknown, question: string): string | null | false {
+  if (typeof body !== "object" || body === null || !("pdf" in body)) {
+    return null;
+  }
+  const { pdf } = body;
+  return typeof pdf === "string" &&
+    pdf.length <= MAX_PDF_CHARS &&
+    BASE64.test(pdf) &&
+    atob(pdf.slice(0, 8)).startsWith("%PDF-") &&
+    question.startsWith(`${FIT_PROMPT}\n`)
+    ? pdf
+    : false;
+}
+
 /* The conversation for the API. An answer that showed a card goes back as
    the call that showed it, then its text, so the model sees what was on
    screen. Earlier turns carry no thinking blocks, which the API allows. */
-function toMessages(turns: Turn[]): Anthropic.MessageParam[] {
+function toMessages(turns: Turn[], pdf: string | null): Anthropic.MessageParam[] {
   return turns.flatMap((turn, index): Anthropic.MessageParam[] => {
+    // The PDF goes before the question it came with, the last turn.
+    if (pdf && index === turns.length - 1) {
+      return [
+        {
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: { type: "base64", media_type: "application/pdf", data: pdf },
+            },
+            { type: "text", text: turn.text },
+          ],
+        },
+      ];
+    }
     if (turn.role === "user" || !turn.card) {
       return [{ role: turn.role, content: turn.text }];
     }
@@ -181,6 +220,9 @@ async function converse(
     messages.push({
       role: "user",
       content: calls.map((call): Anthropic.ToolResultBlockParam => {
+        if (isNotAnAd(call)) {
+          return { type: "tool_result", tool_use_id: call.id, content: NOT_AN_AD };
+        }
         const card = toCard(call);
         if (card) send({ type: "card", card });
         return {
@@ -211,14 +253,21 @@ export async function POST(req: Request): Promise<Response> {
   if (!success) return errorResponse(RATE_LIMITED, 429);
 
   const raw = await req.text();
-  if (raw.length > MAX_BODY_CHARS) return errorResponse("too_large", 413);
+  if (raw.length > MAX_BODY_CHARS + MAX_PDF_CHARS) {
+    return errorResponse("too_large", 413);
+  }
   let turns: Turn[] | null;
+  let pdf: string | null | false = false;
   try {
-    turns = parseTurns(JSON.parse(raw));
+    const body: unknown = JSON.parse(raw);
+    turns = parseTurns(body);
+    if (turns) pdf = parsePdf(body, turns.at(-1)!.text);
   } catch {
     turns = null;
   }
-  if (!turns) return errorResponse("bad_request", 400);
+  if (!turns || pdf === false) return errorResponse("bad_request", 400);
+  // Without a PDF, the old cap holds: only a PDF earns the room.
+  if (!pdf && raw.length > MAX_BODY_CHARS) return errorResponse("too_large", 413);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -228,7 +277,7 @@ export async function POST(req: Request): Promise<Response> {
 
   // One retry at most: a visitor is watching the dots.
   const client = new Anthropic({ apiKey, maxRetries: 1 });
-  const messages = toMessages(turns);
+  const messages = toMessages(turns, pdf);
   const choice = firstChoice(turns.at(-1)!.text);
 
   // Aborts the upstream call when the visitor presses stop or leaves, or
@@ -256,10 +305,16 @@ export async function POST(req: Request): Promise<Response> {
           const status =
             error instanceof Anthropic.APIError ? error.status : undefined;
           console.error("[chat] upstream failed", status ?? error);
+          // With a PDF on board, a 400 is the PDF: encrypted, broken or
+          // too many pages.
           send({
             type: "error",
             message:
-              status === 429 || status === 529 ? UPSTREAM_BUSY : FAILED_MESSAGE,
+              status === 429 || status === 529
+                ? UPSTREAM_BUSY
+                : pdf && status === 400
+                  ? PDF_UNREADABLE
+                  : FAILED_MESSAGE,
           });
         }
       } finally {

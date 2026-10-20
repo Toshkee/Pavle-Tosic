@@ -1,15 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { preload } from "react-dom";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import {
   FAILED_MESSAGE,
   FIT_PROMPT,
   LIMITS,
+  PDF_ONLY,
+  PDF_TOO_BIG,
+  PDF_UNREADABLE,
   type Card,
   type ChatEvent,
+  type ChatRequest,
   type Turn,
 } from "../chat-protocol";
 import { EMAIL } from "../contact";
@@ -30,7 +34,9 @@ import ThemeToggle from "./ThemeToggle";
 
 type Part = { type: "text"; text: string } | { type: "card"; card: Card };
 type Exchange = { question: string; parts: Part[]; error?: string };
-type Pending = { question: string; history: Turn[] };
+// `pdf` is the job ad's base64, sent with this question only.
+type Pending = { question: string; history: Turn[]; pdf?: string };
+type Attachment = { name: string; data: string };
 
 /* An exchange as history for the next request: what was said, and the card
    it showed. One that ended in an error or said nothing is dropped whole,
@@ -71,7 +77,7 @@ function applyEvent(exchange: Exchange, event: ChatEvent): Exchange {
 }
 
 async function streamAnswer(
-  { question, history }: Pending,
+  { question, history, pdf }: Pending,
   signal: AbortSignal,
   onEvent: (event: ChatEvent) => void,
 ): Promise<void> {
@@ -80,7 +86,8 @@ async function streamAnswer(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       messages: [...history, { role: "user", text: question }],
-    }),
+      ...(pdf && { pdf }),
+    } satisfies ChatRequest),
     signal,
   });
   if (!response.ok || !response.body) {
@@ -130,6 +137,10 @@ export default function Chat({
   const [input, setInput] = useState("");
   // Set by Job fit: the next message is a job ad, sent after FIT_PROMPT.
   const [fitting, setFitting] = useState(initialFit);
+  // A job ad as a PDF, waiting to go with the next fit question.
+  const [pdf, setPdf] = useState<Attachment | null>(null);
+  // Why a file was turned down; cleared by typing or a good file.
+  const [notice, setNotice] = useState<string | null>(null);
   const [showQuick, setShowQuick] = useState(true);
   // The laptop pose appears the moment a question is sent; fetch it now so
   // the swap never shows an empty frame.
@@ -166,24 +177,83 @@ export default function Chat({
 
   const busy = pending !== null;
 
+  /* A dropped, pasted or picked file. Only a PDF under the cap is kept,
+     and it turns the chat to Job fit: an ad is all a file is read for. */
+  const attach = (file: File) => {
+    if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) {
+      setNotice(PDF_ONLY);
+      return;
+    }
+    if (file.size > LIMITS.pdfBytes) {
+      setNotice(PDF_TOO_BIG);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === "string" ? reader.result : "";
+      setPdf({ name: file.name, data: url.slice(url.indexOf(",") + 1) });
+      setFitting(true);
+      setNotice(null);
+    };
+    reader.onerror = () => setNotice(PDF_UNREADABLE);
+    reader.readAsDataURL(file);
+  };
+
+  /* A file dropped anywhere on the page would otherwise open in the tab,
+     and the conversation would be gone with it. */
+  const onDropFile = useEffectEvent(attach);
+  useEffect(() => {
+    const hasFiles = (event: DragEvent) =>
+      event.dataTransfer?.types.includes("Files") ?? false;
+    const over = (event: DragEvent) => {
+      if (hasFiles(event)) event.preventDefault();
+    };
+    const drop = (event: DragEvent) => {
+      if (!hasFiles(event)) return;
+      event.preventDefault();
+      const file = event.dataTransfer?.files[0];
+      if (file) onDropFile(file);
+    };
+    window.addEventListener("dragover", over);
+    window.addEventListener("drop", drop);
+    return () => {
+      window.removeEventListener("dragover", over);
+      window.removeEventListener("drop", drop);
+    };
+  }, []);
+
   const ask = (raw: string, asFit = false) => {
     const text = raw.trim();
-    if (!text || busy) return;
-    const question = (asFit ? `${FIT_PROMPT}\n\n${text}` : text).slice(
+    const file = asFit ? pdf : null;
+    if ((!text && !file) || busy) return;
+    // The PDF is named in the question, so the history says what the fit
+    // card that answers it was read from.
+    const body = file
+      ? `Job ad attached: ${file.name}${text ? `\n\n${text}` : ""}`
+      : text;
+    const question = (asFit ? `${FIT_PROMPT}\n\n${body}` : body).slice(
       0,
       LIMITS.messageChars,
     );
     setPending({
       question,
       history: exchanges.flatMap(toTurns).slice(-(LIMITS.turns - 1)),
+      ...(file && { pdf: file.data }),
     });
     setExchanges((previous) => [...previous, { question, parts: [] }]);
     setInput("");
     setFitting(false);
+    setPdf(null);
+    setNotice(null);
   };
 
   // The input takes focus as fitting turns on, from the pill or the tile.
   const startFit = () => setFitting(true);
+  const leaveFit = () => {
+    setFitting(false);
+    setPdf(null);
+    setNotice(null);
+  };
 
   const stop = () => {
     abortRef.current?.abort();
@@ -216,13 +286,13 @@ export default function Chat({
           {fitting ? (
             <div className="mt-16 text-center">
               <p className="text-lg text-body">
-                Paste a job ad below,
+                Paste a job ad below or drop its PDF here,
                 <br className="sm:hidden" /> and I&apos;ll show how I match it.
               </p>
               {latest && (
                 <button
                   type="button"
-                  onClick={() => setFitting(false)}
+                  onClick={leaveFit}
                   className="link-underline mt-4 text-sm text-faint transition-colors hover:text-ink"
                 >
                   Back to the last answer
@@ -267,10 +337,18 @@ export default function Chat({
           )}
           <AskBar
             value={input}
-            onChange={setInput}
+            onChange={(value) => {
+              setInput(value);
+              setNotice(null);
+            }}
             onSubmit={() => ask(input, fitting)}
-            placeholder={fitting ? "Paste the job ad here…" : undefined}
+            placeholder={fitting ? "Paste the job ad, or attach its PDF…" : undefined}
             focus={fitting}
+            canAttach={fitting}
+            attachment={pdf?.name ?? null}
+            onAttach={attach}
+            onDetach={() => setPdf(null)}
+            notice={notice}
             onStop={stop}
             busy={busy}
           />
