@@ -191,7 +191,8 @@ export default function Chat({
   };
 
   const latest = exchanges.at(-1);
-  const showsCard = latest?.parts.some((part) => part.type === "card") ?? false;
+  const showsCard =
+    !fitting && (latest?.parts.some((part) => part.type === "card") ?? false);
 
   return (
     <div className="flex h-dvh flex-col">
@@ -210,18 +211,31 @@ export default function Chat({
 
       <main ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-8">
-          {latest ? (
+          {/* Job fit takes the screen even over an answer: with the answer
+              still showing, the pill only changed the input's placeholder. */}
+          {fitting ? (
+            <div className="mt-16 text-center">
+              <p className="text-lg text-body">
+                Paste a job ad below,
+                <br className="sm:hidden" /> and I&apos;ll show how I match it.
+              </p>
+              {latest && (
+                <button
+                  type="button"
+                  onClick={() => setFitting(false)}
+                  className="link-underline mt-4 text-sm text-faint transition-colors hover:text-ink"
+                >
+                  Back to the last answer
+                </button>
+              )}
+            </div>
+          ) : latest ? (
             <ExchangeView
               key={exchanges.length}
               exchange={latest}
               busy={busy}
               onAsk={ask}
             />
-          ) : fitting ? (
-            <p className="mt-16 text-center text-lg text-body">
-              Paste a job ad below,
-              <br className="sm:hidden" /> and I&apos;ll show how I match it.
-            </p>
           ) : (
             <p className="mt-16 text-center text-lg text-body">
               Ask me anything about my work,
