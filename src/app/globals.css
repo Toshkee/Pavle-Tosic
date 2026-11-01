@@ -16,14 +16,17 @@
   --bg: #ffffff;
   --surface: #f7f7f8; /* inputs, the visitor's bubble */
   --plate: #f4f4f5; /* card fills, image placeholders */
-  --ink: #0a0a0a; /* headings */
-  --body: #3f3f46; /* running text, 10.4:1 on bg */
-  --muted: #52525b;
-  --faint: #71717a; /* 4.8:1 on bg, 4.5:1 on surface: the floor for small text */
+  /* All type is black: the light film is ink on white paper, and grey
+     type over its greys read as more of the picture. Hierarchy is size and
+     weight alone. 19.8:1 on bg. */
+  --ink: #0a0a0a;
+  --body: #0a0a0a;
+  --muted: #0a0a0a;
+  --faint: #0a0a0a;
   --line: #e4e4e7;
   --line-strong: #d4d4d8;
-  --send: #0171e3; /* 4.7:1 under the white arrow */
-  --send-hover: #0062c4;
+  --send: #0a0a0a; /* black too, 19.8:1 under the white arrow */
+  --send-hover: #2a2a2a;
 }
 
 :root[data-theme="dark"] {
@@ -32,9 +35,9 @@
   --surface: #161618;
   --plate: #1c1c1f;
   --ink: #fafafa;
-  --body: #d4d4d8;
-  --muted: #a1a1aa;
-  --faint: #a1a1aa; /* 7.7:1 on bg */
+  --body: #e4e4e7;
+  --muted: #c4c4cc;
+  --faint: #c4c4cc; /* 11:1 on bg */
   --line: #27272a;
   --line-strong: #3f3f46;
   --send: #2563eb;
@@ -69,7 +72,10 @@ html {
 
 /* The page colour is on <html> alone: the cursor trail (CursorTrail in
    layout.tsx) is a fixed canvas at z-index -1, and a body background would
-   paint over it. */
+   paint over it. No halo round the type over the film: a soft glow lit a
+   pale cloud round every line over the darker rock, and even a 1px edge
+   ate into regular-weight strokes so they read grey beside bold. Black on
+   the light film and the dark theme's light greys read without one. */
 body {
   color: var(--body);
   font-family: var(--font-sans);
@@ -111,16 +117,148 @@ body {
 
 /* The giant handle behind the landing page: ink fading to nothing, so it
    reads as texture, never as text competing with the title. 13% ink at the
-   top: readable as a word, still well under the tiles' border. */
+   top in dark: readable as a word, still well under the tiles' border. The
+   light film is mid grey behind it, where 13% vanished, so light takes 30%. */
 .watermark {
   background-image: linear-gradient(
     to bottom,
-    color-mix(in oklab, var(--ink) 13%, transparent),
+    color-mix(in oklab, var(--ink) var(--watermark-ink, 13%), transparent),
     transparent 92%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+:root:not([data-theme="dark"]) .watermark {
+  --watermark-ink: 30%;
+}
+
+/* The site's film (FilmBackdrop.tsx), fixed behind every page but /play:
+   the theme's first frame as a cover background, the clip over it once
+   hydrated, and a wash of the page colour on top so the type stays
+   readable over a busy picture. -z-20 keeps it under the cursor trail's
+   canvas (-z-10); the pages themselves have no background of their own. */
+.film {
+  position: fixed;
+  inset: 0;
+  z-index: -20;
+  overflow: hidden;
+  pointer-events: none;
+  background: url("/images/film-light.webp") center / cover no-repeat;
+  /* How much page colour the wash lays over the middle and the edges,
+     the same on every page: little, as the light clip is already pale and
+     the dark one near black at the edges. The type's halo (body, above)
+     keeps the text pages readable over it. */
+  --wash-mid: 32%;
+  --wash-edge: 8%;
+}
+:root[data-theme="dark"] .film {
+  background-image: url("/images/film-dark.webp");
+  --wash-mid: 62%;
+  --wash-edge: 30%;
+}
+.film::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    /* a strip along the bottom edge, under the landing page's footer */
+    linear-gradient(to top, color-mix(in oklab, var(--bg) 70%, transparent), transparent 14%),
+    radial-gradient(
+      ellipse 60% 55% at 50% 45%,
+      color-mix(in oklab, var(--bg) var(--wash-mid), transparent),
+      color-mix(in oklab, var(--bg) var(--wash-edge), transparent)
+    );
+}
+
+/* The stack orbiting behind the landing page (OrbitMarks.tsx), after Magic
+   UI's Orbiting Circles: hairline rings centred on the page, each carrying
+   a short arc round with its marks, in the film's colours (ink on the
+   light one, the monoliths' orange glow, #fe7f58, on the dark), and the marks in
+   white chips that stay upright as they travel. The whole layer fades out
+   toward the page edges, the outer ring most. --orbit-unit scales the
+   radii: 1px from 1250px wide, down to 0.55px on a phone. */
+.orbit {
+  --orbit-unit: clamp(0.55px, 0.08vw, 1px);
+  --chip: 52px;
+  --orbit-line: color-mix(in oklab, var(--ink) 18%, transparent);
+  --orbit-arc: color-mix(in oklab, var(--ink) 65%, transparent);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(farthest-corner, #000 55%, transparent 92%);
+  mask-image: radial-gradient(farthest-corner, #000 55%, transparent 92%);
+}
+:root[data-theme="dark"] .orbit {
+  --orbit-line: rgb(254 127 88 / 0.22);
+  --orbit-arc: rgb(254 127 88 / 0.85);
+}
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--radius) * 2);
+  height: calc(var(--radius) * 2);
+  margin: calc(var(--radius) * -1) 0 0 calc(var(--radius) * -1);
+  border: 1px solid var(--orbit-line);
+  border-radius: 50%;
+}
+.orbit-ring::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  border-top-color: var(--orbit-arc);
+  border-radius: 50%;
+}
+.orbit-mark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: var(--chip);
+  height: var(--chip);
+  margin: calc(var(--chip) / -2) 0 0 calc(var(--chip) / -2);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.06);
+  transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1))
+    rotate(calc(var(--angle) * -1));
+}
+@keyframes orbit {
+  from {
+    transform: rotate(var(--angle)) translateY(calc(var(--radius) * -1))
+      rotate(calc(var(--angle) * -1));
+  }
+  to {
+    transform: rotate(calc(var(--angle) + 360deg)) translateY(calc(var(--radius) * -1))
+      rotate(calc((var(--angle) + 360deg) * -1));
+  }
+}
+@keyframes orbit-arc {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .orbit-mark {
+    animation: orbit var(--duration) linear infinite var(--direction);
+  }
+  .orbit-ring::before {
+    animation: orbit-arc var(--duration) linear infinite var(--direction);
+  }
+}
+/* A phone has no room beside the content, so the rings cross the title
+   and the tiles: smaller chips, and the whole layer at half strength. */
+@media (max-width: 639px) {
+  .orbit {
+    --chip: 40px;
+    opacity: 0.5;
+  }
 }
 
 .no-scrollbar {

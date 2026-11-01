@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { EMAIL } from "./contact";
 import CursorTrail from "./site/CursorTrail";
+import FilmBackdrop from "./site/FilmBackdrop";
 
 // Runs before first paint, so a visitor who picked dark with the toggle
 // never sees a flash of the light page. Without a stored choice the page is
@@ -112,6 +113,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(PROFILE_JSON_LD) }}
         />
+        <FilmBackdrop />
         <CursorTrail />
         {children}
       </body>

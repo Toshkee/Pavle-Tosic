@@ -5,18 +5,21 @@ import { LuArrowRight, LuFileText } from "react-icons/lu";
 import { LIMITS } from "../chat-protocol";
 import { HANDLE, NAME, RESUME, ROLE, SOCIAL } from "./content";
 import MemojiGaze from "./MemojiGaze";
+import OrbitMarks from "./OrbitMarks";
 import { QuickTiles } from "./QuickQuestions";
 import ThemeToggle from "./ThemeToggle";
 
 /* The front page, after aaabadcode.com: greeting, title, the Memoji whose
    eyes follow the cursor, one question box and the starter questions over
-   a giant faded handle; the cursor trail under it all comes from the
-   layout. Everything is a link or a GET form to /chat, so it
+   a giant faded handle and my stack circling on rings (OrbitMarks); the
+   film behind it (FilmBackdrop) and the cursor trail under it all come
+   from the layout. Everything is a link or a GET form to /chat, so it
    works before (and without) hydration. The page says little on purpose: /about is the crawlable
    version of who I am. */
 export default function Landing() {
   return (
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 pt-20 pb-16">
+      <OrbitMarks />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center overflow-hidden"
