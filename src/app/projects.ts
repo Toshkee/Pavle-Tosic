@@ -1,4 +1,4 @@
-/* Project data (nine projects, newest first) — the single source of truth for the chat's project cards,
+/* Project data (ten projects, newest first) — the single source of truth for the chat's project cards,
    the facts the chat model is given (api/chat/prompt.ts) AND the crawlable
    case-study routes under /work/[slug]. Plain data, no "use client": client
    components and server routes both import it.
@@ -93,6 +93,49 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
+    slug: "distinct",
+    title: "Distinct",
+    blurb:
+      "A redesign for Distinct, a Podgorica firm in accounting, marketing and consulting, built for a client: a bilingual static Vite site with GSAP and Lenis motion, a case study page for every project, and the motion graphics made in Remotion.",
+    problem:
+      "A firm with three practices needed a site that says what it does on the first screen, shows its work by practice, and asks a visitor what they need before anything else, in Montenegrin and in English.",
+    highlights: [
+      "The three practices on the first screen, each with its own seamless 6 s loop rendered in Remotion",
+      "Selected work filtered by practice, and a case study page for each project, built at /projekti/<slug>/ and /en/projekti/<slug>/",
+      "Montenegrin is the source; the build writes the English pages from keyed translations and fails if a page's element count changes",
+      "Page changes without a reload: the next page is fetched under a wipe, and a page from a newer deploy loads normally instead",
+    ],
+    result: [
+      "Live at distinct.co.me, deployed by Cloudflare Workers Builds on every push, as static assets with no server code.",
+      "Every page ships in both languages with its own title, description, canonical address and hreflang pair, and both are in the sitemap.",
+      "The contact form asks what the visitor needs first (finance, marketing, consulting, company registration) and hands the message to their email app; there is no backend to keep running.",
+    ],
+    kpis: [
+      // grep -c "slug:" site/src/projects.js
+      { label: "case study pages", value: "23, each in two languages" },
+      // grep -c "<Composition" video/src/Root.tsx
+      { label: "Remotion compositions", value: "7: showreels, loops, share image" },
+      // git log --oneline | wc -l
+      { label: "commits", value: "35 since 23 October 2026" },
+    ],
+    role: "Solo build, client work",
+    kind: "client",
+    context: "Vaky, October 2026",
+    stack: ["Vite", "JavaScript", "GSAP", "Lenis", "Remotion", "Cloudflare Workers"],
+    live: "https://distinct.co.me/en/",
+    code: null,
+    note: "The repository is private, so there is no code link.",
+    shot: "/images/projects/distinct.webp",
+    video: null,
+    domain: "distinct.co.me",
+    gallery: [
+      { src: "/images/projects/distinct.webp", label: "Home" },
+      { src: "/images/projects/distinct-services.webp", label: "Services" },
+      { src: "/images/projects/distinct-work.webp", label: "Selected work" },
+      { src: "/images/projects/distinct-contact.webp", label: "Contact form" },
+    ],
+  },
+  {
     slug: "infostream",
     title: "Infostream",
     blurb:
@@ -142,45 +185,44 @@ export const PROJECTS: Project[] = [
     slug: "vaky",
     title: "Vaky.me",
     blurb:
-      "My own web studio's site and back office: a bilingual static Next.js export selling websites to local businesses, and Cloudflare Pages Functions behind it that take an enquiry through lead, project, private onboarding brief and build brief. No payments, no CMS.",
+      "My own web studio's site and back office: a bilingual static Next.js export selling websites, apps and motion design videos to local businesses, with a page of its own for US small businesses, and Cloudflare Pages Functions behind it that take an enquiry through lead, project, private onboarding brief and build brief. No payments, no CMS.",
     problem:
       "A one-person studio needed a site that sells websites to Montenegrin restaurants, salons and gyms, and a way to take an enquiry through to a signed-off brief without email threads and spreadsheets.",
     highlights: [
-      "Static Next.js 16 export in two languages, with 15 concept sites under /demo, each a real page",
+      "Static Next.js 16 export in two languages, plus a /us/ page without the euro prices; 15 concept sites for Montenegrin trades under /demo and 50 for US businesses under /c/, each a real page",
+      "Prices as a calculator that prints the bill as the package and add-ons change; nothing is paid through the site",
+      "The motion design videos it sells and shows are Remotion compositions in the same repo, the site's own showreel rendered from the shots the page builds",
       "Pages Functions + D1 + R2: lead form, admin dashboard, single-use onboarding links that carry the package server-side",
-      "Three layers before a stranger's write: edge rate limit, honeypot, Turnstile; strict CSP from public/_headers",
+      "Three layers before a stranger's write: edge rate limit, honeypot, Turnstile, and an address whose domain takes no mail is refused; strict CSP from public/_headers",
     ],
     result: [
-      "Live at vaky.me, and two client sites listed on this page (Villa Vučje, Mandarina) came in through it.",
+      "Live at vaky.me, and two client sites listed on this page (Villa Vučje, Mandarina) came in through it. Its work section shows Reform Fitness, Distinct, Villa Vučje, Mandarina and Infostream.",
       "A lead is stored first and emailed after, off the request: the database is the record and the inbox a courtesy, so a mail outage never loses an enquiry.",
       "CI runs lint, both tsconfigs (site and Workers), the export, the Functions build, npm audit and an axe pass against the served export.",
     ],
     kpis: [
       // find functions/api -name '*.ts' | wc -l
       { label: "API endpoints", value: "24 Pages Functions" },
-      // ls src/app/\(me\)/demo | wc -l
-      { label: "concept sites", value: "15, each its own route" },
-      // gh api repos/Toshkee/Vaky.me/commits, created 25 Aug 2026
-      { label: "commits", value: "101 since August 2026" },
+      // ls src/app/\(me\)/demo | wc -l; ls public/c | grep -v '^_' | wc -l
+      { label: "concept sites", value: "15 in Montenegro, 50 for the US" },
+      // ls public/video/*.mp4 | wc -l
+      { label: "motion design videos", value: "9 on the site, Remotion" },
     ],
     role: "Solo build, own studio",
     kind: "build",
     context: "Vaky, since August 2026",
-    stack: ["Next.js 16", "TypeScript", "Cloudflare Pages Functions", "D1", "R2"],
+    stack: ["Next.js 16", "TypeScript", "Cloudflare Pages Functions", "D1", "R2", "Remotion"],
     live: "https://vaky.me/en/",
-    code: "https://github.com/Toshkee/Vaky.me",
+    code: null,
+    note: "The studio's repository is private, so there is no code link.",
     shot: "/images/projects/vaky.webp",
-    video: {
-      src: "/video/projects/vaky.mp4",
-      poster: "/images/projects/vaky-demo.webp",
-      width: 1920,
-      height: 1200,
-    },
+    video: null,
     domain: "vaky.me",
     gallery: [
       { src: "/images/projects/vaky.webp", label: "Home" },
-      { src: "/images/projects/vaky-work.webp", label: "Live sites and concepts" },
-      { src: "/images/projects/vaky-concept.webp", label: "One of the 15 concepts" },
+      { src: "/images/projects/vaky-work.webp", label: "Live work" },
+      { src: "/images/projects/vaky-motion.webp", label: "Motion design videos" },
+      { src: "/images/projects/vaky-pricing.webp", label: "Price calculator" },
     ],
   },
   {
@@ -463,6 +505,7 @@ export const VAKY_CASE = {
   arch: `cloudflare pages ── next 16 static export
  │  (me)/ and (en)/ route groups
  │   15 concept sites under /demo
+ │   /us/ page · 50 US concepts in /c/
  │   public/_headers: strict CSP
  └─ functions/ pages functions
      ├ api/lead  the one public write

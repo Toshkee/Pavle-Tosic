@@ -247,23 +247,30 @@ function helpers(page, { mobile, viewport, events, vt }) {
       });
     },
     // Waits until the page stops scrolling: smooth-scroll libraries
-    // (Lenis) keep easing after the wheel stops.
+    // (Lenis) keep easing after the wheel stops. Gives up after 3 s of page
+    // time: a page that never sits still must not hold the take forever.
     async settle() {
-      let last = await page.evaluate(() => scrollY), still = 0;
-      while (still < 3) {
+      let last = await page.evaluate(() => scrollY), still = 0, tries = 0;
+      while (still < 3 && tries++ < 75) {
         await sleep(40 * SLOW);
         const y = await page.evaluate(() => scrollY);
         still = Math.abs(y - last) < 1 ? still + 1 : 0;
         last = y;
       }
     },
-    // Scrolls until the element's top sits `at` px from the top.
+    // Scrolls until the element's top sits `at` px from the top. Pinned
+    // sections (GSAP ScrollTrigger) add scroll length as they pass, so one
+    // stroke can fall short: a shorter one follows, three at most.
     async scrollTo(locator, { at = 120, ms } = {}) {
-      await h.settle();
-      const box = await locator.boundingBox();
-      if (!box) throw new Error(`nothing to scroll to: ${locator}`);
-      if (process.env.DEBUG) console.log(`scrollTo ${locator}: at ${Math.round(box.y)}, by ${Math.round(box.y - at)}`);
-      await h.scroll(Math.round(box.y - at), ms);
+      for (let stroke = 0; stroke < 3; stroke++) {
+        await h.settle();
+        const box = await locator.first().boundingBox();
+        if (!box) throw new Error(`nothing to scroll to: ${locator}`);
+        const by = Math.round(box.y - at);
+        if (process.env.DEBUG) console.log(`scrollTo ${locator}: at ${Math.round(box.y)}, by ${by}`);
+        if (Math.abs(by) < 24) return;
+        await h.scroll(by, stroke ? Math.min(900, Math.abs(by) * 0.9) : ms);
+      }
     },
     async touchScroll(px, ms) {
       ms ??= Math.min(1600, Math.max(600, Math.abs(px) * 1.4));
@@ -447,19 +454,41 @@ async function record(slug, opts, script) {
 
 const DEMOS = {
   vaky: () =>
-    record("vaky", { url: "https://vaky.me/en/", posterAt: 0.5 }, async (page, h) => {
+    record("vaky", { url: "https://vaky.me/en/", settle: 7000, posterAt: 0.5 }, async (page, h) => {
       await h.wait(400);
-      const cta = await h.target(page.getByRole("link", { name: /free concept/i }).first());
+      const cta = await h.target(page.getByRole("link", { name: /Get your free concept/i }).first());
       await h.moveTo(cta.x + 10, cta.y + 4, 900);
+      await h.wait(1300);
+      await h.scrollTo(page.getByRole("heading", { name: /What I have made/i }), { at: 110 });
+      await h.moveTo(560, 520, 800);
+      await h.wait(1200);
+      await h.scrollTo(page.getByRole("heading", { name: /Motion design for/i }), { at: 120 });
+      await h.wait(1500);
+      await h.scrollTo(page.getByRole("heading", { name: /Website pricing/i }), { at: 100 });
+      await h.wait(400);
+      // The calculator prints the bill as the package and add-ons change.
+      await h.click(page.locator("label").filter({ hasText: /^Project/ }).first());
+      await h.wait(900);
+      await h.click(page.locator("label").filter({ hasText: /^Motion design videos/ }).first());
       await h.wait(1400);
-      await h.scrollTo(page.getByRole("heading", { name: /Concepts for your trade/i }), { at: 150 });
-      await h.wait(350);
-      for (const trade of ["Restaurant", "Gym", "Dentist"]) {
-        await h.click(page.locator("button").filter({ hasText: trade }).first());
-        await h.wait(950);
-      }
-      await h.scrollTo(page.getByRole("heading", { name: /^Pricing/i }), { at: 130 });
-      await h.moveTo(980, 640, 800);
+    }),
+
+  distinct: () =>
+    record("distinct", { url: "https://distinct.co.me/en/", settle: 6000, posterAt: 0.5 }, async (page, h) => {
+      await h.moveTo(980, 520, 700);
+      await h.wait(1200);
+      await h.scrollTo(page.getByRole("heading", { name: /Finance & Accounting/ }), { at: 80 });
+      await h.wait(1000);
+      await h.scrollTo(page.getByRole("heading", { name: /Selected work/ }), { at: 110 });
+      await h.wait(700);
+      await h.click(page.getByRole("button", { name: "Marketing", exact: true }));
+      await h.wait(1200);
+      await h.scrollTo(page.getByRole("heading", { name: /Tell us where/ }), { at: 110 });
+      await h.wait(500);
+      // The form asks what the client needs before anything else.
+      await h.click(page.locator("form label").filter({ hasText: /^Marketing/ }));
+      await h.wait(500);
+      await h.click(page.locator("form label").filter({ hasText: /^Consulting/ }));
       await h.wait(1300);
     }),
 
