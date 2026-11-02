@@ -4,7 +4,7 @@ import { EDUCATION, EXPERIENCE, pointText, type LogEntry } from "../content";
    CV. The /about page shows the same timelines under its own headings. */
 export default function ExperienceCard() {
   return (
-    <article className="rounded-3xl border border-line p-6 sm:p-8">
+    <article className="glass rounded-3xl p-6 sm:p-8">
       <section>
         <h3 className="text-xs font-semibold tracking-wider text-faint uppercase">
           Work

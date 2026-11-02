@@ -115,6 +115,27 @@ body {
   border: 1px solid var(--line);
 }
 
+/* A sheet of frosted glass for reading over the film: behind each answer
+   in the chat, and one behind the whole of every text page (/about, /work,
+   the case studies, /how-its-built, /privacy, the 404). Half the page
+   colour, a wide blur so the rock behind turns to soft light and shade
+   instead of edges under the type, a lit top edge and a faint shadow. */
+.glass {
+  background: color-mix(in oklab, var(--bg) 55%, transparent);
+  border: 1px solid rgb(255 255 255 / 0.55);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.7),
+    0 20px 50px -20px rgb(0 0 0 / 0.25);
+  -webkit-backdrop-filter: blur(28px) saturate(1.4);
+  backdrop-filter: blur(28px) saturate(1.4);
+}
+:root[data-theme="dark"] .glass {
+  border-color: rgb(255 255 255 / 0.1);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 20px 50px -20px rgb(0 0 0 / 0.6);
+}
+
 /* The giant handle behind the landing page: ink fading to nothing, so it
    reads as texture, never as text competing with the title. 13% ink at the
    top in dark: readable as a word, still well under the tiles' border. The

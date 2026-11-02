@@ -6,7 +6,7 @@ import Zoomable from "../Zoomable";
    has entries (see tools.ts). */
 export default function FunCard() {
   return (
-    <article className="rounded-3xl border border-line p-6 sm:p-8">
+    <article className="glass rounded-3xl p-6 sm:p-8">
       <h3 className="text-xl font-bold tracking-tight text-ink">
         Off the clock
       </h3>

@@ -14,7 +14,7 @@ export default function ContactCard() {
   ];
 
   return (
-    <article className="relative overflow-hidden rounded-3xl border border-line p-6 sm:p-8 sm:pr-44">
+    <article className="glass relative overflow-hidden rounded-3xl p-6 sm:p-8 sm:pr-44">
       {/* The sticker's torso is cut flat 16px above its bottom edge, so it
           sits 7px low (16/320 of 144px) to stand on the card's border. It is
           the largest thing painted when the card lands, so it loads

@@ -21,7 +21,7 @@ export default function CardView({ card }: { card: Card }) {
     case "project": {
       const project = projectBySlug(card.slug);
       return project ? (
-        <div className="overflow-hidden rounded-3xl border border-line">
+        <div className="glass overflow-hidden rounded-3xl">
           <ProjectDetail project={project} />
         </div>
       ) : null;

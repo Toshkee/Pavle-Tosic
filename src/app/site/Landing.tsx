@@ -16,6 +16,11 @@ import ThemeToggle from "./ThemeToggle";
    from the layout. Everything is a link or a GET form to /chat, so it
    works before (and without) hydration. The page says little on purpose: /about is the crawlable
    version of who I am. */
+/* Each footer link is a small frosted pill, like "Open to work" above, so
+   it reads over whatever part of the film passes behind it. */
+const FOOT_LINK =
+  "rounded-full border border-line bg-bg/70 px-3 py-1 backdrop-blur transition-colors hover:bg-surface hover:text-ink";
+
 export default function Landing() {
   return (
     <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 pt-20 pb-16">
@@ -99,24 +104,24 @@ export default function Landing() {
 
       <nav
         aria-label="More"
-        className="absolute inset-x-4 bottom-4 z-10 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] text-faint"
+        className="absolute inset-x-4 bottom-4 z-10 flex flex-wrap justify-center gap-2 text-[13px] text-faint"
       >
-        <Link href="/about" className="transition-colors hover:text-ink">
+        <Link href="/about" className={FOOT_LINK}>
           About
         </Link>
-        <Link href="/work" className="transition-colors hover:text-ink">
+        <Link href="/work" className={FOOT_LINK}>
           Case studies
         </Link>
-        <Link href="/how-its-built" className="transition-colors hover:text-ink">
+        <Link href="/how-its-built" className={FOOT_LINK}>
           How it&apos;s built
         </Link>
-        <a href={SOCIAL.github} className="transition-colors hover:text-ink">
+        <a href={SOCIAL.github} className={FOOT_LINK}>
           GitHub
         </a>
-        <a href={SOCIAL.linkedin} className="transition-colors hover:text-ink">
+        <a href={SOCIAL.linkedin} className={FOOT_LINK}>
           LinkedIn
         </a>
-        <Link href="/privacy" className="transition-colors hover:text-ink">
+        <Link href="/privacy" className={FOOT_LINK}>
           Privacy
         </Link>
       </nav>

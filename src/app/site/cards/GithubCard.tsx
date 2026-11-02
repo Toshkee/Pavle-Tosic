@@ -14,7 +14,7 @@ export default function GithubCard() {
   ];
 
   return (
-    <article className="rounded-3xl border border-line p-6 sm:p-8">
+    <article className="glass rounded-3xl p-6 sm:p-8">
       <div className="flex items-center justify-between gap-4">
         <h3 className="text-xl font-bold tracking-tight text-ink">On GitHub</h3>
         <a

@@ -65,7 +65,8 @@ export default function ProjectsCard() {
       </ul>
 
       <div className="mt-3 flex items-center justify-between gap-4">
-        <p className="text-xs text-faint">
+        {/* Glass like the answers: the line sits on the film, under the rail. */}
+        <p className="glass rounded-2xl px-3.5 py-2 text-xs text-faint">
           In progress:{" "}
           {IN_PROGRESS.map((game, index) => (
             <span key={game.title}>

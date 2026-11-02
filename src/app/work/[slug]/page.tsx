@@ -105,161 +105,163 @@ export default async function CaseStudy({ params }: Params) {
   };
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 py-14 sm:px-8 sm:py-20">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+    <main className="mx-auto w-full max-w-4xl px-3 py-6 sm:px-8 sm:py-14">
+      <div className="glass rounded-3xl px-5 py-8 sm:px-10 sm:py-12">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
 
-      <Crumbs trail={[{ label: "Work", href: "/work" }, { label: p.title }]} />
+        <Crumbs trail={[{ label: "Work", href: "/work" }, { label: p.title }]} />
 
-      <header className="mt-6">
-        <h1 className="font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-          {p.title}
-        </h1>
-        <p className="mt-2 text-[13px] text-muted">
-          {p.role} · {p.context}
-        </p>
-        <p className="mt-5 max-w-[70ch] text-[15px] leading-[1.7] text-body">
-          {p.blurb}
-        </p>
+        <header className="mt-6">
+          <h1 className="font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+            {p.title}
+          </h1>
+          <p className="mt-2 text-[13px] text-muted">
+            {p.role} · {p.context}
+          </p>
+          <p className="mt-5 max-w-[70ch] text-[15px] leading-[1.7] text-body">
+            {p.blurb}
+          </p>
 
-        {/* "Visit <domain>", as on the chat's card: a client's site is not
-            a demo. The chat link is always there, link or no link. */}
-        <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
-          {p.live && (
-            <a
-              href={p.live}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-underline font-medium text-accent-ink"
-            >
-              Visit {p.domain ?? "the site"}
-            </a>
-          )}
-          {p.code && (
-            <a
-              href={p.code}
-              target="_blank"
-              rel="noopener noreferrer"
+          {/* "Visit <domain>", as on the chat's card: a client's site is not
+              a demo. The chat link is always there, link or no link. */}
+          <div className="mt-5 flex flex-wrap items-center gap-5 text-sm">
+            {p.live && (
+              <a
+                href={p.live}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-underline font-medium text-accent-ink"
+              >
+                Visit {p.domain ?? "the site"}
+              </a>
+            )}
+            {p.code && (
+              <a
+                href={p.code}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted transition-colors hover:text-ink"
+              >
+                Source on GitHub
+              </a>
+            )}
+            <Link
+              href={{ pathname: "/chat", query: { q: `Tell me about ${p.title}` } }}
               className="text-muted transition-colors hover:text-ink"
             >
-              Source on GitHub
-            </a>
-          )}
-          <Link
-            href={{ pathname: "/chat", query: { q: `Tell me about ${p.title}` } }}
-            className="text-muted transition-colors hover:text-ink"
-          >
-            Ask me about it in the chat
-          </Link>
-        </div>
-        {p.note && <p className="mt-2 text-[13px] text-faint">{p.note}</p>}
-
-        <ul className="mt-5 flex flex-wrap gap-x-1">
-          {p.stack.map((s) => (
-            <li
-              key={s}
-              className="text-[13px] text-muted after:content-[',_'] last:after:content-none"
-            >
-              {s}
-            </li>
-          ))}
-        </ul>
-      </header>
-
-      {/* The demo clip where there is one, else the still. Phone screens
-          stay phone-width instead of page-tall. The clip loads nothing but
-          its poster until it is played. */}
-      {p.video ? (
-        <video
-          src={p.video.src}
-          poster={p.video.poster}
-          width={p.video.width}
-          height={p.video.height}
-          controls
-          muted
-          playsInline
-          preload="none"
-          aria-label={`${p.title}: demo`}
-          className={`mt-10 h-auto rounded-xl border border-line bg-plate ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
-        />
-      ) : (
-        <Image
-          src={p.shot}
-          alt={`${p.title} screenshot`}
-          width={p.phone ? 720 : 1280}
-          height={p.phone ? 1558 : 720}
-          priority
-          className={`mt-10 rounded-xl border border-line ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
-        />
-      )}
-
-      {/* Numbers first: they are what a reader scanning the page stops on,
-          and every one of them is counted out of the repo. */}
-      <dl className="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
-        {p.kpis.map((k) => (
-          <div key={k.label} className="bg-surface p-4">
-            <dt className="text-[12px] text-faint">
-              {k.label}
-            </dt>
-            <dd className="mt-1 text-sm leading-snug text-ink">{k.value}</dd>
+              Ask me about it in the chat
+            </Link>
           </div>
-        ))}
-      </dl>
+          {p.note && <p className="mt-2 text-[13px] text-faint">{p.note}</p>}
 
-      <Section cmd="cat problem.md" title="The problem">
-        <p className="max-w-[70ch] text-[15px] leading-[1.7] text-body">
-          {p.problem}
-        </p>
-      </Section>
-
-      <Section cmd="cat decisions.md" title="What I built, and why">
-        <Bullets items={p.highlights} />
-      </Section>
-
-      {caseFile && (
-        <Section cmd="cat arch.txt" title="Architecture">
-          <Pane file="arch.txt">{caseFile.arch}</Pane>
-        </Section>
-      )}
-
-      {caseFile && (
-        <Section cmd="cat notes.md" title="What broke, and what I did about it">
-          <Pane file="notes.md">{caseFile.notes}</Pane>
-        </Section>
-      )}
-
-      <Section cmd="cat result.md" title="Result">
-        <Bullets items={p.result} />
-      </Section>
-
-      {caseFile && (
-        <Section cmd={`cat ${caseFile.codeFile}`} title="A slice of the code">
-          <Pane file={caseFile.codeFile}>{caseFile.code}</Pane>
-        </Section>
-      )}
-
-      <Section cmd="ls ../" title="Other projects">
-        <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-          {PROJECTS.filter((o) => o.slug !== p.slug).map((o) => (
-            <li key={o.slug}>
-              <Link
-                href={`/work/${o.slug}`}
-                className="link-underline text-accent-ink"
+          <ul className="mt-5 flex flex-wrap gap-x-1">
+            {p.stack.map((s) => (
+              <li
+                key={s}
+                className="text-[13px] text-muted after:content-[',_'] last:after:content-none"
               >
-                {o.title}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Section>
+                {s}
+              </li>
+            ))}
+          </ul>
+        </header>
 
-      <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
-        <Link href="/work" className="transition-colors hover:text-ink">
-          Back to all work
-        </Link>
-      </p>
+        {/* The demo clip where there is one, else the still. Phone screens
+            stay phone-width instead of page-tall. The clip loads nothing but
+            its poster until it is played. */}
+        {p.video ? (
+          <video
+            src={p.video.src}
+            poster={p.video.poster}
+            width={p.video.width}
+            height={p.video.height}
+            controls
+            muted
+            playsInline
+            preload="none"
+            aria-label={`${p.title}: demo`}
+            className={`mt-10 h-auto rounded-xl border border-line bg-plate ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
+          />
+        ) : (
+          <Image
+            src={p.shot}
+            alt={`${p.title} screenshot`}
+            width={p.phone ? 720 : 1280}
+            height={p.phone ? 1558 : 720}
+            priority
+            className={`mt-10 rounded-xl border border-line ${p.phone ? "mx-auto w-full max-w-72" : "w-full"}`}
+          />
+        )}
+
+        {/* Numbers first: they are what a reader scanning the page stops on,
+            and every one of them is counted out of the repo. */}
+        <dl className="mt-10 grid gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
+          {p.kpis.map((k) => (
+            <div key={k.label} className="bg-surface p-4">
+              <dt className="text-[12px] text-faint">
+                {k.label}
+              </dt>
+              <dd className="mt-1 text-sm leading-snug text-ink">{k.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <Section cmd="cat problem.md" title="The problem">
+          <p className="max-w-[70ch] text-[15px] leading-[1.7] text-body">
+            {p.problem}
+          </p>
+        </Section>
+
+        <Section cmd="cat decisions.md" title="What I built, and why">
+          <Bullets items={p.highlights} />
+        </Section>
+
+        {caseFile && (
+          <Section cmd="cat arch.txt" title="Architecture">
+            <Pane file="arch.txt">{caseFile.arch}</Pane>
+          </Section>
+        )}
+
+        {caseFile && (
+          <Section cmd="cat notes.md" title="What broke, and what I did about it">
+            <Pane file="notes.md">{caseFile.notes}</Pane>
+          </Section>
+        )}
+
+        <Section cmd="cat result.md" title="Result">
+          <Bullets items={p.result} />
+        </Section>
+
+        {caseFile && (
+          <Section cmd={`cat ${caseFile.codeFile}`} title="A slice of the code">
+            <Pane file={caseFile.codeFile}>{caseFile.code}</Pane>
+          </Section>
+        )}
+
+        <Section cmd="ls ../" title="Other projects">
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            {PROJECTS.filter((o) => o.slug !== p.slug).map((o) => (
+              <li key={o.slug}>
+                <Link
+                  href={`/work/${o.slug}`}
+                  className="link-underline text-accent-ink"
+                >
+                  {o.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
+          <Link href="/work" className="transition-colors hover:text-ink">
+            Back to all work
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }

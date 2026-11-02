@@ -284,7 +284,7 @@ export default function Chat({
           {/* Job fit takes the screen even over an answer: with the answer
               still showing, the pill only changed the input's placeholder. */}
           {fitting ? (
-            <div className="mt-16 text-center">
+            <div className="glass mx-auto mt-16 w-fit rounded-3xl px-6 py-4 text-center">
               <p className="text-lg text-body">
                 Paste a job ad below or drop its PDF here,
                 <br className="sm:hidden" /> and I&apos;ll show how I match it.
@@ -307,7 +307,7 @@ export default function Chat({
               onAsk={ask}
             />
           ) : (
-            <p className="mt-16 text-center text-lg text-body">
+            <p className="glass mx-auto mt-16 w-fit rounded-3xl px-6 py-4 text-center text-lg text-body">
               Ask me anything about my work,
               <br className="sm:hidden" /> or pick a question below.
             </p>
@@ -396,23 +396,28 @@ function ExchangeView({
 
       <div className="mt-6 space-y-5" aria-live="polite" aria-busy={busy}>
         {busy && silent && (
-          <div className="dots flex gap-1.5 py-2" role="status" aria-label="Thinking">
+          <div className="dots glass flex w-fit gap-1.5 rounded-full px-4 py-3" role="status" aria-label="Thinking">
             <span className="size-2 rounded-full bg-faint" />
             <span className="size-2 rounded-full bg-faint" />
             <span className="size-2 rounded-full bg-faint" />
           </div>
         )}
+        {/* Each text answer is a glass bubble, the question's counterpart,
+            and each card is a glass sheet of its own: on the light film
+            the rock behind bare text made it hard to read. */}
         {parts.map((part, index) => (
           <div key={index} className="settle">
             {part.type === "text" ? (
-              <Markdown text={part.text} />
+              <div className="glass rounded-3xl rounded-tl-lg px-5 py-4 sm:px-6">
+                <Markdown text={part.text} />
+              </div>
             ) : (
               <CardView card={part.card} />
             )}
           </div>
         ))}
         {error && (
-          <p className="text-[15px] text-body">
+          <p className="glass rounded-3xl rounded-tl-lg px-5 py-4 text-[15px] text-body sm:px-6">
             {error}{" "}
             {error === FAILED_MESSAGE && (
               <a href={`mailto:${EMAIL}`} className="link-underline text-ink">
@@ -422,7 +427,7 @@ function ExchangeView({
           </p>
         )}
         {!busy && silent && (
-          <p className="text-[15px] text-faint">
+          <p className="glass w-fit rounded-3xl rounded-tl-lg px-5 py-4 text-[15px] text-faint sm:px-6">
             No answer this time. Try asking another way.
           </p>
         )}

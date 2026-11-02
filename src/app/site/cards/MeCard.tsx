@@ -5,7 +5,7 @@ import Zoomable from "../Zoomable";
    checkable facts. */
 export default function MeCard() {
   return (
-    <article className="rounded-3xl border border-line p-6 sm:p-8">
+    <article className="glass rounded-3xl p-6 sm:p-8">
       <div className="flex items-center gap-5">
         <Zoomable
           media={{ kind: "image", src: PHOTO.src, full: PHOTO.full, alt: PHOTO.alt }}

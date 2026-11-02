@@ -109,127 +109,129 @@ function Bullets({ items }: { items: string[] }) {
 
 export default function HowItsBuilt() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-      <Crumbs trail={[{ label: "How this site is built" }]} />
+    <main className="mx-auto w-full max-w-3xl px-3 py-6 sm:px-8 sm:py-14">
+      <div className="glass rounded-3xl px-5 py-8 sm:px-10 sm:py-12">
+        <Crumbs trail={[{ label: "How this site is built" }]} />
 
-      <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-        How this site is built
-      </h1>
-      <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
-        The front page is one question box. Behind it, a model answers as me
-        and puts cards on screen: my projects, my stack, my work history. This
-        page is the engineering behind that, and the source is{" "}
-        <a
-          href={REPO}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="link-underline text-accent-ink"
-        >
-          public on GitHub
-        </a>
-        .
-      </p>
-
-      <Section cmd="cat stack.txt" title="The stack">
-        <Bullets
-          items={[
-            "Next.js 16 and React 19 on the App Router, in strict TypeScript. Server components by default; only the parts that need the browser ship JavaScript.",
-            "Tailwind CSS v4, with the colours as CSS variables, so light and dark are one set of names with two sets of values.",
-            "Deployed to Cloudflare Workers through OpenNext. Every page except the chat is prerendered and served from the edge cache.",
-            "No webfont and no animation library: the system font stack, and CSS keyframes for the few entrances.",
-          ]}
-        />
-      </Section>
-
-      <Section cmd="cat chat.txt" title="The chat">
-        <Pane file="chat.txt">{CHAT_ARCH}</Pane>
-        <p>
-          The model is Claude Haiku 5.5, called from the Worker, never from
-          the browser, so the API key never leaves the server. The answer
-          streams back as newline-delimited JSON: text as it is written, and
-          a card the moment the model asks for one. The model never fetches
-          anything; a tool call only picks which card to draw.
-        </p>
-        <p>
-          The system prompt is built from the same two data files the cards
-          render from, so the chat and the cards cannot disagree. A fact that
-          is not in those files does not exist for the model: it is told not
-          to invent opinions or habits, to call a prototype a prototype, and
-          to say it is an AI when asked.
-        </p>
-        <p>
-          One card is written by the model: paste a job ad (or attach its
-          PDF, which Claude reads as a document) and it lists the
-          key requirements, each marked yes, partly or no from those same
-          facts, with the project that backs it. A missing skill is a plain
-          no. The server checks every field before the card is drawn: a
-          match outside the three, a project not on the list or an overlong
-          line is dropped.
-        </p>
-        <p>
-          The same facts, with a link to every page, are published as plain
-          text at{" "}
-          <a href="/llms.txt" className="link-underline text-accent-ink">
-            /llms.txt
+        <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+          How this site is built
+        </h1>
+        <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
+          The front page is one question box. Behind it, a model answers as me
+          and puts cards on screen: my projects, my stack, my work history. This
+          page is the engineering behind that, and the source is{" "}
+          <a
+            href={REPO}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="link-underline text-accent-ink"
+          >
+            public on GitHub
           </a>
-          , for the AI assistants that read this site when someone asks them
-          about me.
+          .
         </p>
-      </Section>
 
-      <Section cmd="cat notes.md" title="What broke, and what I did about it">
-        <Pane file="notes.md">{BROKE}</Pane>
-      </Section>
+        <Section cmd="cat stack.txt" title="The stack">
+          <Bullets
+            items={[
+              "Next.js 16 and React 19 on the App Router, in strict TypeScript. Server components by default; only the parts that need the browser ship JavaScript.",
+              "Tailwind CSS v4, with the colours as CSS variables, so light and dark are one set of names with two sets of values.",
+              "Deployed to Cloudflare Workers through OpenNext. Every page except the chat is prerendered and served from the edge cache.",
+              "No webfont and no animation library: the system font stack, and CSS keyframes for the few entrances.",
+            ]}
+          />
+        </Section>
 
-      <Section cmd="cat ci.yml" title="What every push has to pass">
-        <Bullets
-          items={[
-            "An npm audit, and a check that no image in public/ still carries EXIF or XMP metadata.",
-            "Lint, typecheck and a production build.",
-            "A smoke test against the running build: every route answers 200, every page has its canonical, the JSON-LD parses, the security headers are present and no internal link points at nothing.",
-            "Lighthouse, three runs, judged on the median: accessibility at least 95, best practices at least 90, SEO 100, plus ceilings on first paint, layout shift and blocking time.",
-          ]}
-        />
-      </Section>
+        <Section cmd="cat chat.txt" title="The chat">
+          <Pane file="chat.txt">{CHAT_ARCH}</Pane>
+          <p>
+            The model is Claude Haiku 5.5, called from the Worker, never from
+            the browser, so the API key never leaves the server. The answer
+            streams back as newline-delimited JSON: text as it is written, and
+            a card the moment the model asks for one. The model never fetches
+            anything; a tool call only picks which card to draw.
+          </p>
+          <p>
+            The system prompt is built from the same two data files the cards
+            render from, so the chat and the cards cannot disagree. A fact that
+            is not in those files does not exist for the model: it is told not
+            to invent opinions or habits, to call a prototype a prototype, and
+            to say it is an AI when asked.
+          </p>
+          <p>
+            One card is written by the model: paste a job ad (or attach its
+            PDF, which Claude reads as a document) and it lists the
+            key requirements, each marked yes, partly or no from those same
+            facts, with the project that backs it. A missing skill is a plain
+            no. The server checks every field before the card is drawn: a
+            match outside the three, a project not on the list or an overlong
+            line is dropped.
+          </p>
+          <p>
+            The same facts, with a link to every page, are published as plain
+            text at{" "}
+            <a href="/llms.txt" className="link-underline text-accent-ink">
+              /llms.txt
+            </a>
+            , for the AI assistants that read this site when someone asks them
+            about me.
+          </p>
+        </Section>
 
-      <Section cmd="cat headers.txt" title="Security">
-        <Bullets
-          items={[
-            "An enforced Content Security Policy: scripts, images, media and connections from this origin only (plus Cloudflare's analytics beacon), no frames, no plugins, no inline event handlers.",
-            "HSTS with preload, and same-origin opener and resource policies, on every page.",
-            "The chat endpoint takes same-origin JSON only, caps the size of every message and the length of the history, and limits each IP to ten questions a minute.",
-          ]}
-        />
-      </Section>
+        <Section cmd="cat notes.md" title="What broke, and what I did about it">
+          <Pane file="notes.md">{BROKE}</Pane>
+        </Section>
 
-      <Section cmd="cat details.md" title="The details">
-        <Bullets
-          items={[
-            "The cursor trail is one canvas behind every page: dots on a 14px grid that turn into ASCII characters and fade. Its animation loop sleeps once the trail has faded, and it is off for touch and for reduced motion.",
-            "The Memoji's eyes follow your cursor; on a phone it glances around on its own.",
-            "Content is visible without JavaScript: the front page is links and a plain form, and every animation respects prefers-reduced-motion.",
-          ]}
-        />
-        <p>
-          And there is a{" "}
-          <Link href="/play" className="link-underline text-accent-ink">
-            small game
+        <Section cmd="cat ci.yml" title="What every push has to pass">
+          <Bullets
+            items={[
+              "An npm audit, and a check that no image in public/ still carries EXIF or XMP metadata.",
+              "Lint, typecheck and a production build.",
+              "A smoke test against the running build: every route answers 200, every page has its canonical, the JSON-LD parses, the security headers are present and no internal link points at nothing.",
+              "Lighthouse, three runs, judged on the median: accessibility at least 95, best practices at least 90, SEO 100, plus ceilings on first paint, layout shift and blocking time.",
+            ]}
+          />
+        </Section>
+
+        <Section cmd="cat headers.txt" title="Security">
+          <Bullets
+            items={[
+              "An enforced Content Security Policy: scripts, images, media and connections from this origin only (plus Cloudflare's analytics beacon), no frames, no plugins, no inline event handlers.",
+              "HSTS with preload, and same-origin opener and resource policies, on every page.",
+              "The chat endpoint takes same-origin JSON only, caps the size of every message and the length of the history, and limits each IP to ten questions a minute.",
+            ]}
+          />
+        </Section>
+
+        <Section cmd="cat details.md" title="The details">
+          <Bullets
+            items={[
+              "The cursor trail is one canvas behind every page: dots on a 14px grid that turn into ASCII characters and fade. Its animation loop sleeps once the trail has faded, and it is off for touch and for reduced motion.",
+              "The Memoji's eyes follow your cursor; on a phone it glances around on its own.",
+              "Content is visible without JavaScript: the front page is links and a plain form, and every animation respects prefers-reduced-motion.",
+            ]}
+          />
+          <p>
+            And there is a{" "}
+            <Link href="/play" className="link-underline text-accent-ink">
+              small game
+            </Link>
+            , written from scratch on one canvas.
+          </p>
+        </Section>
+
+        <p className="mt-12 flex flex-wrap gap-5 border-t border-line pt-6 text-[13px] text-faint">
+          <Link href="/" className="transition-colors hover:text-ink">
+            Back to the front page
           </Link>
-          , written from scratch on one canvas.
+          <Link href="/work" className="transition-colors hover:text-ink">
+            Case studies
+          </Link>
+          <a href={REPO} className="transition-colors hover:text-ink">
+            Source on GitHub
+          </a>
         </p>
-      </Section>
-
-      <p className="mt-12 flex flex-wrap gap-5 border-t border-line pt-6 text-[13px] text-faint">
-        <Link href="/" className="transition-colors hover:text-ink">
-          Back to the front page
-        </Link>
-        <Link href="/work" className="transition-colors hover:text-ink">
-          Case studies
-        </Link>
-        <a href={REPO} className="transition-colors hover:text-ink">
-          Source on GitHub
-        </a>
-      </p>
+      </div>
     </main>
   );
 }

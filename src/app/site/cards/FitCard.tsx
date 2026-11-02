@@ -24,7 +24,7 @@ export default function FitCard({
   rows: FitRow[];
 }) {
   return (
-    <article className="rounded-3xl border border-line p-6 sm:p-8">
+    <article className="glass rounded-3xl p-6 sm:p-8">
       <h3 className="text-xs font-semibold tracking-wider text-faint uppercase">
         How I match{role ? `: ${role}` : " this role"}
       </h3>

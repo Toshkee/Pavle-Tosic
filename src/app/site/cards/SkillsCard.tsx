@@ -9,7 +9,7 @@ import "../icons";
    the Iconify API (CSP allows no such origin). */
 export default function SkillsCard() {
   return (
-    <article className="rounded-3xl border border-line p-6 sm:p-8">
+    <article className="glass rounded-3xl p-6 sm:p-8">
       <h3 className="text-xl font-bold tracking-tight text-ink">
         What I build with
       </h3>

@@ -38,88 +38,90 @@ function Section({
 
 export default function Privacy() {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-14 sm:px-8 sm:py-20">
-      <Crumbs trail={[{ label: "Privacy" }]} />
+    <main className="mx-auto w-full max-w-3xl px-3 py-6 sm:px-8 sm:py-14">
+      <div className="glass rounded-3xl px-5 py-8 sm:px-10 sm:py-12">
+        <Crumbs trail={[{ label: "Privacy" }]} />
 
-      <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
-        Privacy
-      </h1>
-      <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
-        This is a personal portfolio. There are no accounts, no sign-in, no ads
-        and no advertising or tracking cookies. The network services used by
-        the site are described below.
-      </p>
-
-      <Section title="Analytics">
-        <p>
-          The site uses Cloudflare Web Analytics, injected at the edge. It is
-          cookieless and does not fingerprint visitors or track them across
-          sites. It records aggregate page views along with the page URL, the
-          referrer, coarse device and browser information, country, and page
-          load timings. I use it to see which pages people read. It does not
-          identify you, and I cannot single out an individual visit from it.
+        <h1 className="mt-6 font-display text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+          Privacy
+        </h1>
+        <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
+          This is a personal portfolio. There are no accounts, no sign-in, no ads
+          and no advertising or tracking cookies. The network services used by
+          the site are described below.
         </p>
-      </Section>
 
-      <Section title="The chat">
-        <p>
-          The answers on this site are written by an AI model speaking for me.
-          When you ask a question, it goes to this site&apos;s server, which
-          sends it, together with the earlier questions and answers from the
-          same page visit, to Anthropic&apos;s Claude API to write the reply. A
-          job ad you paste or attach as a PDF for the fit check travels the
-          same way, and the PDF is not kept either. I do
-          not store the conversation: it lives in your browser tab and is gone
-          when you close it or reload.
-        </p>
-        <p>
-          Anthropic processes the messages under its commercial terms, which
-          do not allow using them to train its models; Anthropic may keep them
-          for a limited time to detect abuse.
-          Please don&apos;t type anything personal or sensitive into the chat.
-          To limit abuse, the server counts requests per IP address for one
-          minute; the count is not stored beyond that.
-        </p>
-      </Section>
+        <Section title="Analytics">
+          <p>
+            The site uses Cloudflare Web Analytics, injected at the edge. It is
+            cookieless and does not fingerprint visitors or track them across
+            sites. It records aggregate page views along with the page URL, the
+            referrer, coarse device and browser information, country, and page
+            load timings. I use it to see which pages people read. It does not
+            identify you, and I cannot single out an individual visit from it.
+          </p>
+        </Section>
 
-      <Section title="Storage on your device">
-        <p>
-          The site sets no cookies. If you switch between light and dark with
-          the toggle, that one choice is saved in your browser&apos;s local
-          storage under the key <code>theme</code>, so the next page opens the
-          same way. Nothing else is written.
-        </p>
-      </Section>
+        <Section title="The chat">
+          <p>
+            The answers on this site are written by an AI model speaking for me.
+            When you ask a question, it goes to this site&apos;s server, which
+            sends it, together with the earlier questions and answers from the
+            same page visit, to Anthropic&apos;s Claude API to write the reply. A
+            job ad you paste or attach as a PDF for the fit check travels the
+            same way, and the PDF is not kept either. I do
+            not store the conversation: it lives in your browser tab and is gone
+            when you close it or reload.
+          </p>
+          <p>
+            Anthropic processes the messages under its commercial terms, which
+            do not allow using them to train its models; Anthropic may keep them
+            for a limited time to detect abuse.
+            Please don&apos;t type anything personal or sensitive into the chat.
+            To limit abuse, the server counts requests per IP address for one
+            minute; the count is not stored beyond that.
+          </p>
+        </Section>
 
-      <Section title="Hosting">
-        <p>
-          The site is hosted on Cloudflare, which processes requests (including
-          IP addresses) to serve pages and to protect against abuse, as any web
-          host does. Links out to project demos are hosted elsewhere (Netlify,
-          Vercel, GitHub Pages, Render) and have their own policies.
-        </p>
-      </Section>
+        <Section title="Storage on your device">
+          <p>
+            The site sets no cookies. If you switch between light and dark with
+            the toggle, that one choice is saved in your browser&apos;s local
+            storage under the key <code>theme</code>, so the next page opens the
+            same way. Nothing else is written.
+          </p>
+        </Section>
 
-      <Section title="Your data, and getting in touch">
-        <p>
-          Because nothing here is stored against your identity, there is no
-          account to delete and no profile to export. If you have a question
-          about any of this, or want something looked into, email{" "}
-          <a
-            href={`mailto:${EMAIL}`}
-            className="link-underline text-accent-ink"
-          >
-            {EMAIL}
-          </a>
-          .
-        </p>
-      </Section>
+        <Section title="Hosting">
+          <p>
+            The site is hosted on Cloudflare, which processes requests (including
+            IP addresses) to serve pages and to protect against abuse, as any web
+            host does. Links out to project demos are hosted elsewhere (Netlify,
+            Vercel, GitHub Pages, Render) and have their own policies.
+          </p>
+        </Section>
 
-      <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
-        <Link href="/" className="transition-colors hover:text-ink">
-          Back to the front page
-        </Link>
-      </p>
+        <Section title="Your data, and getting in touch">
+          <p>
+            Because nothing here is stored against your identity, there is no
+            account to delete and no profile to export. If you have a question
+            about any of this, or want something looked into, email{" "}
+            <a
+              href={`mailto:${EMAIL}`}
+              className="link-underline text-accent-ink"
+            >
+              {EMAIL}
+            </a>
+            .
+          </p>
+        </Section>
+
+        <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
+          <Link href="/" className="transition-colors hover:text-ink">
+            Back to the front page
+          </Link>
+        </p>
+      </div>
     </main>
   );
 }
