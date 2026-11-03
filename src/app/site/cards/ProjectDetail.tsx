@@ -9,7 +9,9 @@ export default function ProjectDetail({ project }: { project: Project }) {
 
   return (
     <article className="p-6 sm:p-8">
-      <p className="text-sm text-faint">
+      {/* pr-10 keeps this line clear of the dialog's sticky close button,
+          which sits over the article's top right corner. */}
+      <p className="pr-10 text-sm text-faint">
         {project.role}, {project.context}
       </p>
       <h3 className="mt-1 text-3xl font-bold tracking-tight text-ink">
@@ -22,7 +24,7 @@ export default function ProjectDetail({ project }: { project: Project }) {
       {/* A fixed-height strip, so desktop stills and phone screens both
           keep their own shape; each opens full size when clicked. The demo
           clip leads, and loads nothing until it is played. */}
-      <ul className="no-scrollbar -mx-6 mt-6 flex snap-x gap-3 overflow-x-auto px-6 sm:-mx-8 sm:px-8">
+      <ul className="no-scrollbar -mx-6 mt-6 flex snap-x scroll-px-6 gap-3 overflow-x-auto px-6 sm:-mx-8 sm:scroll-px-8 sm:px-8">
         {project.video && (
           <li className="shrink-0 snap-start">
             <Zoomable

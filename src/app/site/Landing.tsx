@@ -23,7 +23,7 @@ const FOOT_LINK =
 
 export default function Landing() {
   return (
-    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 pt-20 pb-16">
+    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 pt-20 pb-6 sm:pb-16">
       <OrbitMarks />
       <div
         aria-hidden
@@ -102,9 +102,12 @@ export default function Landing() {
         <QuickTiles />
       </div>
 
+      {/* On a phone the links wrap to two rows and the tiles already fill
+          the screen, so they follow the tiles in the flow instead of being
+          pinned to the bottom edge, where they ran into Job fit and Quest. */}
       <nav
         aria-label="More"
-        className="absolute inset-x-4 bottom-4 z-10 flex flex-wrap justify-center gap-2 text-[13px] text-faint"
+        className="relative z-10 mt-10 flex flex-wrap justify-center gap-2 text-[13px] text-faint sm:absolute sm:inset-x-4 sm:bottom-4 sm:mt-0"
       >
         <Link href="/about" className={FOOT_LINK}>
           About

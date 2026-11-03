@@ -10,8 +10,9 @@ import Crumbs from "../site/Crumbs";
 
 export const metadata: Metadata = {
   title: "Work — case studies | Pavle Tošić",
-  description:
-    "Case studies for ten projects: what the problem was, what I decided, what broke, and what shipped.",
+  // The count comes from PROJECTS: written out, it said "nine" after the
+  // tenth was added.
+  description: `Case studies for ${PROJECTS.length} projects: what the problem was, what I decided, what broke, and what shipped.`,
   alternates: { canonical: "https://pavletosic.com/work" },
 };
 
@@ -25,7 +26,7 @@ export default function WorkIndex() {
           Work
         </h1>
         <p className="mt-4 max-w-[70ch] text-[15px] leading-[1.7] text-body">
-          Nine projects, each with a case study: the problem it set out to solve,
+          {PROJECTS.length} projects, each with a case study: the problem it set out to solve,
           the decisions behind it, what broke along the way, and what shipped.
           Or{" "}
           <Link

@@ -31,7 +31,7 @@ export default function ProjectsCard() {
     <div>
       <ul
         ref={railRef}
-        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-1"
+        className="no-scrollbar -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto scroll-smooth px-4 pb-1"
       >
         {PROJECTS.map((project) => (
           <li key={project.slug} className="shrink-0 snap-start">
