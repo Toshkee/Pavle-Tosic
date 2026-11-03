@@ -54,9 +54,12 @@ other page re-render on each request instead of serving a cache HIT.
 
 Requires **Node 22+** (wrangler refuses to run on 20).
 
-**Keep `@opennextjs/cloudflare` at 1.20.9 or newer with Next 16.3.8+** (1.20.10
-pulls a `glob` with a high advisory through `@opennextjs/aws`, so the lock
-pins 1.20.9 until that clears `npm run audit:security`). Next
+**Keep `@opennextjs/cloudflare` at 1.20.15 or newer with Next 16.4.1+** (its
+peer range; 16.4.0 and below carry the 2026 RCE advisories). Its
+`@opennextjs/aws` pulls `@node-minify/core`, which pins `glob` 10.3.3 (high
+advisory on the glob CLI, which it never runs); the scoped override in
+`package.json` lifts it to 10.5.0, and can go once node-minify stops pinning
+it. Next
 16.3.8 changed the incremental-cache keys (`/route-cache/APP_PAGE/<hash>/$/…`);
 an older adapter still writes the old names, the Worker finds nothing, and
 every prerendered `/work/[slug]` 404s in production while `next start` is
