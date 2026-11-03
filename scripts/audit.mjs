@@ -6,12 +6,9 @@
 
 import { execFileSync } from "node:child_process";
 
-const ACCEPTED = {
-  // braces <=3.0.3, no patched release (checked 2026-10-08). The only path in
-  // is eslint-config-next > @next/eslint-plugin-next > fast-glob 3.3.1 >
-  // micromatch: lint-time globbing of patterns we write, never the worker.
-  "GHSA-vfj7-8cjw-p6xm": "braces stack exhaustion, lint tooling only",
-};
+// Empty since 2026-11-03: the braces advisory it held left the tree with
+// eslint-config-next 16.4. Shape: "GHSA-id": "what it is, why it can't ship".
+const ACCEPTED = {};
 const BLOCKING = new Set(["high", "critical"]);
 
 let raw;
