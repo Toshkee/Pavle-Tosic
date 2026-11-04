@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { PROJECTS, thumbOf } from "../projects";
 import Crumbs from "../site/Crumbs";
+import ProjectIndex from "../site/ProjectIndex";
 
 /* Index for the case studies: the flat, linkable list a crawler and a
    recruiter both want, with a way into the chat for anyone who would
@@ -41,35 +41,14 @@ export default function WorkIndex() {
           .
         </p>
 
-        <ul className="mt-10 divide-y divide-line border-y border-line">
-          {PROJECTS.map((p) => (
-            <li key={p.slug}>
-              <Link
-                href={`/work/${p.slug}`}
-                className="flex gap-6 py-6 text-body transition-colors hover:text-ink"
-              >
-                <Image
-                  src={thumbOf(p.shot)}
-                  alt=""
-                  width={160}
-                  height={100}
-                  className="plate hidden h-[100px] w-[160px] shrink-0 rounded-[6px] object-cover object-top sm:block"
-                />
-                <div>
-                  <h2 className="font-display text-xl font-medium tracking-tight text-ink">
-                    {p.title}
-                  </h2>
-                  <p className="mt-1 text-[13px] text-faint">
-                    {p.role}, {p.context}
-                  </p>
-                  <p className="mt-2 max-w-[65ch] text-sm leading-relaxed text-body">
-                    {p.blurb}
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <ProjectIndex
+          rows={PROJECTS.map((p) => ({
+            slug: p.slug,
+            title: p.title,
+            tag: `${p.role}, ${p.context}`,
+            thumb: thumbOf(p.shot),
+          }))}
+        />
 
         <p className="mt-12 border-t border-line pt-6 text-[13px] text-faint">
           <Link href="/" className="transition-colors hover:text-ink">
