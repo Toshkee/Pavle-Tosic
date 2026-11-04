@@ -18,6 +18,7 @@ import {
   SPEC,
 } from "../site/content";
 import Crumbs from "../site/Crumbs";
+import ExperienceLedger from "../site/ExperienceLedger";
 
 /* The CV as a page: the same facts the chat's cards show, from content.ts,
    but server-rendered, so a search engine, a link preview or an AI crawler
@@ -114,7 +115,7 @@ export default function About() {
         </Section>
 
         <Section title="Work">
-          <Timeline entries={EXPERIENCE} />
+          <ExperienceLedger entries={EXPERIENCE} />
         </Section>
 
         <Section title="Education">
