@@ -18,15 +18,16 @@ export function GET(): Response {
     `> ${ROLE} in Montenegro. This site is a chat that answers as him, from the facts below, plus a case study per project.`,
     "## Pages",
     [
-      `- Front page: ${SITE}`,
-      `- About, the CV as a page: ${SITE}/about`,
-      `- Case studies: ${SITE}/work`,
+      `- [Front page](${SITE}): the chat that answers as Pavle`,
+      `- [About](${SITE}/about): the CV as a page`,
+      `- [Case studies](${SITE}/work): every project, one page each`,
       ...PROJECTS.map(
-        (project) => `  - ${project.title}: ${SITE}/work/${project.slug}`,
+        (project) =>
+          `- [${project.title}](${SITE}/work/${project.slug}): case study`,
       ),
-      `- How this site is built: ${SITE}/how-its-built`,
-      `- Toshkee's Quest, a small arcade game: ${SITE}/play`,
-      `- Privacy: ${SITE}/privacy`,
+      `- [How this site is built](${SITE}/how-its-built): the engineering behind it`,
+      `- [Toshkee's Quest](${SITE}/play): a small arcade game`,
+      `- [Privacy](${SITE}/privacy): what the chat does with a question`,
     ].join("\n"),
     facts(SITE),
   ].join("\n\n");
