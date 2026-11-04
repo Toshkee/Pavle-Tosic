@@ -275,7 +275,7 @@ export async function POST(req: Request): Promise<Response> {
     return errorResponse(FAILED_MESSAGE, 500);
   }
 
-  // One retry at most: a visitor is watching the dots.
+  // One retry at most: a visitor is watching the "Thinking" line.
   const client = new Anthropic({ apiKey, maxRetries: 1 });
   const messages = toMessages(turns, pdf);
   const choice = firstChoice(turns.at(-1)!.text);

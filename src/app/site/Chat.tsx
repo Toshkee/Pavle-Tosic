@@ -396,11 +396,9 @@ function ExchangeView({
 
       <div className="mt-6 space-y-5" aria-live="polite" aria-busy={busy}>
         {busy && silent && (
-          <div className="dots glass flex w-fit gap-1.5 rounded-full px-4 py-3" role="status" aria-label="Thinking">
-            <span className="size-2 rounded-full bg-faint" />
-            <span className="size-2 rounded-full bg-faint" />
-            <span className="size-2 rounded-full bg-faint" />
-          </div>
+          <p role="status" className="glass w-fit rounded-full px-4 py-2.5 text-[15px]">
+            <span className="shine">Thinking…</span>
+          </p>
         )}
         {/* Each text answer is a glass bubble, the question's counterpart,
             and each card is a glass sheet of its own: on the light film
