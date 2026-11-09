@@ -253,6 +253,15 @@ body {
   animation: shine 1.8s linear infinite;
 }
 
+/* The theme switch (ThemeToggle.tsx) is the site's only view transition:
+   no default crossfade, the new page just opens in a circle over the old.
+   The toggle skips the transition altogether under reduced motion. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rise,
   .settle {
