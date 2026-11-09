@@ -79,7 +79,7 @@ function Section({
 }) {
   return (
     <section className="mt-12">
-      <p className="text-[12px] uppercase tracking-[0.18em] text-faint">
+      <p className="font-mono text-[12px] text-faint">
         <span className="text-accent-ink">$</span> {cmd}
       </p>
       <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink">
@@ -98,7 +98,7 @@ function Bullets({ items }: { items: string[] }) {
       {items.map((t) => (
         <li
           key={t}
-          className="relative pl-5 before:absolute before:left-0 before:top-[0.6em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-line-strong"
+          className="relative pl-5 before:absolute before:left-0 before:top-[0.6em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-muted"
         >
           {t}
         </li>

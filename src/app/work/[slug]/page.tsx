@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LuMessageCircle } from "react-icons/lu";
 import { PROJECTS, CASES, projectBySlug } from "../../projects";
 import Crumbs from "../../site/Crumbs";
 import Pane from "../../site/Pane";
@@ -57,7 +58,7 @@ function Section({
 }) {
   return (
     <section className="mt-12">
-      <p className="text-[12px] uppercase tracking-[0.18em] text-faint">
+      <p className="font-mono text-[12px] text-faint">
         <span className="text-accent-ink">$</span> {cmd}
       </p>
       <h2 className="mt-2 font-display text-2xl font-bold tracking-tight text-ink">
@@ -74,7 +75,7 @@ function Bullets({ items }: { items: string[] }) {
       {items.map((t) => (
         <li
           key={t}
-          className="relative max-w-[75ch] pl-5 text-[15px] leading-[1.7] text-body before:absolute before:left-0 before:top-[0.6em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-line-strong"
+          className="relative max-w-[75ch] pl-5 text-[15px] leading-[1.7] text-body before:absolute before:left-0 before:top-[0.6em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-muted"
         >
           {t}
         </li>
@@ -143,15 +144,18 @@ export default async function CaseStudy({ params }: Params) {
                 href={p.code}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted transition-colors hover:text-ink"
+                className="link-underline text-ink"
               >
                 Source on GitHub
               </a>
             )}
+            {/* A frosted pill like "Open to work" on the front page: as
+                plain grey text it read as a caption, not the way in. */}
             <Link
               href={{ pathname: "/chat", query: { q: `Tell me about ${p.title}` } }}
-              className="text-muted transition-colors hover:text-ink"
+              className="inline-flex items-center gap-2 rounded-full border border-line bg-bg/70 px-3.5 py-1.5 font-medium text-ink backdrop-blur transition-colors hover:bg-surface"
             >
+              <LuMessageCircle aria-hidden className="size-4" />
               Ask me about it in the chat
             </Link>
           </div>

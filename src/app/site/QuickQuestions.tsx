@@ -122,7 +122,10 @@ export function FollowUps({
 /* Landing: plain links to /chat?q=..., so they work before hydration. */
 export function QuickTiles() {
   return (
-    <ul className="mt-4 flex w-full max-w-4xl flex-wrap justify-center gap-3">
+    // Eight tiles: three to a row on a phone, four from sm (29rem fits four
+    // 106px tiles and their gaps), all eight in one row from lg. In
+    // max-w-4xl they needed 932px of 896, and Quest wrapped on its own.
+    <ul className="mt-4 flex w-full max-w-[29rem] flex-wrap justify-center gap-3 lg:max-w-5xl">
       {QUICK.map(({ label, prompt, color, Icon }) => (
         <li key={label}>
           <Link
@@ -169,10 +172,11 @@ export function QuickPills({
   onFit: () => void;
   disabled: boolean;
 }) {
-  // center-safe: a row too wide to centre starts at the left, where plain
-  // centring pushed the first pill off screen with no way to scroll to it.
+  // A phone scrolls the row sideways. From sm up the eight pills are two
+  // rows of four: in one row they came to 925px in a 768px column, and
+  // Quest sat past the edge where a mouse had no way to scroll to it.
   return (
-    <ul className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:justify-center-safe">
+    <ul className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 sm:[&>li>*]:w-full sm:[&>li>*]:justify-center">
       {QUICK.map(({ label, prompt, color, Icon }) => (
         <li key={label} className="shrink-0">
           <button

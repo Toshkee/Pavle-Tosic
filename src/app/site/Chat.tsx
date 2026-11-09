@@ -279,8 +279,14 @@ export default function Chat({
         </div>
       </header>
 
-      <main ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-4 pt-2 pb-8">
+      {/* The mask fades the answer out over 20px at both edges, where it
+          was cut mid-line under the Memoji and above the quick questions.
+          pt-5 keeps the question bubble clear of the fade at rest. */}
+      <main
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto [mask-image:linear-gradient(to_bottom,transparent,black_20px,black_calc(100%-20px),transparent)]"
+      >
+        <div className="mx-auto w-full max-w-3xl px-4 pt-5 pb-8">
           {/* Job fit takes the screen even over an answer: with the answer
               still showing, the pill only changed the input's placeholder. */}
           {fitting ? (

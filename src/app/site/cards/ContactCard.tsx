@@ -28,8 +28,11 @@ export default function ContactCard() {
         className="pointer-events-none absolute right-4 -bottom-[7px] hidden size-36 object-contain sm:block"
       />
       {AVAILABILITY && (
-        <p className="flex items-center gap-2 text-sm text-faint">
-          <span aria-hidden className="size-2 rounded-full bg-emerald-500" />
+        // items-start with mt-1.5 centres the dot on the first 20px line;
+        // centred on the block, it floated between the lines once the
+        // availability wrapped on a phone.
+        <p className="flex items-start gap-2 text-sm text-faint">
+          <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-emerald-500" />
           {AVAILABILITY}
         </p>
       )}

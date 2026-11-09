@@ -24,7 +24,9 @@ export default function NotFound() {
           That page does not exist on this site. Ask me anything on the front
           page, or read the case studies.
         </p>
-        <p className="mt-6 flex gap-5 text-[15px]">
+        {/* Wraps as whole links: on a phone, three in a row broke each one
+            over two lines. */}
+        <p className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-[15px] whitespace-nowrap">
           <Link href="/" className="link-underline text-ink">
             Front page
           </Link>

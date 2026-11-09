@@ -57,10 +57,10 @@ export default function Landing() {
         <ThemeToggle />
       </div>
 
-      <header
-        className="rise relative z-10 mb-8 flex flex-col items-center text-center md:mb-10"
-        style={{ "--rise-from": "-60px" } as CSSProperties}
-      >
+      {/* Both entrances travel 24px on a phone, where the top bar and the
+          footer links sit 24 and 40px away: at 60px the greeting slid
+          through "Open to work" and the tiles through the links. */}
+      <header className="rise relative z-10 mb-8 flex flex-col items-center text-center [--rise-from:-24px] sm:[--rise-from:-60px] md:mb-10">
         <p className="text-xl font-semibold text-body md:text-2xl">
           Hey, I&apos;m {NAME.split(" ")[0]}
         </p>
@@ -72,7 +72,7 @@ export default function Landing() {
       <MemojiGaze className="relative z-10 size-44 sm:size-56" />
 
       <div
-        className="rise relative z-10 mt-8 flex w-full flex-col items-center"
+        className="rise relative z-10 mt-8 flex w-full flex-col items-center [--rise-from:24px] sm:[--rise-from:60px]"
         style={{ animationDelay: "0.2s" } as CSSProperties}
       >
         <Form action="/chat" className="w-full max-w-lg">

@@ -38,26 +38,27 @@ export default function ProjectsCard() {
             <button
               type="button"
               onClick={() => setOpen(project)}
-              className="group relative flex h-80 w-56 flex-col overflow-hidden rounded-3xl bg-plate text-left sm:h-96 sm:w-72"
+              className="group flex h-80 w-56 flex-col overflow-hidden rounded-3xl bg-plate text-left sm:h-96 sm:w-72"
             >
-              <Image
-                src={project.shot}
-                alt=""
-                width={1600}
-                height={1000}
-                className="absolute inset-0 size-full object-cover object-top transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
-              />
-              <span
-                aria-hidden
-                className="absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-black/75 via-black/35 to-transparent"
-              />
-              <span className="relative p-5">
-                <span className="block text-xs font-medium text-white/80">
+              {/* The title sits on the card, above the screen, not over it:
+                  over a light screenshot even a 75% black scrim let the
+                  site's own headings show through the white type. */}
+              <span className="block p-5 pb-4">
+                <span className="block text-xs font-medium text-faint">
                   {project.context}
                 </span>
-                <span className="mt-1 block text-xl font-bold text-white sm:text-2xl">
+                <span className="mt-1 block text-xl font-bold text-ink sm:text-2xl">
                   {project.title}
                 </span>
+              </span>
+              <span className="relative mx-3 mb-3 flex-1 overflow-hidden rounded-2xl">
+                <Image
+                  src={project.shot}
+                  alt=""
+                  width={1600}
+                  height={1000}
+                  className="absolute inset-0 size-full object-cover object-top transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none"
+                />
               </span>
             </button>
           </li>
@@ -116,11 +117,14 @@ export default function ProjectsCard() {
         {open && (
           <>
             <div className="sticky top-0 z-10 flex justify-end p-3">
+              {/* Sticky, so it stays in reach on a long sheet; frosted with a
+                  ring and shadow so it reads as a control floating over the
+                  text rather than a grey disc stuck on it. */}
               <button
                 type="button"
                 onClick={() => dialogRef.current?.close()}
                 aria-label="Close"
-                className="grid size-10 place-items-center rounded-full bg-surface text-ink transition-colors hover:bg-plate"
+                className="grid size-10 place-items-center rounded-full bg-bg/85 text-ink shadow-md ring-1 ring-line backdrop-blur transition-colors hover:bg-surface"
               >
                 <LuX aria-hidden className="size-5" />
               </button>

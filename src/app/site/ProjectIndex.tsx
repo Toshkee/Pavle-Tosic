@@ -48,10 +48,14 @@ export default function ProjectIndex({ rows }: { rows: IndexRow[] }) {
   };
 
   return (
+    // Rule on top only: the page's footer draws the line under the last
+    // row, and a bottom border here doubled it 48px above that one. The
+    // tag wraps on a phone, where its own line has room, and truncates
+    // only beside the title from sm.
     <ul
       ref={list}
       onPointerMove={follow}
-      className="relative mt-10 divide-y divide-line border-y border-line"
+      className="relative mt-10 divide-y divide-line border-t border-line"
     >
       {rows.map((row, i) => (
         <li key={row.slug}>
@@ -70,7 +74,7 @@ export default function ProjectIndex({ rows }: { rows: IndexRow[] }) {
             >
               {row.title}
             </h2>
-            <span className="order-3 w-full truncate text-[13px] text-faint sm:order-none sm:w-auto sm:min-w-0 sm:flex-1">
+            <span className="order-3 w-full text-[13px] text-faint sm:order-none sm:w-auto sm:min-w-0 sm:flex-1 sm:truncate">
               {row.tag}
             </span>
             <span

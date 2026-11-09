@@ -96,9 +96,9 @@ export default function About() {
 
         <dl className="mt-6 divide-y divide-line border-y border-line text-sm">
           {SPEC.map(({ label, value }) => (
-            <div key={label} className="flex justify-between gap-6 py-2.5">
+            <div key={label} className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:justify-between sm:gap-6">
               <dt className="shrink-0 text-faint">{label}</dt>
-              <dd className="text-right text-ink">{value}</dd>
+              <dd className="text-ink sm:text-right">{value}</dd>
             </div>
           ))}
         </dl>

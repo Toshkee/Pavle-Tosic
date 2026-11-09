@@ -245,7 +245,9 @@ export default function Quest() {
             Ultra mode, the endless run
           </button>
           {ui.touch && (
-            <p className="px-6 text-center text-[11px] leading-relaxed text-[#8a8a8a]">
+            // On its own dark plate: #8a8a8a straight over the dotted
+            // ground was lost among the dots.
+            <p className="mx-6 rounded-lg bg-[#0f0f0f]/85 px-3 py-2 text-center text-[11px] leading-relaxed text-[#c8c8c8]">
               Arrows to walk, double-tap and hold one to run. Tap anywhere to jump, again in
               the air for a second jump.
             </p>
