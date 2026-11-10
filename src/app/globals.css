@@ -165,7 +165,7 @@ body {
   z-index: -20;
   overflow: hidden;
   pointer-events: none;
-  background: url("/images/film-light.webp") center / cover no-repeat;
+  background: url("/images/film-light-wide.webp") center / cover no-repeat;
   /* How much page colour the wash lays over the middle and the edges,
      the same on every page: little, as the light clip is already pale and
      the dark one near black at the edges. The type's halo (body, above)
@@ -174,7 +174,7 @@ body {
   --wash-edge: 8%;
 }
 :root[data-theme="dark"] .film {
-  background-image: url("/images/film-dark.webp");
+  background-image: url("/images/film-dark-wide.webp");
   --wash-mid: 62%;
   --wash-edge: 30%;
 }

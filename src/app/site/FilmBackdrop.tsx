@@ -31,7 +31,7 @@ import { useSyncExternalStore } from "react";
 // recipe at 720p, the dark clip cut at frame 177, the light one run whole
 // with a one-second cross-fade as it never quite comes back, 0.5 and 0.6 MB.
 const CLIPS = {
-  wide: { light: "/video/film-light.mp4", dark: "/video/film-dark.mp4" },
+  wide: { light: "/video/film-light-wide.mp4", dark: "/video/film-dark-wide.mp4" },
   tall: { light: "/video/film-light-tall.mp4", dark: "/video/film-dark-tall.mp4" },
 };
 
