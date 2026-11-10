@@ -7,7 +7,7 @@ import { PROJECTS, type Project } from "../../projects";
 import { IN_PROGRESS } from "../content";
 import ProjectDetail from "./ProjectDetail";
 
-/* "What have you built?": every project as a tall photo card in a snapping
+/* "What have you built?": every project as a photo card in a snapping
    rail, after Aceternity's Apple Cards Carousel
    (https://21st.dev/aceternity/apple-cards-carousel), the component the
    reference uses. Opening a card shows ProjectDetail in a native <dialog>. */
@@ -38,7 +38,7 @@ export default function ProjectsCard() {
             <button
               type="button"
               onClick={() => setOpen(project)}
-              className="group flex h-80 w-56 flex-col overflow-hidden rounded-3xl bg-plate text-left sm:h-96 sm:w-72"
+              className="group flex w-72 flex-col overflow-hidden rounded-3xl bg-plate text-left sm:w-96"
             >
               {/* The title sits on the card, above the screen, not over it:
                   over a light screenshot even a 75% black scrim let the
@@ -51,7 +51,11 @@ export default function ProjectsCard() {
                   {project.title}
                 </span>
               </span>
-              <span className="relative mx-3 mb-3 flex-1 overflow-hidden rounded-2xl">
+              {/* The window has the screenshots' own shape (1600x1000), so a
+                  site shows edge to edge. In the tall, near-square window
+                  it had before, object-cover kept only the middle 60% and
+                  cut every headline off at both sides. */}
+              <span className="relative mx-3 mb-3 block aspect-[16/10] overflow-hidden rounded-2xl">
                 <Image
                   src={project.shot}
                   alt=""
