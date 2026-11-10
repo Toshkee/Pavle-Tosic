@@ -27,6 +27,12 @@
   --line-strong: #d4d4d8;
   --send: #0a0a0a; /* black too, 19.8:1 under the white arrow */
   --send-hover: #2a2a2a;
+  /* The film's top and bottom edges under their wash, measured on the
+     stills (the phone and wide frames agree within a step): the page
+     colour behind the film, which an iPhone shows above and below it
+     (html, below). */
+  --film-top: #cec8c5;
+  --film-bottom: #e9e6e5;
   /* 0 in light, 1 in dark, and every value in between during the theme
      fade: for what is not a single colour (the glass's edge and shadow,
      the watermark's strength, the 404 still), so it crosses on the same
@@ -47,6 +53,8 @@
   --line-strong: #3f3f46;
   --send: #2563eb;
   --send-hover: #3b74f0;
+  --film-top: #0e0f0e;
+  --film-bottom: #110f0e;
   --dark: 1;
 }
 
@@ -71,9 +79,19 @@
 
 /* ================= BASE ================= */
 
+/* Under the film, the film's own edge colours rather than the page
+   colour: Safari on iOS 26 draws no fixed element under its status bar
+   or its floating toolbar, so the film stops short of both and what
+   shows there is this background (white bands above and below it, seen
+   on an iPhone 2026-11-10). The colour fills the overscroll above the
+   page; the gradient runs down the page to the bottom edge's colour. */
 html {
   -webkit-text-size-adjust: 100%;
-  background-color: var(--bg);
+  background: linear-gradient(var(--film-top), var(--film-bottom)) var(--film-top);
+}
+/* The game has no film: its own screen colour (Quest.tsx) all round. */
+html:has(.quest) {
+  background: #171717;
 }
 
 /* The page colour is on <html> alone: the cursor trail (CursorTrail in

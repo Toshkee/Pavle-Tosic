@@ -34,6 +34,8 @@ const COLOURS = [
   "--line-strong",
   "--send",
   "--send-hover",
+  "--film-top",
+  "--film-bottom",
 ];
 const NUMBERS = ["--dark"];
 
