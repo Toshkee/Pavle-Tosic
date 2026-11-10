@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <main className="relative flex min-h-[100svh] flex-col justify-end px-6 pb-[12svh] md:px-[6vw]">
+      {/* The statue's empty plinth over the film (.lost in globals.css). */}
+      <div aria-hidden className="lost" />
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>

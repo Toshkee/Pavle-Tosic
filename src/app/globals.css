@@ -190,7 +190,30 @@ body {
     background-image: url("/images/film-dark-tall.webp");
   }
 }
-.film::after {
+/* The 404 page lays a still over the film, under the same wash: the
+   kickboxer's plinth stands empty with only his hand wraps left on it,
+   one drifting off ("Not here."). GPT Image 2.6 on Higgsfield from the
+   film's stills (2026-11-10; a toppled statue was tried first and refused
+   by its filter). The plinth sits in the right third, clear of the card at
+   the bottom left; on a phone the frame is held on it. The film's clip
+   still plays underneath, hidden: a 404 is rare enough not to switch it
+   off for. */
+.lost {
+  position: fixed;
+  inset: 0;
+  z-index: -19;
+  pointer-events: none;
+  background: url("/images/lost-light.webp") 78% center / cover no-repeat;
+  --wash-mid: 32%;
+  --wash-edge: 8%;
+}
+:root[data-theme="dark"] .lost {
+  background-image: url("/images/lost-dark.webp");
+  --wash-mid: 62%;
+  --wash-edge: 30%;
+}
+.film::after,
+.lost::after {
   content: "";
   position: absolute;
   inset: 0;

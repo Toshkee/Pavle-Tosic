@@ -37,9 +37,12 @@ export const metadata: Metadata = {
     siteName: "Pavle Tošić",
     images: [
       {
-        // ?v=2 busts social scrapers' preview caches (WhatsApp/Telegram/X hold
-        // og:images for weeks keyed by URL): bump it whenever og.png changes.
-        url: "/og.png?v=7",
+        // The first frame of the light film with the landing's words set in
+        // Helvetica Neue over the page's wash (2026-11-10; it replaced the
+        // Memoji card). ?v= busts social scrapers' preview caches
+        // (WhatsApp/Telegram/X hold og:images for weeks keyed by URL): bump
+        // it whenever og.jpg changes.
+        url: "/og.jpg?v=8",
         width: 1200,
         height: 630,
         alt: "Pavle Tošić, Software Developer",
@@ -51,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pavle Tošić, Software Developer",
     description: DESCRIPTION,
-    images: ["/og.png?v=7"],
+    images: ["/og.jpg?v=8"],
   },
 };
 
@@ -66,7 +69,7 @@ const PROFILE_JSON_LD = {
     name: "Pavle Tošić",
     jobTitle: "Software Developer",
     url: "https://pavletosic.com",
-    image: "https://pavletosic.com/og.png",
+    image: "https://pavletosic.com/og.jpg",
     email: `mailto:${EMAIL}`,
     address: { "@type": "PostalAddress", addressCountry: "ME" },
     worksFor: { "@type": "Organization", name: "Infostream" },
