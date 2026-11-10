@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 /* The site's background film, fixed behind every page but the game (/play
    has its own screen and loads none of this), one per theme: a statue of
@@ -23,8 +23,15 @@ import { useSyncExternalStore } from "react";
    also lays a light wash of the page colour over it, the same on every
    page), so the page has its picture before
    hydration and only the current theme's poster is fetched. Once hydrated,
-   the current theme's clip plays over its own poster; a theme switch swaps
-   the clip. Under reduced motion the poster stays and no clip loads. */
+   the current theme's clip plays over its own poster.
+
+   A theme switch turns the statue to the other stone instead of swapping
+   the picture: both clips hold the same sculpture in the same place, so
+   the old clip stays on top, still playing under its own theme's wash,
+   and fades out over the new one (.film-clip[data-leaving] in
+   globals.css, 1.4 s), so marble turns to obsidian where he stands; the
+   page's colours fade with it (ThemeToggle). Under reduced motion the poster stays, no clip loads and the
+   switch is instant. */
 
 // A phone held upright gets the 9:16 film, ribbons and mist without the
 // statue (the same query as .film's poster in globals.css): the same
@@ -35,13 +42,16 @@ const CLIPS = {
   tall: { light: "/video/film-light-tall.mp4", dark: "/video/film-dark-tall.mp4" },
 };
 
+type Theme = "light" | "dark";
+type Layer = { clip: string; tone: Theme };
+
 // The theme lives on <html data-theme>, written by ThemeToggle.
 const subscribeTheme = (onChange: () => void) => {
   const observer = new MutationObserver(onChange);
   observer.observe(document.documentElement, { attributeFilter: ["data-theme"] });
   return () => observer.disconnect();
 };
-const themeNow = () => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+const themeNow = (): Theme => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
 
 const REDUCED = "(prefers-reduced-motion: reduce)";
 const TALL = "(max-width: 767px) and (orientation: portrait)";
@@ -61,21 +71,44 @@ export default function FilmBackdrop() {
   const reduced = useSyncExternalStore(subscribeMotion, reducedNow, () => true);
   const tall = useSyncExternalStore(subscribeTall, tallNow, () => false);
 
-  if (pathname.startsWith("/play")) return null;
   const clip = theme && !reduced ? CLIPS[tall ? "tall" : "wide"][theme] : null;
+  const current = theme && clip ? { clip, tone: theme } : null;
+  // The clip the last render showed: when the theme changes under it, it
+  // stays on as the leaving layer until it has faded. A first paint, a
+  // turn of the phone or reduced motion just swaps the clip.
+  const [shown, setShown] = useState<Layer | null>(null);
+  const [leaving, setLeaving] = useState<Layer | null>(null);
+  if (current?.clip !== shown?.clip) {
+    setShown(current);
+    setLeaving(shown && current && shown.tone !== current.tone ? shown : null);
+  }
+
+  if (pathname.startsWith("/play")) return null;
+  // In a fixed order ("dark" before "light"), so a second click mid-fade
+  // swaps the two layers' roles without React moving either video.
+  const layers = [current, leaving]
+    .filter((layer): layer is Layer => layer !== null)
+    .sort((a, b) => a.tone.localeCompare(b.tone));
   return (
     <div aria-hidden className="film">
-      {clip && (
-        <video
-          key={clip}
-          src={clip}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="size-full object-cover"
-        />
-      )}
+      {layers.map((layer) => (
+        <div
+          key={layer.clip}
+          className="film-clip"
+          data-tone={layer.tone}
+          data-leaving={layer === leaving || undefined}
+          onAnimationEnd={() => setLeaving(null)}
+        >
+          <video
+            src={layer.clip}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="size-full object-cover"
+          />
+        </div>
+      ))}
     </div>
   );
 }

@@ -125,12 +125,14 @@ export function QuickTiles() {
     // Eight tiles: three to a row on a phone, four from sm (29rem fits four
     // 106px tiles and their gaps), all eight in one row from lg. In
     // max-w-4xl they needed 932px of 896, and Quest wrapped on its own.
+    // Frosted glass with no border: a line round each read as a white
+    // frame on the light film (dropped at Pavle's call, 2026-11-10).
     <ul className="mt-4 flex w-full max-w-[29rem] flex-wrap justify-center gap-3 lg:max-w-5xl">
       {QUICK.map(({ label, prompt, color, Icon }) => (
         <li key={label}>
           <Link
             href={{ pathname: "/chat", query: { q: prompt } }}
-            className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
+            className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
           >
             <Icon aria-hidden className="size-[22px]" style={{ color }} />
             <span className="text-sm font-medium text-ink">{label}</span>
@@ -141,7 +143,7 @@ export function QuickTiles() {
         <Link
           href={{ pathname: "/chat", query: { fit: "" } }}
           title={FIT.title}
-          className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
+          className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
         >
           <FIT.Icon aria-hidden className="size-[22px]" style={{ color: FIT.color }} />
           <span className="text-sm font-medium text-ink">{FIT.label}</span>
@@ -151,7 +153,7 @@ export function QuickTiles() {
         <Link
           href="/play"
           title={GAME.title}
-          className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
+          className="flex h-[72px] w-[100px] flex-col items-center justify-center gap-1.5 rounded-2xl bg-bg/40 backdrop-blur-lg transition hover:bg-surface active:scale-95 sm:w-[106px]"
         >
           <GAME.Icon aria-hidden className="size-[22px]" style={{ color: GAME.color }} />
           <span className="text-sm font-medium text-ink">{GAME.label}</span>
@@ -203,10 +205,19 @@ export function QuickPills({
         </button>
       </li>
       <li className="shrink-0">
+        {/* A link cannot be disabled, so while an answer is on its way it
+            is locked like the buttons beside it: dimmed, out of the tab
+            order and its click swallowed, instead of standing out as the
+            one pill that still lights up under the pointer. */}
         <Link
           href="/play"
           title={GAME.title}
-          className="flex items-center gap-2.5 rounded-xl border border-line bg-bg px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-surface active:scale-95"
+          aria-disabled={disabled || undefined}
+          tabIndex={disabled ? -1 : undefined}
+          onClick={(event) => {
+            if (disabled) event.preventDefault();
+          }}
+          className="flex items-center gap-2.5 rounded-xl border border-line bg-bg px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-surface active:scale-95 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:hover:bg-bg aria-disabled:active:scale-100"
         >
           <GAME.Icon aria-hidden className="size-[18px]" style={{ color: GAME.color }} />
           {GAME.label}

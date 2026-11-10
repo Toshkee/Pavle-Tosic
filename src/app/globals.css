@@ -27,6 +27,11 @@
   --line-strong: #d4d4d8;
   --send: #0a0a0a; /* black too, 19.8:1 under the white arrow */
   --send-hover: #2a2a2a;
+  /* 0 in light, 1 in dark, and every value in between during the theme
+     fade: for what is not a single colour (the glass's edge and shadow,
+     the watermark's strength, the 404 still), so it crosses on the same
+     clock as the tokens instead of jumping at the click. */
+  --dark: 0;
 }
 
 :root[data-theme="dark"] {
@@ -42,6 +47,7 @@
   --line-strong: #3f3f46;
   --send: #2563eb;
   --send-hover: #3b74f0;
+  --dark: 1;
 }
 
 @theme inline {
@@ -56,8 +62,8 @@
   --color-body: var(--body);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
-  --color-line: var(--line);
-  --color-line-strong: var(--line-strong);
+  --color-line: color-mix(in srgb, var(--line) var(--line-show), transparent);
+  --color-line-strong: color-mix(in srgb, var(--line-strong) var(--line-show), transparent);
   --color-accent-ink: var(--ink);
   --color-send: var(--send);
   --color-send-hover: var(--send-hover);
@@ -120,38 +126,46 @@ body {
    the case studies, /how-its-built, /privacy, the 404). Half the page
    colour, a wide blur so the rock behind turns to soft light and shade
    instead of edges under the type, a lit top edge and a faint shadow. */
+/* The edge, the lit line and the shadow run from light (white 55% and
+   70%, black 25%) to dark (white 10% and 8%, black 60%) on --dark, and the
+   edge dips with the other borders (--line-show) halfway through a
+   theme fade, where a white rim stood out round the grey sheet. */
 .glass {
   background: color-mix(in oklab, var(--bg) 55%, transparent);
-  border: 1px solid rgb(255 255 255 / 0.55);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      rgb(255 255 255 / calc(0.55 - 0.45 * var(--dark))) var(--line-show),
+      transparent
+    );
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.7),
-    0 20px 50px -20px rgb(0 0 0 / 0.25);
+    inset 0 1px 0
+      color-mix(
+        in srgb,
+        rgb(255 255 255 / calc(0.7 - 0.62 * var(--dark))) var(--line-show),
+        transparent
+      ),
+    0 20px 50px -20px rgb(0 0 0 / calc(0.25 + 0.35 * var(--dark)));
   -webkit-backdrop-filter: blur(28px) saturate(1.4);
   backdrop-filter: blur(28px) saturate(1.4);
-}
-:root[data-theme="dark"] .glass {
-  border-color: rgb(255 255 255 / 0.1);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 20px 50px -20px rgb(0 0 0 / 0.6);
 }
 
 /* The giant handle behind the landing page: ink fading to nothing, so it
    reads as texture, never as text competing with the title. 13% ink at the
-   top in dark: readable as a word, still well under the tiles' border. The
+   top in dark: readable as a word, still well under the tiles. The
    light film is mid grey behind it, where 13% vanished, so light takes 30%. */
 .watermark {
   background-image: linear-gradient(
     to bottom,
-    color-mix(in oklab, var(--ink) var(--watermark-ink, 13%), transparent),
+    color-mix(in oklab, var(--ink) var(--watermark-ink), transparent),
     transparent 92%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-:root:not([data-theme="dark"]) .watermark {
-  --watermark-ink: 30%;
+.watermark {
+  --watermark-ink: calc(30% - 17% * var(--dark));
 }
 
 /* The site's film (FilmBackdrop.tsx), fixed behind every page but /play:
@@ -166,17 +180,24 @@ body {
   overflow: hidden;
   pointer-events: none;
   background: url("/images/film-light-wide.webp") center / cover no-repeat;
-  /* How much page colour the wash lays over the middle and the edges,
-     the same on every page: little, as the light clip is already pale and
-     the dark one near black at the edges. The type's halo (body, above)
-     keeps the text pages readable over it. */
+}
+/* How much page colour the wash lays over the middle and the edges,
+   the same on every page: little, as the light clip is already pale and
+   the dark one near black at the edges. The type's halo (body, above)
+   keeps the text pages readable over it. A leaving clip (below) keeps
+   its own theme's wash. */
+.film,
+.film-clip[data-tone="light"] {
   --wash-mid: 32%;
   --wash-edge: 8%;
 }
-:root[data-theme="dark"] .film {
-  background-image: url("/images/film-dark-wide.webp");
+:root[data-theme="dark"] .film,
+.film-clip[data-tone="dark"] {
   --wash-mid: 62%;
   --wash-edge: 30%;
+}
+:root[data-theme="dark"] .film {
+  background-image: url("/images/film-dark-wide.webp");
 }
 /* On a phone held upright the wide frame is cut down to its middle strip
    and the statue falls outside it, so a 9:16 frame takes its place: the
@@ -190,6 +211,60 @@ body {
     background-image: url("/images/film-dark-tall.webp");
   }
 }
+/* A theme switch (FilmBackdrop.tsx): the old clip stays on top as the
+   leaving layer, under its own theme's wash (the page around it is
+   switching too, hence the page colours restated here), and fades out
+   over the new one. Both clips hold the statue in the same place, so he
+   changes stone where he stands; the ribbons, which do not line up, just
+   dissolve into each other. The page's own colours fade on the same
+   clock (.theme-fade, below). A second click mid-fade puts the
+   attribute on the other layer, which starts the fade over. A wipe with
+   a coral seam was tried first and dropped (2026-11-10). */
+.film-clip {
+  position: absolute;
+  inset: 0;
+}
+.film-clip[data-tone="light"] {
+  --bg: #ffffff;
+}
+.film-clip[data-tone="dark"] {
+  --bg: #0a0a0a;
+}
+.film-clip[data-leaving] {
+  z-index: 1;
+  animation: film-fade var(--theme-fade-time) var(--theme-fade-ease) both;
+}
+@keyframes film-fade {
+  to {
+    opacity: 0;
+  }
+}
+
+/* While the theme switches, ThemeToggle.tsx moves the colour tokens
+   (and --dark) from one theme to the other itself, a frame at a time, as
+   inline values on <html>, on the statue's clock: every var() on the
+   page, gradients included, reads the same in-between colour on the same
+   frame. A CSS transition of the tokens (registered with @property) did
+   the same in Chromium, but Safari reports the in-between values and
+   paints the end ones, so its pages jumped at the click. Transitioning
+   each element's color instead lagged: every child that inherits a colour
+   starts a transition of its own as its parent's moves. .theme-fade turns
+   the elements' own transitions (hover fades) off for that second, or
+   each would trail the tokens by its own duration. */
+:root {
+  --theme-fade-time: 1.4s; /* FADE_MS in ThemeToggle.tsx */
+  --theme-fade-ease: cubic-bezier(0.45, 0, 0.55, 1); /* EASE there too */
+  /* How much of the line colour the borders show: all of it, except that
+     during the fade ThemeToggle dips it to nothing and back, so the pills
+     and sheets do not stand as empty frames halfway, when their labels
+     pass through grey. Tailwind's border-line and border-line-strong read
+     the tokens through it (@theme, above), as does the .glass edge. */
+  --line-show: 100%;
+}
+:root.theme-fade * {
+  transition: none !important;
+}
+
 /* The 404 page lays a still over the film, under the same wash: the
    kickboxer's plinth stands empty with only his hand wraps left on it,
    one drifting off ("Not here."). GPT Image 2.6 on Higgsfield from the
@@ -197,22 +272,28 @@ body {
    by its filter). The plinth sits in the right third, clear of the card at
    the bottom left; on a phone the frame is held on it. The film's clip
    still plays underneath, hidden: a 404 is rare enough not to switch it
-   off for. */
+   off for. Both stills load, the dark one over the light at --dark's
+   opacity, so a theme switch fades the plinth from marble to obsidian
+   like the film (and the wash with it) instead of swapping it at the
+   click. */
 .lost {
   position: fixed;
   inset: 0;
   z-index: -19;
   pointer-events: none;
   background: url("/images/lost-light.webp") 78% center / cover no-repeat;
-  --wash-mid: 32%;
-  --wash-edge: 8%;
+  --wash-mid: calc(32% + 30% * var(--dark));
+  --wash-edge: calc(8% + 22% * var(--dark));
 }
-:root[data-theme="dark"] .lost {
-  background-image: url("/images/lost-dark.webp");
-  --wash-mid: 62%;
-  --wash-edge: 30%;
+.lost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/images/lost-dark.webp") 78% center / cover no-repeat;
+  opacity: var(--dark);
 }
 .film::after,
+.film-clip[data-leaving]::after,
 .lost::after {
   content: "";
   position: absolute;
@@ -286,15 +367,6 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   animation: shine 1.8s linear infinite;
-}
-
-/* The theme switch (ThemeToggle.tsx) is the site's only view transition:
-   no default crossfade, the new page just opens in a circle over the old.
-   The toggle skips the transition altogether under reduced motion. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
 }
 
 @media (prefers-reduced-motion: reduce) {
