@@ -178,6 +178,18 @@ body {
   --wash-mid: 62%;
   --wash-edge: 30%;
 }
+/* On a phone held upright the wide frame is cut down to its middle strip
+   and the statue falls outside it, so a 9:16 frame takes its place: the
+   same ribbons and mist with no statue, as a second face beside the
+   Memoji read badly (FilmBackdrop uses the same query for its clips). */
+@media (max-width: 767px) and (orientation: portrait) {
+  .film {
+    background-image: url("/images/film-light-tall.webp");
+  }
+  :root[data-theme="dark"] .film {
+    background-image: url("/images/film-dark-tall.webp");
+  }
+}
 .film::after {
   content: "";
   position: absolute;
