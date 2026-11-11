@@ -21,28 +21,28 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.132.1",
-    "@iconify/react": "^6.0.2",
-    "next": "16.4.4",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "@anthropic-ai/sdk": "^0.137.0",
+    "@iconify/react": "^6.0.4",
+    "next": "16.4.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "react-icons": "^5.7.0",
     "react-markdown": "^10.1.0"
   },
   "devDependencies": {
-    "@iconify-json/logos": "^1.2.14",
-    "@opennextjs/cloudflare": "^1.20.15",
+    "@iconify-json/logos": "^1.2.19",
+    "@opennextjs/cloudflare": "^1.20.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.4.4",
-    "lighthouse": "13.4.1",
+    "eslint-config-next": "16.4.5",
+    "lighthouse": "13.6.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "wait-on": "9.1.0",
-    "wrangler": "^4.156.2"
+    "wait-on": "9.5.1",
+    "wrangler": "^4.158.0"
   },
   "overrides": {
     "sharp": "^0.35.5",
