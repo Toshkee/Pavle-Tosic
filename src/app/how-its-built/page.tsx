@@ -27,6 +27,7 @@ const CHAT_ARCH = `browser ── POST /api/chat
  │
  └─ cloudflare worker (next 16, opennext)
      ├ rate limit: 10 a minute per IP
+     │   30 a minute for everyone
      ├ system prompt built from
      │   content.ts + projects.ts
      │   prompt and tools cached
@@ -198,7 +199,7 @@ export default function HowItsBuilt() {
             items={[
               "An enforced Content Security Policy: scripts, images, media and connections from this origin only (plus Cloudflare's analytics beacon), no frames, no plugins, no inline event handlers.",
               "HSTS with preload, and same-origin opener and resource policies, on every page.",
-              "The chat endpoint takes same-origin JSON only, caps the size of every message and the length of the history, and limits each IP to ten questions a minute.",
+              "The chat endpoint takes same-origin JSON only, caps the size of every message and the length of the history, and limits each IP to ten questions a minute and all visitors together to thirty.",
             ]}
           />
         </Section>

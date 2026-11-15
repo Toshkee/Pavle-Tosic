@@ -78,8 +78,9 @@ export default function Privacy() {
             do not allow using them to train its models; Anthropic may keep them
             for a limited time to detect abuse.
             Please don&apos;t type anything personal or sensitive into the chat.
-            To limit abuse, the server counts requests per IP address for one
-            minute; the count is not stored beyond that.
+            To limit abuse, the server counts requests per IP address (per
+            network, for an IPv6 address) and in total for one minute; the
+            counts are not stored beyond that.
           </p>
         </Section>
 

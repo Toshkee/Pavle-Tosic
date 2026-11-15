@@ -61,9 +61,25 @@ function errorResponse(message: string, status: number): Response {
 /* Only this site's own pages may call the endpoint. Browsers always send
    Origin on a cross-site POST and cannot forge it, so this stops other sites
    from spending the key through their visitors. Scripts can forge anything,
-   which is what the per-IP rate limit is for. */
+   which is what the two rate limits are for. */
 function isSameOrigin(req: Request): boolean {
   return req.headers.get("origin") === new URL(req.url).origin;
+}
+
+/* What the per-visitor limiter counts by. An IPv6 subscriber holds a whole
+   /64 and can send from a new address every time, so those are counted by
+   their first four groups; an IPv4 address is counted as it is. */
+function limiterKey(ip: string): string {
+  if (!ip.includes(":") || ip.includes(".")) return ip;
+  const [head, tail] = ip.toLowerCase().split("::");
+  const groups = head.split(":").filter(Boolean);
+  if (tail !== undefined) {
+    const rest = tail.split(":").filter(Boolean);
+    const gap = Math.max(8 - groups.length - rest.length, 0);
+    groups.push(...Array<string>(gap).fill("0"), ...rest);
+  }
+  const prefix = groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, ""));
+  return `${prefix.join(":")}::/64`;
 }
 
 function parseTurns(body: unknown): Turn[] | null {
@@ -249,8 +265,11 @@ export async function POST(req: Request): Promise<Response> {
 
   const { env } = getCloudflareContext();
   const ip = req.headers.get("cf-connecting-ip") ?? "local";
-  const { success } = await env.CHAT_LIMITER.limit({ key: ip });
-  if (!success) return errorResponse(RATE_LIMITED, 429);
+  const own = await env.CHAT_LIMITER.limit({ key: limiterKey(ip) });
+  if (!own.success) return errorResponse(RATE_LIMITED, 429);
+  // Every visitor together: what a script with many addresses runs into.
+  const all = await env.CHAT_LIMITER_ALL.limit({ key: "all" });
+  if (!all.success) return errorResponse(UPSTREAM_BUSY, 429);
 
   const raw = await req.text();
   if (raw.length > MAX_BODY_CHARS + MAX_PDF_CHARS) {

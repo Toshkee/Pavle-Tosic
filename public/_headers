@@ -5,6 +5,12 @@
 # assets directory and does not serve it. Format:
 # https://developers.cloudflare.com/workers/static-assets/headers/
 
+# The security headers in next.config.ts never reach these files either.
+# Most of them only mean something on a page; this one keeps a browser
+# from guessing a file's type from its bytes.
+/*
+  X-Content-Type-Options: nosniff
+
 # Next hashes everything under _next/static, so a changed file is a new
 # URL: safe to cache for a year.
 /_next/static/*

@@ -23,12 +23,20 @@
   },
   // /api/chat spends the Anthropic key, so each visitor IP gets 10 messages a
   // minute (period can only be 10 or 60). namespace_id is any number that is
-  // unique within the Cloudflare account.
+  // unique within the Cloudflare account. CHAT_LIMITER_ALL counts every
+  // visitor together under one key: a script with many addresses passes the
+  // first limiter and stops at this one. It caps a burst, not a bill: the
+  // spend limit in the Claude Console is the ceiling in dollars.
   "ratelimits": [
     {
       "name": "CHAT_LIMITER",
       "namespace_id": "1101",
       "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "CHAT_LIMITER_ALL",
+      "namespace_id": "1102",
+      "simple": { "limit": 30, "period": 60 }
     }
   ]
 }

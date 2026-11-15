@@ -121,9 +121,12 @@ async function streamAnswer(
 
 export default function Chat({
   initialQuestion,
+  initialDraft = "",
   initialFit = false,
 }: {
   initialQuestion: string | null;
+  // A ?q= that did not come from this site: in the input, not yet asked.
+  initialDraft?: string;
   initialFit?: boolean;
 }) {
   const [exchanges, setExchanges] = useState<Exchange[]>(() =>
@@ -134,7 +137,9 @@ export default function Chat({
   const [pending, setPending] = useState<Pending | null>(() =>
     initialQuestion ? { question: initialQuestion, history: [] } : null,
   );
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(() =>
+    initialDraft.slice(0, LIMITS.messageChars),
+  );
   // Set by Job fit: the next message is a job ad, sent after FIT_PROMPT.
   const [fitting, setFitting] = useState(initialFit);
   // A job ad as a PDF, waiting to go with the next fit question.
