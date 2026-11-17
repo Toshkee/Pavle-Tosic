@@ -42,6 +42,13 @@ const CLIPS = {
   tall: { light: "/video/film-light-tall.mp4", dark: "/video/film-dark-tall.mp4" },
 };
 
+// Each clip's first frame, the still .film already shows as its CSS
+// background (/video/film-light-wide.mp4 → /images/film-light-wide.webp),
+// so the poster comes from the cache. Without one, Google's video indexing
+// found a <video> on every page with "No thumbnail URL provided"
+// (Search Console, 2026-11-17).
+const posterOf = (clip: string) => clip.replace(/^\/video\/(.+)\.mp4$/, "/images/$1.webp");
+
 type Theme = "light" | "dark";
 type Layer = { clip: string; tone: Theme };
 
@@ -101,6 +108,7 @@ export default function FilmBackdrop() {
         >
           <video
             src={layer.clip}
+            poster={posterOf(layer.clip)}
             autoPlay
             muted
             loop
