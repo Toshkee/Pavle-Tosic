@@ -4,31 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Coding Rules
 
-- Think before coding.
-- Prefer simple, maintainable solutions.
 - Modify existing patterns instead of inventing new architecture.
-- Keep files small and readable.
 - Avoid unnecessary abstractions and dependencies.
 - Preserve existing code style and structure.
-- Write production-ready code, not prototypes.
-- Prioritize clarity over cleverness.
-- Avoid premature optimization.
-- Fix root causes, not symptoms.
 - Use strong typing; avoid `any`.
 - Do not rewrite unrelated code.
-- Minimize side effects and complexity.
 - Make surgical, focused changes.
-- Optimize for developer experience and long-term maintainability.
-- Build fast, but keep the codebase clean.
 
 ## Commands
 
 ```bash
-npm run dev          # Start dev server (Next.js, localhost:3000)
-npm run build        # Production build
-npm start            # Serve the production build locally
-npm run lint         # ESLint (flat config via eslint-config-next)
-npm run typecheck    # tsc --noEmit
 npm run check:site   # Post-build smoke check against a running server (routes, canonicals, JSON-LD, security headers, internal links)
 npm run check:metadata  # Fails if any image in public/ still carries EXIF/XMP metadata
 npm run github       # Regenerate src/app/site/github.ts (the GitHub card's numbers) from the public API, then commit it
@@ -113,7 +98,7 @@ An AI portfolio after aaabadcode.com / toukoum.fr: one landing screen, and a cha
 | `/chat` | `chat/page.tsx` → `site/Chat.tsx` | Reads `?q=` on the server and asks it on mount, but only when the request came from this site's own pages (`Sec-Fetch-Site: same-origin`); from any other link or a typed address it only fills the input, so a crafted link cannot make the site ask its question. Shows only the latest exchange (question, then text and cards in the order they streamed); earlier turns are not shown but are sent along as history. (Keeping them all on screen, dimmed above the latest, was tried and dropped at Pavle's call: a card reads best alone.) After a card, two or three static follow-up pills (`FOLLOW_UPS` in `QuickQuestions.tsx`). Quick-question pills (plus Job fit) and `AskBar.tsx` (an auto-growing textarea, 4,000 characters for a pasted job ad; send / stop) at the bottom. `noindex`. |
 | `/api/chat` | `api/chat/route.ts` | POST, same-origin only, per-IP rate limit (`CHAT_LIMITER` binding, 10 a minute; an IPv6 address is counted by its /64) and one for all visitors together (`CHAT_LIMITER_ALL`, 30 a minute), body and turn caps from `chat-protocol.ts`. Streams NDJSON `ChatEvent`s: text deltas and cards. Two rounds at most: round one may call a tool, round two has tools off and must answer in text. A starter question sent word for word (`QUICK_PROMPTS` in `chat-protocol.ts`, the landing tiles and the pills), or a job ad opening with `FIT_PROMPT`, forces its card's tool in round one (Haiku 5.5 accepts a forced `tool_choice`; Sonnet 5.5 and Opus 5.5 return a 400). The history carries the card each answer showed, rebuilt as the tool call that showed it, so the model never reads an answer that pointed at a card it cannot see. |
 | `/about` | `about/page.tsx` | The CV as a crawlable page from `content.ts` (About, spec sheet, stack, work, education, contact): the landing says little on purpose and the cards only exist once the model calls for them. Static. |
-| `/play` | `play/page.tsx` → `site/quest/Quest.tsx` | Toshkee's Quest, a tiny arcade platformer after Clawd's Quest on claude.dev (written from scratch, nothing copied): a dot-matrix world on one canvas (`quest/dots.ts`: hills, trees, bushes, clouds, ground with grass, flowers and pits, one-way ledges; `quest/sky.ts`: a low striped sun, or a crescent moon on the night mission, and now and then a shooting star, a rocket with its smoke, a flock of birds; `quest/life.ts`: windmills and blinking masts on the far ridge, fireflies at night; `quest/fx.ts`: dust, sword sparks, pick-up sparkle; none of the passing things under reduced motion), the hero from Pavle's PixelLab character (`public/images/quest/hero.png`, the East-direction sprite sheet of that export minus its rotations row, re-encoded without metadata; `quest/hero.ts` maps its rows: idle, death, walk, roll, hurt, attack; no jump was generated, so the single jump holds the roll's leap frame and the double jump plays its somersault), bugs and pick-ups as text pixel art (`quest/sprites.ts`; the bugs, pit walls and ledge tops are full coral, Clawd's colour, so what hurts stands out in the grey world, while the scenery's warm light (the sun, lit cloud undersides and ridge, autumn trees, flowers, ore, fireflies) is the same coral in dimmer `ember` tones, and each ledge clears a band through it; a blue glow marks what to collect), five missions from his own stories (`quest/missions.ts`: the bad deploy, the moving tender deadline, kickboxing, an in-range update, a full class at Reform), plus Ultra mode (endless run, best in `localStorage.quest.best`). Moves: walk, sprint, jump, a second jump in the air, roll (R, invulnerable, slips through bugs), sword (K, a big bug takes two). The engine (`quest/engine.ts`) owns the loop, physics and level generation (bugs are placed first and kept 150 px from pit edges so a knock-back never ends in a pit; everything to pick up keeps clear of their beats) and reports a `QuestUi` snapshot; React draws the chips, paper slips, controls panel and the touch pads (on a phone: ← → to walk, a double tap held on one to run, Roll, Sword, Jump, and a tap on the stage jumps; in Ultra, where he runs on his own, Sprint replaces the arrows). Reaching the end of a collect or crate mission with something missed says how many are left, back to the west. Dark on purpose, ignores the theme toggle. Synthesised blips and an original eight-bar chiptune loop (`quest/sound.ts`), off until clicked; the AudioContext is only made and resumed inside a tap or key press (Quest.tsx listens for them), and `navigator.audioSession.type = "playback"` keeps an iPhone's silent switch from muting it. A Quest tile on the landing page and a Quest pill in the chat open it (`QuickQuestions.tsx`), and it is linked from the 404 page and llms.txt; the finale sends the visitor to the chat for the Godot games. Static. **Testing:** on `next dev` the engine exposes `window.__quest.state()`; paste `scripts/quest-bot.js` into the console on /play and `__bot.start(240000)` plays every mission and Ultra by itself (it must reach the finale with hearts to spare). |
+| `/play` | `play/page.tsx` → `site/quest/Quest.tsx` | Toshkee's Quest, a tiny arcade platformer (canvas engine, his PixelLab hero, five missions plus Ultra). Dark on purpose, ignores the theme toggle. Static. Details, and how to test it with `scripts/quest-bot.js`, are in `src/app/site/quest/CLAUDE.md`. |
 | `/llms.txt` | `llms.txt/route.ts` | The site for AI crawlers: the page list plus the same `facts()` the system prompt is built from (`api/chat/prompt.ts`), with absolute links. Announced by a `<link rel="alternate" type="text/plain">` on the front page (`layout.tsx`; a page with its own `alternates` drops it) and linked from `/how-its-built`; not in the landing footer, it means nothing to a visitor. Static. |
 
 - `api/chat/prompt.ts` builds the system prompt from the data files below, so the model and the cards can never disagree. Honesty rules are in the prompt, including: a card is the answer and the text around it never restates it, the two parked games come up only when a visitor asks about games, a website or pricing enquiry is pointed to vaky.me without naming a price, and the GitHub numbers are quoted as of the date they were counted.
