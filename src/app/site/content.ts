@@ -52,12 +52,14 @@ export const MEMOJI = {
     ],
   },
 };
-// The real me on the "Who are you?" card: face and shoulders as the
-// thumbnail, the whole photo when it is clicked.
+// The real me on the "Who are you?" card and /about: my face as the
+// thumbnail, the whole photo when it is clicked. Taken at the APEX Alpe
+// Adria conference with my Infostream badge on; the people behind me are
+// blurred, they never agreed to be on my site.
 export const PHOTO = {
-  src: "/images/me.webp",
-  full: "/images/me-full.webp",
-  alt: "Pavle Tošić on a wooden bench, black and white",
+  src: "/images/me-conference.webp",
+  full: "/images/me-conference-full.webp",
+  alt: "Pavle Tošić smiling in sunglasses, with a thumbs-up and his conference attendee badge",
 };
 // The giant faded word behind the landing page.
 export const HANDLE = "Toshkee";
