@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
     // The Remotion project that renders the launch film: its own packages,
     // its own tsconfig.
     "video/**",
+    // Claude Code's local state, including whole checkouts of this repo in
+    // .claude/worktrees/ with their own build output.
+    ".claude/**",
   ]),
 ]);
 
