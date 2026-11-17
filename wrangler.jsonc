@@ -19,7 +19,11 @@
     "binding": "ASSETS",
     // The asset server ignores Range, so the clips go through worker.ts,
     // which answers byte ranges: without them a video cannot be seeked.
-    "run_worker_first": ["/video/*"]
+    "run_worker_first": ["/video/*"],
+    // With run_worker_first on, @opennextjs/cloudflare 1.20.17+ refuses to
+    // build unless assets are served only at their exact path, as Next does
+    // (no /foo for /foo.html). There are no .html assets, so nothing changes.
+    "html_handling": "none"
   },
   // /api/chat spends the Anthropic key, so each visitor IP gets 10 messages a
   // minute (period can only be 10 or 60). namespace_id is any number that is
