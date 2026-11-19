@@ -466,10 +466,10 @@ const DEMOS = {
       await h.wait(1500);
       await h.scrollTo(page.getByRole("heading", { name: /Website pricing/i }), { at: 100 });
       await h.wait(400);
-      // The calculator prints the bill as the package and add-ons change.
-      await h.click(page.locator("label").filter({ hasText: /^Project/ }).first());
-      await h.wait(900);
-      await h.click(page.locator("label").filter({ hasText: /^Motion design videos/ }).first());
+      // Three package cards since the November 2026 redesign; the pick is a
+      // link to the contact form, so the camera only rests on it.
+      const pick = await h.target(page.getByRole("link", { name: /Choose Business/i }).first());
+      await h.moveTo(pick.x + 10, pick.y + 4, 900);
       await h.wait(1400);
     }),
 

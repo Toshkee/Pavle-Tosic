@@ -57,7 +57,8 @@ export const PROJECTS: Project[] = [
       "Owner's panel in the same app: members, memberships and payments, the schedule, a weekly template and invites",
     ],
     result: [
-      "Live for the studio's members, built and shipped in October 2026.",
+      // 100+: the Reform case study on vaky.me (src/i18n/en.ts in the Vaky.me repo)
+      "Live for the studio's members, built and shipped in October 2026; more than 100 members use it across both studios.",
       "Tested at three levels: unit tests, Firestore rules and the API against the Firebase emulators, and an end-to-end run through the Functions emulator.",
     ],
     kpis: [
@@ -185,13 +186,13 @@ export const PROJECTS: Project[] = [
     slug: "vaky",
     title: "Vaky.me",
     blurb:
-      "My own web studio's site and back office: a bilingual static Next.js export selling websites, apps and motion design videos to local businesses, with a page of its own for US small businesses, and Cloudflare Pages Functions behind it that take an enquiry through lead, project, private onboarding brief and build brief. No payments, no CMS.",
+      "My own web studio's site and back office: a bilingual static Next.js export selling websites, apps and motion design videos to local businesses, with pages of their own for US and European small businesses, and Cloudflare Pages Functions behind it that take an enquiry through lead, project, private onboarding brief and build brief. No payments, no CMS.",
     problem:
       "A one-person studio needed a site that sells websites to Montenegrin restaurants, salons and gyms, and a way to take an enquiry through to a signed-off brief without email threads and spreadsheets.",
     highlights: [
-      "Static Next.js 16 export in two languages, plus a /us/ page without the euro prices; 15 concept sites for Montenegrin trades under /demo and 50 for US businesses under /c/, each a real page",
-      "Prices as a calculator that prints the bill as the package and add-ons change; nothing is paid through the site",
-      "The motion design videos it sells and shows are Remotion compositions in the same repo, the site's own showreel rendered from the shots the page builds",
+      "Static Next.js 16 export in two languages, plus a /us/ page without the euro prices and a /eu/ page for Europe outside the Balkans; 15 concept sites for Montenegrin trades under /demo and 50 for US businesses under /c/, each a real page",
+      "Redesigned in November 2026: the hero is a three.js V, a lattice of crosses that gathers, cuts and scatters and can be dragged, over ASCII dot fields, and the sections dive in as sheets",
+      "The motion design videos it sells and shows are rendered from a Remotion project in the same repo",
       "Pages Functions + D1 + R2: lead form, admin dashboard, single-use onboarding links that carry the package server-side",
       "Three layers before a stranger's write: edge rate limit, honeypot, Turnstile, and an address whose domain takes no mail is refused; strict CSP from public/_headers",
     ],
@@ -205,13 +206,14 @@ export const PROJECTS: Project[] = [
       { label: "API endpoints", value: "24 Pages Functions" },
       // ls src/app/\(me\)/demo | wc -l; ls public/c | grep -v '^_' | wc -l
       { label: "concept sites", value: "15 in Montenegro, 50 for the US" },
-      // ls public/video/*.mp4 | wc -l
-      { label: "motion design videos", value: "9 on the site, Remotion" },
+      // grep -c 'file: "' src/i18n/en.ts (the motion row; public/video also
+      // keeps the two showreels the November redesign took off the page)
+      { label: "motion design videos", value: "7 on the site, Remotion" },
     ],
     role: "Solo build, own studio",
     kind: "build",
     context: "Vaky, since August 2026",
-    stack: ["Next.js 16", "TypeScript", "Cloudflare Pages Functions", "D1", "R2", "Remotion"],
+    stack: ["Next.js 16", "TypeScript", "three.js", "Cloudflare Pages Functions", "D1", "R2", "Remotion"],
     live: "https://vaky.me/en/",
     code: null,
     note: "The studio's repository is private, so there is no code link.",
@@ -222,7 +224,7 @@ export const PROJECTS: Project[] = [
       { src: "/images/projects/vaky.webp", label: "Home" },
       { src: "/images/projects/vaky-work.webp", label: "Live work" },
       { src: "/images/projects/vaky-motion.webp", label: "Motion design videos" },
-      { src: "/images/projects/vaky-pricing.webp", label: "Price calculator" },
+      { src: "/images/projects/vaky-pricing.webp", label: "Pricing" },
     ],
   },
   {
@@ -504,8 +506,9 @@ export const VAKY_CASE = {
   codeFile: "lead.ts",
   arch: `cloudflare pages ── next 16 static export
  │  (me)/ and (en)/ route groups
+ │   three.js V hero · ascii dot fields
  │   15 concept sites under /demo
- │   /us/ page · 50 US concepts in /c/
+ │   /us/ and /eu/ · 50 US concepts in /c/
  │   public/_headers: strict CSP
  └─ functions/ pages functions
      ├ api/lead  the one public write
