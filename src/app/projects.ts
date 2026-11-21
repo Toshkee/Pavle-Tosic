@@ -1,4 +1,4 @@
-/* Project data (ten projects, newest first) — the single source of truth for the chat's project cards,
+/* Project data (twelve projects, newest first) — the single source of truth for the chat's project cards,
    the facts the chat model is given (api/chat/prompt.ts) AND the crawlable
    case-study routes under /work/[slug]. Plain data, no "use client": client
    components and server routes both import it.
@@ -44,6 +44,50 @@ export type Project = {
 };
 
 export const PROJECTS: Project[] = [
+  {
+    slug: "aqua-bianca",
+    title: "Aqua Bianca",
+    blurb:
+      "The new website of Aqua Bianca, a natural spring water company bottling at Kolašin and one of the biggest in Montenegro and the region, built for the client: one page in Montenegrin and English, plain HTML, CSS and JavaScript with Three.js, where the water in the hero ripples under the cursor, the real bottles carry a scroll story from the source to the table, and a section for partners sets out the range for trade orders.",
+    problem:
+      "The old site was a Squarespace template: no hierarchy, the About page one wall of text, products without detail, the videos a list of embeds, and nothing for the businesses that buy by the pallet: distributors, hotels and restaurants, offices with water coolers.",
+    highlights: [
+      "No build step: one HTML page and seven vanilla ES modules, Three.js through an import map, and a deploy script that ships only the files the page uses",
+      "The hero plays the nature video as a live WebGL texture whose water ripples after the cursor; under reduced motion or blocked autoplay the aerial photo stays instead",
+      "A showcase of all 13 formats, from the 0.25 l Junior to the 19 l cooler bottle, with a liquid fill between products and carbonation bubbles for the sparkling water",
+      "A sticky scroll story, from source to bottle, told with the real bottles cut out of the client's product photography",
+      "For partners: the bottle line-up, a range table filtered by spring, sparkling or cooler, and enquiry links that preselect the contact form's topic",
+    ],
+    result: [
+      "Live at aquabianca.com in Montenegrin and English, in place of the Squarespace site, built in November 2026.",
+      "English is a map keyed by the Montenegrin text, so the HTML stays one language and the modules that write their own text (the showcase, the table, the counters) redraw when the language changes.",
+      "The videos below the hero load just before they scroll in, every video plays only while it is on screen, and both WebGL loops stop as soon as their section leaves it.",
+    ],
+    kpis: [
+      // grep -c "cat: '" main.js (the PRODUCTS list)
+      { label: "product formats", value: "13: PET, glass and cooler bottles" },
+      // i18n.js: the keys of the EN map
+      { label: "translated strings", value: "224, Montenegrin to English" },
+      // ls *.js; wc -l *.js
+      { label: "build step", value: "none: 7 ES modules, ~1,000 lines" },
+    ],
+    role: "Solo build, client work",
+    kind: "client",
+    context: "Freelance, November 2026",
+    stack: ["HTML", "CSS", "JavaScript", "Three.js", "WebGL"],
+    live: "https://aquabianca.com/?lang=en",
+    code: "https://github.com/Toshkee/AquaBianca",
+    note: "The trade table's logistics columns (units per pack, packs per pallet, EAN) and the contact form are waiting on details from the client.",
+    shot: "/images/projects/aquabianca.webp",
+    video: null,
+    domain: "aquabianca.com",
+    gallery: [
+      { src: "/images/projects/aquabianca.webp", label: "Hero" },
+      { src: "/images/projects/aquabianca-story.webp", label: "Scroll story" },
+      { src: "/images/projects/aquabianca-range.webp", label: "The range" },
+      { src: "/images/projects/aquabianca-partners.webp", label: "For partners" },
+    ],
+  },
   {
     slug: "reform-fitness",
     title: "Reform Fitness",
@@ -225,6 +269,49 @@ export const PROJECTS: Project[] = [
       { src: "/images/projects/vaky-work.webp", label: "Live work" },
       { src: "/images/projects/vaky-motion.webp", label: "Motion design videos" },
       { src: "/images/projects/vaky-pricing.webp", label: "Pricing" },
+    ],
+  },
+  {
+    slug: "vaky-kids",
+    title: "Vaky Kids",
+    blurb:
+      "My studio's own product, next to Vaky.me: personalised cartoons in which a child is the hero, with their name in the opening titles and narration in Montenegrin. vakykids.me is a static Next.js page that plays a live version of those opening titles with the child's name, then takes the order in a seven-step wizard.",
+    problem:
+      "One page whose only job is to turn a parent who tapped through from Instagram, TikTok or a Facebook group into an order, on a phone, in the in-app browser.",
+    highlights: [
+      "Name first: the parent types the child's name and presses play, the curtains open and a live version of the films' opening titles, painted shots moved by GSAP, lands on that name; the same name follows them down the page",
+      "An order wizard with one question per screen, like an app (name, age, theme, package, extras, review, contact), ending in a form that posts to a Cloudflare Pages Function",
+      "The order is emailed through Resend and kept in no database; if sending fails the visitor is told and offered WhatsApp or email with the same text, so nothing they typed is lost",
+      "3D toys in the site's sticker style, toon shading with a dark outline, built in three.js from simple shapes so there are no models to download; the balloons pop when clicked",
+    ],
+    result: [
+      "Live at vakykids.me since November 2026, deployed by Cloudflare Pages on every push to main.",
+      "Honest about how the films are made: I write the story, direct it and pick and fix every shot, and the pictures, animation, narration and music are made with AI tools on paid plans. The site says so in its steps, its FAQ and its privacy page.",
+      "The site never takes a child's photo: the order asks for the name, the age and what the child loves, and photos are sent later, in the conversation, and deleted once the film is delivered.",
+    ],
+    kpis: [
+      // STEPS in src/components/OrderWizard.tsx
+      { label: "order wizard", value: "7 steps, one question per screen" },
+      // ToyKind in src/components/toys/scene.ts
+      { label: "3D toys", value: "8 kinds, no model files" },
+      // git log --oneline | wc -l, first commit 20 Nov 2026
+      { label: "commits", value: "23 since 20 November 2026" },
+    ],
+    role: "Solo build, own product",
+    kind: "build",
+    context: "Vaky, November 2026",
+    stack: ["Next.js 16", "TypeScript", "Tailwind CSS", "GSAP", "three.js", "Cloudflare Pages Functions"],
+    live: "https://vakykids.me/",
+    code: "https://github.com/Toshkee/VakyKids",
+    note: "The site is in Montenegrin only, for parents in Montenegro.",
+    shot: "/images/projects/vakykids.webp",
+    video: null,
+    domain: "vakykids.me",
+    gallery: [
+      { src: "/images/projects/vakykids.webp", label: "Name first" },
+      { src: "/images/projects/vakykids-film.webp", label: "What a film holds" },
+      { src: "/images/projects/vakykids-how.webp", label: "How it's made" },
+      { src: "/images/projects/vakykids-packages.webp", label: "Packages" },
     ],
   },
   {
